@@ -73,6 +73,19 @@ The immutable digest must come from the **registry's actual manifest/index**, re
 
 **Quarantine record (2026-11-02):** Attempt 2 of [RC run #41447703825](https://github.com/OXY7O/kaori-docs/actions/runs/41447703825) built/pushed the registry tag `v0.1.0-rc.1` from staging source `129336ff33d7e96a76d4ae9ea1df4b35e1628c2e`. Docker push and pull reported digest `sha256:c466a76d617ae3aa92439630b36bc618e9acf191882ab5385e844daf9b4ebc1d`, but strict local `RepoDigests` equality failed **before signature/SBOM attestation and GitHub release finalization**. Therefore `v0.1.0-rc.1` is **INCOMPLETE / QUARANTINED / NEVER DEPLOY**, even though registry storage contains a tag. No mutating retry, retag, overwrite or deletion is authorized by the digest fix. A newly admitted source must use a **new** explicitly approved artifact tag, initially proposed `v0.1.0-rc.2`, with complete signed evidence. Registry tag visibility never substitutes for acceptance.
 
+## Automated downstream handoff (issue #33)
+
+GitHub Actions `GITHUB_TOKEN` creates the signed prerelease metadata only
+after immutable digest, Trivy, Cosign and signed SPDX/SLSA verification.
+GitHub suppresses downstream `release.published` workflow triggers
+generated with the same token; release auto-deployment therefore uses the
+canonical publisher's completed-success `workflow_run` on the default branch
+after separate issue #33 standing policy and first-public/UAT acceptance.
+Publisher approval remains **per exact staging SHA and RC tag** under #13.
+The deployment workflow revalidates the signed release; publisher success
+alone is not server-change authority. Details:
+[Release Deployment](RELEASE_DEPLOYMENT.md).
+
 ## Recovery without mutation
 
 If an earlier attempt already pushed the candidate but was interrupted, use resume_existing=true with the exact previously evidenced expected_digest. The workflow pulls rather than rebuilds, refuses a changed digest, checks OCI labels and reruns scan/signature/attestation verification. A mismatched Git tag or prerelease is rejected. Never overwrite or silently republish an existing candidate.
