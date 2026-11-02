@@ -28,7 +28,7 @@ permanent automatic push-to-release pipeline. Unlike a copied `rc-once.yml`,
 the actual signer remains the canonical workflow identity already pinned by
 `deploy-release.sh`.
 
-The push path must change the **publisher workflow itself**, and its accepted
+The runtime checks the canonical workflow path against the **first parent of the exact two-parent staging merge commit**, not with bare `git diff-tree -r` (which returns no changed paths on an ordinary merge). This is a fail-closed activation check; a missing changed path or non-merge SHA is rejected. The push path must change the **publisher workflow itself**, and its accepted
 staging merge commit message must contain the exceptional marker
 `[KAORI_DOCS_RC_ISSUE_24]`. Missing the marker, ordinary staging pushes,
 PRs, forks and non-staging branches cannot start its publish job. This trigger
