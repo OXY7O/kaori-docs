@@ -6,6 +6,7 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'dispatch from staging only'
 [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
+[[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || fail 'public edge option must be 0 or 1'
 [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-([0-9]+)$ ]] || fail 'exact issue #14 approval comment URL required'
 approval_id="${BASH_REMATCH[1]}"
 [[ "${DOCS_PUBLIC_DOMAIN:-}" == docs.kaori.cloud ]] || fail 'Docs domain variable must be docs.kaori.cloud'
@@ -112,6 +113,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'deploy_root=%q\nremote_release=%q\n' "$DOCS_DEPLOY_ROOT" "$remote_release"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$RC_TAG"
+  printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
   cat <<'REMOTE_DEPLOY'
 docker_config="$(mktemp -d)"
 chmod 700 "$docker_config"
@@ -120,20 +122,43 @@ trap cleanup_remote EXIT
 export DOCKER_CONFIG="$docker_config"
 printf '%s' "$registry_pass" | docker login "$registry_host" --username "$registry_user" --password-stdin >/dev/null
 test -s "$remote_release/server/deploy.sh"
-# Never detach an existing public Docs container from shared-edge during private UAT.
-existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-docs \
-  --filter label=com.docker.compose.service=web --format '{{.ID}}')"
-if [[ -n "$existing_web" ]]; then
-  while IFS= read -r existing_id; do
-    [[ -n "$existing_id" ]] || continue
-    published="$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$existing_id")"
-    [[ "$published" != true ]] || { echo 'BLOCK: Docs already publicly attached; separate approved edge change required' >&2; exit 1; }
-  done <<< "$existing_web"
+if [[ "$attach_existing_edge" == 1 ]]; then
+  test -s "$remote_release/server/reattach-existing-site.sh"
+  # Fail before replacing public Docs unless its existing independent edge is
+  # approved, healthy, and unambiguous. Never alter other edge registrations.
+  bash "$remote_release/server/reattach-existing-site.sh" preflight
+else
+  existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-docs \
+    --filter label=com.docker.compose.service=web --format '{{.ID}}')"
+  if [[ -n "$existing_web" ]]; then
+    while IFS= read -r existing_id; do
+      [[ -n "$existing_id" ]] || continue
+      published="$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$existing_id")"
+      [[ "$published" != true ]] || { echo 'BLOCK: public Docs requires explicit edge reconciliation before container replacement' >&2; exit 1; }
+    done <<< "$existing_web"
+  fi
 fi
-# Docs UAT remains private; no shared-edge mutation or public TLS.
+# The release keeps its private loopback; public reattachment is separate.
 export KAORI_DOCS_RELEASE_LOCAL_ONLY=1
-bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"
+if ! bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"; then
+  # If the runtime adapter recovered the previous committed digest, reconnect
+  # only that Docs frontend; do not mask the original failed deployment.
+  if [[ "$attach_existing_edge" == 1 ]]; then
+    bash "$remote_release/server/reattach-existing-site.sh" attach ||
+      echo 'CRITICAL: Docs rollback public edge reconciliation failed' >&2
+  fi
+  exit 1
+fi
+if [[ "$attach_existing_edge" == 1 ]]; then
+  # Post-deploy publication failure is independently recoverable; do not change
+  # the already committed runtime receipt or restart unrelated applications.
+  bash "$remote_release/server/reattach-existing-site.sh" attach
+fi
 docker logout "$registry_host" >/dev/null 2>&1 || true
 REMOTE_DEPLOY
 } | ssh "${ssh_opts[@]}" "$target" 'bash -se'
-printf 'PASS: accepted Docs release candidate %s installed privately at digest %s; no public edge/DNS/TLS changes. Browser UAT and human acceptance still PENDING.\n' "$RC_TAG" "$digest"
+if [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
+  printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\n' "$digest"
+else
+  printf 'PASS: accepted Docs release candidate %s installed privately at digest %s; no public edge/DNS/TLS changes. Browser UAT and human acceptance still PENDING.\n' "$RC_TAG" "$digest"
+fi

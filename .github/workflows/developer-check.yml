@@ -179,6 +179,19 @@ jobs:
             echo 'BLOCK: unscoped release approval URL unexpectedly accepted' >&2
             exit 1
           fi
+          # Issue #32: explicit existing-public-edge choice must be boolean.
+          # Neither negative case is permitted to reach registry or SSH.
+          if env GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.1 \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=unsafe \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: malformed public-edge switch unexpectedly accepted' >&2
+            exit 1
+          fi
+          if bash deploy/server/reattach-existing-site.sh unknown; then
+            echo 'BLOCK: invalid edge reconciliation operation accepted' >&2
+            exit 1
+          fi
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
       - name: Validate static output and public boundary

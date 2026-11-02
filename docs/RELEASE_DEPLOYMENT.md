@@ -53,6 +53,52 @@ The initial bootstrap checks for exactly one issue #14 comment with the exact me
 
 The same final staging merge must change the canonical RC workflow too, with the independently reviewed `[KAORI_DOCS_RC_ISSUE_24]` marker, to publish a **new** signed candidate for that SHA. Never deploy a candidate from an earlier commit. After private deployment evidence is accepted, remove both temporary triggers through reviewed issue-linked cleanup PRs and retain canonical manual workflows.
 
+## Subsequent public release reconciliation — issue #32
+
+First-time DNS, TLS and edge registration are **not** owned by the Docs release
+adapter: [KAORI #4196](https://github.com/OXY7O/KAORI/issues/4196)
+must separately provision and verify the existing `docs.kaori.cloud` site under
+the standalone shared-edge. Do not set public mode when that issue is incomplete.
+
+Only **after** public publication and operator acceptance, the canonical
+`Release Deployment` workflow offers an explicit
+`publish_existing_edge=true` switch. It exports
+`KAORI_DOCS_ATTACH_EXISTING_EDGE=1` to the existing signed deployment adapter.
+Default false retains private UAT and refuses to replace a Docs frontend already
+attached to the public edge. No release push triggers public deployment.
+
+The public switch reuses the existing Website pattern in
+`deploy/server/reattach-existing-site.sh` with two modes:
+
+- **preflight before container replacement:** require one healthy Docs frontend
+  currently attached to `edge-public` with alias `kaori-docs-web`, a
+  non-symlinked existing `/opt/shared-edge/config/sites/kaori-docs.env` with
+  exact reviewed Docs-only domain/upstream/8080/`/healthz`/TLS fields,
+  an existing independent edge verifier and healthy public HTTPS. No new
+  registration, DNS record or certificate is created.
+- **attach after committed release:** require one healthy Docs frontend whose
+  immutable Docker image matches the committed Docs receipt. Reattach only
+  that container to `edge-public` with the same alias. Verify the public Docs
+  `/healthz`, then run the **existing** shared-edge `verify.sh` against
+  **all** registered sites (DNS, trusted TLS/HSTS, redirect, unknown Host/SNI
+  and immutable edge containers). Routine per-release verification does not
+  run Certbot renewal dry-run; first publication and scheduled operator
+  maintenance must still verify real renewal using the canonical
+  `--renewal-dry-run` path.
+
+If a candidate fails and the existing host adapter restores the previous
+committed digest, the orchestration attempts to reconnect **only** the recovered
+Docs frontend, but retains a failed release result. If the new runtime is
+healthy/committed but edge reconciliation fails, **do not rewrite the Docs
+receipt or redeploy unrelated services**: this is a separately failed public
+publication phase requiring the existing edge recovery procedure.
+
+The shared edge is a separate lifecycle authority: it does not belong in the
+Docs Compose network declaration, and this public option never edits app/website
+registrations, Nginx-generated vhosts, DNS or TLS configuration. Current
+temporary staging activation #24/#28 must be retired through a reviewed PR
+after governed promotion, not converted into automatic push-to-deploy.
+
 ## Verification, receipt and rollback
 
 The host adapter requires exact non-root image identity, healthy Docker healthcheck, internal `/healthz` and root HTTP, effective loopback mapping `127.0.0.1:18081` **and a successful loopback curl**. Only after these checks does it commit a receipt and preserve the previous release pointer. If candidate deployment fails, the previous digest is restored, its health is checked, and the candidate receipt remains uncommitted. Failed rollback is **CRITICAL**.
@@ -77,4 +123,4 @@ Visit `http://127.0.0.1:18081/` for responsive viewport, light/dark, accessibili
 
 Only a separate approved public-edge workstream may register `docs.kaori.cloud` using the **existing** `/opt/shared-edge/runtime/publish-container.sh`, `apply.sh` and `verify.sh` and DNS-provider records. The Docs deployment workflow itself does not modify Nginx, Certbot, ports 80/443, existing `kaori.cloud` / `app.kaori.cloud` registrations or `edge-public`. It refuses to replace an already publicly attached Docs frontend because an unreviewed recreate would detach its edge alias.
 
-**Current status:** code candidate only. #10 credential scope/host key and #13 actual signed candidate remain unverified; no Docs host deployment, public site, UAT or release accepted.
+**Runtime evidence as of 2026-11-02:** signed Docs prerelease `v0.1.0-rc.2` from admitted staging SHA `fb2cb80cc1d9a9fb8a134d5e780ef6a8f1cb5603` deployed privately with digest `sha256:bc182315f2e638f81ea7f0b0d34b78c9d566831fd327e565528b1f3c4c16fa57`; [Release Deployment run #41450139227 attempt 3](https://github.com/OXY7O/kaori-docs/actions/runs/41450139227) succeeded with committed receipt, non-root health and localhost port 18081. A desktop dark screenshot was operator-supplied; full Human UAT and rollback drill remain pending. The shared Docker Hub credential is a documented scope exception, not a dedicated robot. Public `docs.kaori.cloud` DNS/TLS/shared-edge publication is **not verified**, and `main` remains unchanged. Issue #32's recurrence adapter is implementation-only until its issue-owned PR passes Developer Check, Full Admission and later public UAT.

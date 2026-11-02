@@ -20,6 +20,11 @@ on:
         description: Issue #14 approval comment with exact SHA/tag/digest marker
         type: string
         required: true
+      publish_existing_edge:
+        description: Reconcile only an already approved docs.kaori.cloud registration (never first publication)
+        type: boolean
+        required: true
+        default: false
 permissions:
   contents: read
   actions: read
@@ -37,6 +42,7 @@ jobs:
       ACCEPTED_SHA: ${{ github.sha }}
       RC_TAG: ${{ inputs.candidate_tag }}
       APPROVAL_REF: ${{ inputs.approval_reference }}
+      KAORI_DOCS_ATTACH_EXISTING_EDGE: ${{ inputs.publish_existing_edge && '1' || '0' }}
       GH_TOKEN: ${{ github.token }}
       REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
       REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
@@ -115,5 +121,10 @@ jobs:
         run: |
           printf 'KAORI Docs private deployment: candidate %s, source %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
           printf 'Authorization reference: %s\n' "$APPROVAL_REF" >> "$GITHUB_STEP_SUMMARY"
-          printf 'SIGNED IMMUTABLE DIGEST VERIFIED; LOOPBACK-ONLY HOST DELIVERY.\n' >> "$GITHUB_STEP_SUMMARY"
-          printf 'PUBLIC EDGE/TLS/HOST-SNI, UAT AND HUMAN ACCEPTANCE: PENDING.\n' >> "$GITHUB_STEP_SUMMARY"
+          printf 'SIGNED IMMUTABLE DIGEST VERIFIED; HOST RELEASE RECEIPT COMMITTED.\n' >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$KAORI_DOCS_ATTACH_EXISTING_EDGE" == 1 ]]; then
+            printf 'PREVIOUSLY PUBLISHED DOCS EDGE REATTACHED; FULL SHARED-EDGE VERIFICATION PASS.\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'PRIVATE LOOPBACK ONLY; PUBLIC EDGE/DNS/TLS: NOT VERIFIED.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf 'HUMAN VISUAL ACCEPTANCE / PROMOTION: PENDING.\n' >> "$GITHUB_STEP_SUMMARY"
