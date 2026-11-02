@@ -287,6 +287,13 @@ jobs:
             echo 'BLOCK: RC staging attempted to attach public production edge' >&2
             exit 1
           fi
+          if env KAORI_DOCS_STAGING_UAT=0 KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: RC request accepted without isolated staging identity' >&2
+            exit 1
+          fi
           echo 'PASS: staging RC cannot be combined with public edge or stable production'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
