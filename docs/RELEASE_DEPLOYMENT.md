@@ -87,67 +87,80 @@ existing public Docs VPS is not a true isolated staging/production environment;
 do not claim two independent environments or deploy an unaccepted RC to public
 production merely because it has passed Full Admission.
 
-## Signed-release automatic deployment — issue #33
+## Stable production automatic deployment — issue #40 (inactive until accepted)
 
-The canonical `Release Deployment` workflow can **optionally** run after a
-**successfully completed canonical Release Candidate publisher workflow** through
-GitHub Actions `workflow_run: completed`, **not** `release.published`.
-The current publisher creates tags/prereleases with `GITHUB_TOKEN`, and GitHub
-does not dispatch arbitrary new workflows for `release` events caused by that
-token. `workflow_run` is an explicit supported handoff. It only becomes
-operational after this workflow exists on the repository's **default `main`**
-via an accepted `kaori/staging` promotion PR. Merely merging this change into
-staging does **not** activate automatic deployment.
+**Only a stable `vX.Y.Z` published from `main` may trigger production
+automation.** The earlier #33 RC publisher-completion → public production
+route has been retired from the workflow and explicitly rejected by the
+deployment adapter. RC `vX.Y.Z-rc.N` remains staging/UAT release identity,
+not production authorization.
 
-Automatic mode is **disabled by default** and requires both:
+The canonical `Release Deployment` workflow listens for successful
+`workflow_run: completed` of the `Full Admission` workflow on `main`
+with upstream event `workflow_dispatch`. It rejects a validation-only run:
+the upstream run must contain a successful **Publish Accepted Stable Release**
+job. The stable publisher writes its exact run ID into the stable GitHub
+Release; the orchestrator selects **exactly one** non-draft, non-prerelease
+stable tag bound to that successful run and current main SHA.
 
-1. Repository Actions **Variable** `KAORI_DOCS_AUTO_DEPLOY_ENABLED=true`,
-   intentionally enabled only after first public DNS/TLS readiness and
-   maintainer Human Acceptance under
-   [KAORI #4196](https://github.com/OXY7O/KAORI/issues/4196).
-2. Exactly one **write-authorized maintainer** comment on
-   [Docs issue #33](https://github.com/OXY7O/kaori-docs/issues/33)
-   containing this standing policy marker verbatim:
+**Disabled by default, independent activation gates:**
+
+1. Repository Actions variable
+   `KAORI_DOCS_STABLE_AUTO_DEPLOY_ENABLED=true`, only after signed RC/UAT,
+   same-digest stable publisher and Docs-only rollback/cutover human
+   acceptance. Leave the old `KAORI_DOCS_AUTO_DEPLOY_ENABLED` unset/false.
+2. One **write-authorized** maintainer comment on
+   [issue #40](https://github.com/OXY7O/kaori-docs/issues/40)
+   with this standalone marker:
 
    ```text
-   KAORI_DOCS_AUTO_DEPLOY_POLICY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:existing-public-only
+   KAORI_DOCS_STABLE_AUTO_DEPLOY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:main-stable-only
    ```
 
-Do **not** post the marker or enable the repository variable before the first
-public Docs release has been accepted. The two controls are a reversible
-standing release-to-deployment policy, **not a waiver of per-release signing**.
-The publisher retains the separate exact-SHA/tag approval on #13. Revocation:
-set the variable to any value other than `true` and/or edit the approval
-comment to remove the marker.
+Neither activation gate is granted by creating or merging this PR. In
+particular, the initial public bootstrap Human Acceptance for PR #37 does
+**not** authorize automatic stable releases. Revocation is removing the
+standing comment marker and/or setting the variable other than `true`.
 
-Auto-deploy accepts only `workflow_run` completion of the **canonical,
-successful, same-repository, manually dispatched** Release Candidate publisher
-on `kaori/staging` with source equal to the current staging HEAD. It resolves
-exactly one non-draft, properly tagged prerelease targeting that source and
-verifies the exact Git tag. The existing deployment adapter independently
-verifies publisher identity/run ID, issue #33 standing policy/author permission,
-current admitted staging SHA, exact Full Admission, Docs registry identity and
-OCI digest, then Cosign signature and signed SPDX/SLSA attestations. It deploys
-through the same pinned SSH trust boundary and requires the **already approved**
-Docs-only public edge preflight and reattachment from issue #32.
+With these gates present, the adapter checks current main SHA, stable Git
+tag/source/release metadata, matching accepted RC tag and RC source SHA
+ancestor, identical registry digest, accepted issue #39 per-release human
+approval, exact successful main Full Admission/stable-publication run,
+write-authorized approvers and admitted RC Full Admission. It then
+independently verifies the **original RC digest** using Cosign image
+signature and signed SPDX/SLSA attestations. Nothing rebuilds or retags
+the original immutable image.
 
-Automatic retries on an already deployed identical SHA/tag/digest are no-ops
-after checking public Docs health; they do **not** overwrite the prior receipt.
-Changed releases use the existing container health, committed receipt and
-bounded runtime rollback before independent public-edge reconciliation. If
-reconciliation fails after a healthy commit, the release remains committed and
-publication is a separate failed incident; do not restart KAORI Application or
-Website.
+The release deployer reuses the existing pinned SSH host trust and Docker
+Compose adapter, passing *stable public version* `vX.Y.Z` with original
+*artifact version* `vX.Y.Z-rc.N`. Image metadata must match the RC.
+The receipt stores `KAORI_DOCS_VERSION` (stable) and
+`KAORI_DOCS_ARTIFACT_VERSION` (RC) alongside the original source and
+digest so rollback can verify the genuine OCI label. Before replacing
+the currently healthy public Docs frontend, it verifies the existing
+`kaori-docs.env` route and `edge-public` alias; after committing the
+new digest it reconnects **only** Docs and runs the canonical all-site
+shared-edge verifier. A same-digest stable retry is an idempotent
+verified no-op. Any post-commit public-edge failure stays a separate
+incident; never silently roll back KAORI App/Website.
 
-Normal `workflow_dispatch` retains its per-digest issue #14 authorization for
-operator-controlled deploy/recovery. The temporary staging push routes #24/#28
-are historical one-time activation paths, not recurrence triggers; retire them
-through reviewed PRs once the main-branch workflow is operational.
+**Current infrastructure caveat:** a *single* `kaori-docs` Compose project
+on the publicly routed VPS is not an isolated staging/UAT environment.
+Do **not** call an RC deployed there an independently isolated staging
+release; approved UAT is a release candidate on the existing public
+Docs origin. True simultaneous staging/production separation needs
+an explicit approved second runtime/namespace and private UAT ingress.
+Existing manual RC `workflow_dispatch` remains per-digest approved
+under issue #14; it defaults to private mode and fails closed rather
+than detaching an attached public Docs frontend. That is intentional.
 
-**No automatic deployment or public staging mutation is claimed by merely
-authoring this source.** Require a later admitted test RC, real public-edge
-verification across all active sites and human release acceptance before
-calling the recurring-release contract operational.
+The historical one-time staging trigger #28 has been removed from the
+deployment workflow. Issue #24 publisher-only RC bootstrap trigger is a
+separate previously reviewed cleanup item; production must never rely
+on it. GitHub `GITHUB_TOKEN` created releases do not fire downstream
+`release.published`; the successful main `workflow_run` handoff is
+the supported model. Actual stable publication, host cutover, rollback,
+UAT and activation remain pending real evidence.
 
 ## Subsequent public release reconciliation — issue #32
 
@@ -234,4 +247,4 @@ Visit `http://127.0.0.1:18081/` for responsive viewport, light/dark, accessibili
 
 Only a separate approved public-edge workstream may register `docs.kaori.cloud` using the **existing** `/opt/shared-edge/runtime/publish-container.sh`, `apply.sh` and `verify.sh` and DNS-provider records. The Docs deployment workflow itself does not modify Nginx, Certbot, ports 80/443, existing `kaori.cloud` / `app.kaori.cloud` registrations or `edge-public`. It refuses to replace an already publicly attached Docs frontend because an unreviewed recreate would detach its edge alias.
 
-**Runtime evidence as of 2026-11-02:** signed Docs prerelease `v0.1.0-rc.2` from admitted staging SHA `fb2cb80cc1d9a9fb8a134d5e780ef6a8f1cb5603` deployed privately with digest `sha256:bc182315f2e638f81ea7f0b0d34b78c9d566831fd327e565528b1f3c4c16fa57`; [Release Deployment run #41450139227 attempt 3](https://github.com/OXY7O/kaori-docs/actions/runs/41450139227) succeeded with committed receipt, non-root health and localhost port 18081. A desktop dark screenshot was operator-supplied; full Human UAT and rollback drill remain pending. The shared Docker Hub credential is a documented scope exception, not a dedicated robot. Public `docs.kaori.cloud` DNS/TLS/shared-edge publication is **not verified**, and `main` remains unchanged. Issue #32's recurrence adapter is implementation-only until its issue-owned PR passes Developer Check, Full Admission and later public UAT.
+**Updated authority (2026-11-02):** first-public Docs DNS/TLS/shared-edge and bootstrap placeholder Human UAT were accepted by the maintainer; [KAORI#4196](https://github.com/OXY7O/KAORI/issues/4196) closed, retired n8n Certbot lineage [#4197](https://github.com/OXY7O/KAORI/issues/4197) operator-confirmed fixed. The full raw final Certbot transcript was not uploaded, and the evidence does not include a new digest-cutover/rollback test. Foundation [PR #37](https://github.com/OXY7O/kaori-docs/pull/37) merged into `main` at `6915fb97c5f53d8e5043876d51401d08bd683879`, post-main Full Admission [#41465358039](https://github.com/OXY7O/kaori-docs/actions/runs/41465358039) PASS 4/4. Stable publisher #39 and public auto-deploy #40 are separate follow-ons, inactive until approval. The previously deployed last evidenced artifact is signed RC `v0.1.0-rc.2` at digest `sha256:bc182315f2e638f81ea7f0b0d34b78c9d566831fd327e565528b1f3c4c16fa57`; **no stable tag or stable deployment evidence is claimed**.\n
