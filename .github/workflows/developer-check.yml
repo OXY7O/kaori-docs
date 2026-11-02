@@ -30,6 +30,7 @@ jobs:
     outputs:
       site: ${{ steps.paths.outputs.site }}
       dependencies: ${{ steps.paths.outputs.dependencies }}
+      runtime: ${{ steps.paths.outputs.runtime }}
     steps:
       - name: Require same-repository issue-linked branch before checkout
         shell: bash
@@ -59,10 +60,11 @@ jobs:
           test -s "$RUNNER_TEMP/kaori-docs-changed.txt" || { echo 'Missing changes.' >&2; exit 1; }
           site=false
           dependencies=false
+          runtime=false
           while IFS= read -r path; do
             echo "Changed: $path"
             case "$path" in
-              src/*|static/*|content/*|tests/*|docusaurus.config.ts|sidebars.ts|tsconfig.json|playwright.config.ts|package.json|package-lock.json|.npmrc|.nvmrc|.prettierrc.json|.prettierignore|.github/workflows/*|.devcontainer/*|compose.dev.yml|Dockerfile|deploy/*|scripts/*)
+              src/*|static/*|content/*|tests/*|docusaurus.config.ts|sidebars.ts|tsconfig.json|playwright.config.ts|package.json|package-lock.json|.npmrc|.nvmrc|.prettierrc.json|.prettierignore|.github/workflows/*|.devcontainer/*|compose.dev.yml|Dockerfile|.dockerignore|deploy/*|scripts/*)
                 site=true ;;
               docs/*|README.md|.github/PULL_REQUEST_TEMPLATE.md|.gitignore)
                 ;;
@@ -74,14 +76,18 @@ jobs:
             case "$path" in
               package.json|package-lock.json|.npmrc) dependencies=true ;;
             esac
+            case "$path" in
+              Dockerfile|.dockerignore|deploy/server/*|scripts/container_smoke.sh)
+                runtime=true ;;
+            esac
           done < "$RUNNER_TEMP/kaori-docs-changed.txt"
-          printf 'site=%s\ndependencies=%s\n' "$site" "$dependencies" >> "$GITHUB_OUTPUT"
+          printf 'site=%s\ndependencies=%s\nruntime=%s\n' "$site" "$dependencies" "$runtime" >> "$GITHUB_OUTPUT"
 
   targeted:
     name: Docs Validation
     needs: route
     runs-on: [self-hosted, linux, x64, platform-ci]
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - name: Report validation route
         shell: bash
@@ -118,6 +124,12 @@ jobs:
       - name: Install locked dependencies
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm ci --no-audit --no-fund
+      - name: Validate issue-owned shell syntax
+        if: ${{ needs.route.outputs.site == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          while IFS= read -r path; do bash -n "$path"; done < <(git ls-files '*.sh')
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
@@ -130,6 +142,10 @@ jobs:
       - name: Build static documentation
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run build
+      - name: Docker runtime and Trivy smoke for runtime changes
+        if: ${{ needs.route.outputs.runtime == 'true' }}
+        shell: bash
+        run: bash scripts/container_smoke.sh "$KAORI_DOCS_SOURCE_SHA"
       - name: Validate static output and public boundary
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash

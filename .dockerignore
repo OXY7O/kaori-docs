@@ -1,0 +1,15 @@
+.git
+.github
+.devcontainer
+docs
+node_modules
+build
+.docusaurus
+.cache
+coverage
+test-results
+playwright-report
+.env
+.env.*
+*.zip
+*.log
