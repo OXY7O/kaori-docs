@@ -176,7 +176,9 @@ if [[ "$attach_existing_edge" == 1 ]]; then
        grep -Fxq "KAORI_DOCS_IMAGE=$image_ref" "$receipt" &&
        grep -Fxq "KAORI_DOCS_SOURCE_SHA=$source_sha" "$receipt" &&
        grep -Fxq "KAORI_DOCS_VERSION=$release_tag" "$receipt"; then
-      echo 'PASS: accepted Docs release already deployed and publicly healthy; idempotent no-op'
+      # Idempotent retry still runs the full canonical all-site edge verifier.
+      bash "$remote_release/server/reattach-existing-site.sh" attach
+      echo 'PASS: same accepted Docs digest already live; full edge verification passed without container replacement'
       exit 0
     fi
   fi
