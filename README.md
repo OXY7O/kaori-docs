@@ -16,6 +16,8 @@
 
 This repository contains **documentation only**. It does not authenticate users, connect to live infrastructure providers, or define product functionality or release acceptance. Product, design, and release authority remains in [OXY7O/KAORI](https://github.com/OXY7O/KAORI). A website or app deployment is not evidence that Docs has been published.
 
+**Engineering release adapter:** [Issue #14](https://github.com/OXY7O/kaori-docs/issues/14) defines a separately governed [private Release Deployment and rollback procedure](docs/RELEASE_DEPLOYMENT.md). This is not an active public Docs site or a completed signed image publication.
+
 **Publication state:** The Docusaurus scaffold is in progress under [#11](https://github.com/OXY7O/kaori-docs/issues/11). No release-qualified product documentation or public Docs deployment is claimed. The minimal root page is a truthful preparation state, not the approved Documentation Home (#1).
 
 ## Technology and project structure

@@ -17,6 +17,7 @@ The initial repository contains only `main`, so issue #11 first creates `kaori/s
 ## Quality and operational boundaries
 
 - Four canonical workflow names: **Developer Check**, **Full Admission**, **Release Candidate**, **Release Deployment**. CI is implemented separately under #12/#13/#14.
+- The #14 [private deployment adapter](RELEASE_DEPLOYMENT.md) uses existing Website-style digest/receipt/rollback controls and an independent loopback 18081. The existing shared-edge Nginx/Certbot owns future public Docs ingress under separate authority; source PR/CI cannot authorize host deployment.
 - No lockfile or npm registry access means no deterministic install/build PASS. Do not override the block with a placeholder lockfile.
 - Runner labels `platform-ci` and `kaori-ci` require confirmed repository access. Labels do not themselves authorize the private Docs repository.
 - Private GitHub plan restrictions can make branch protection/environment controls unenforceable. Document a manual compensating procedure; do not claim server-enforced protection without proof.
