@@ -2,6 +2,8 @@ name: Release Candidate
 run-name: 'Release Candidate · ${{ inputs.candidate_tag || github.sha }}'
 on:
   # One-time issue #24 activation; remove after approved RC is published.
+  # Issue #28 private-deploy activation also requires a new signed RC on its
+  # exact merged staging SHA; never reuse the previous commit's candidate.
   # Path-scoped staging push is insufficient alone: the issue marker, exact
   # license, maintainer approval and signed artifact gates all still apply.
   push:
