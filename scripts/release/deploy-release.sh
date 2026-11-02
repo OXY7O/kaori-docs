@@ -83,7 +83,11 @@ matched="$(jq -c --arg sha "$ACCEPTED_SHA" '[.workflow_runs[] | select(.head_sha
 echo "Accepted RC $RC_TAG: source $ACCEPTED_SHA; digest $digest"
 if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
-  echo 'PASS: issue #14 deployment approval marker and exact Full Admission verified; no registry access or host mutation performed'
+  if [[ "$auto_policy" == 1 ]]; then
+    echo 'PASS: verified standing Docs auto-deploy policy, publisher and exact Full Admission; no registry or host mutation during preflight'
+  else
+    echo 'PASS: issue #14 deployment approval marker and exact Full Admission verified; no registry access or host mutation performed'
+  fi
   exit 0
 fi
 umask 077
@@ -150,6 +154,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$RC_TAG"
   printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
+  printf 'auto_policy=%q\n' "$auto_policy"
   cat <<'REMOTE_DEPLOY'
 docker_config="$(mktemp -d)"
 chmod 700 "$docker_config"
@@ -163,6 +168,18 @@ if [[ "$attach_existing_edge" == 1 ]]; then
   # Fail before replacing public Docs unless its existing independent edge is
   # approved, healthy, and unambiguous. Never alter other edge registrations.
   bash "$remote_release/server/reattach-existing-site.sh" preflight
+  # Event retries are idempotent: preserve the exact last-known-good receipt
+  # and current container when the same accepted SHA/tag/digest is live.
+  if [[ "$auto_policy" == 1 ]]; then
+    receipt=/var/lib/kaori-docs/deploy-state/release.env
+    if [[ -f "$receipt" && ! -L "$receipt" ]] &&
+       grep -Fxq "KAORI_DOCS_IMAGE=$image_ref" "$receipt" &&
+       grep -Fxq "KAORI_DOCS_SOURCE_SHA=$source_sha" "$receipt" &&
+       grep -Fxq "KAORI_DOCS_VERSION=$release_tag" "$receipt"; then
+      echo 'PASS: accepted Docs release already deployed and publicly healthy; idempotent no-op'
+      exit 0
+    fi
+  fi
 else
   existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-docs \
     --filter label=com.docker.compose.service=web --format '{{.ID}}')"
