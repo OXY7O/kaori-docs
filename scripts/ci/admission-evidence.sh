@@ -33,6 +33,19 @@ for gate in PROMOTION FULL CONTAINER BROWSER; do
   var="ADMISSION_${gate}"
   [[ "${!var:-}" == success ]] || fail "gate $gate did not report success"
 done
+profile="${ADMISSION_PROFILE:-full}"
+[[ "$profile" == full || "$profile" == reused ]] ||
+  fail 'admission profile must be full or independently verified reused'
+reuse_authorized=false
+reused_from="${ADMISSION_REUSED_FROM:-}"
+if [[ "$profile" == full ]]; then
+  [[ -z "$reused_from" ]] || fail 'full evidence may not inherit reused source'
+  reuse_authorized=true
+else
+  [[ "$reused_from" =~ ^[1-9][0-9]*$ ]] ||
+    fail 'reused profile requires a verified prior full run and fresh browser smoke'
+fi
+created_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 tree="$(git rev-parse HEAD^{tree})"
 [[ "$tree" =~ ^[a-f0-9]{40}$ ]] || fail 'invalid source tree SHA'
@@ -70,8 +83,15 @@ jq -n \
   --arg workflow_sha "$GITHUB_WORKFLOW_SHA" \
   --arg event "$GITHUB_EVENT_NAME" \
   --arg ref "$GITHUB_REF" \
+  --arg profile "$profile" \
+  --arg reused_from "$reused_from" \
+  --arg created_at "$created_at" \
+  --argjson reusable "$reuse_authorized" \
   '{
-    schema_version: 1,
+    schema_version: 2,
+    profile: $profile,
+    created_at: $created_at,
+    reused_from_full_run: (if $reused_from == "" then null else ($reused_from|tonumber) end),
     repository: "OXY7O/kaori-docs",
     canonical_workflow: ".github/workflows/quality.yml",
     source_sha: $source,
@@ -89,10 +109,14 @@ jq -n \
       "Container Admission": "success",
       "Browser Quality Evidence": "success"
     },
-    reuse_authorized: false
+    reuse_authorized: $reusable
   }' > "$output"
-jq -e '.reuse_authorized == false and .schema_version == 1 and
+jq -e '.schema_version == 2 and
+  (.profile == "full" or .profile == "reused") and
+  ((.profile == "full" and .reuse_authorized == true and .reused_from_full_run == null)
+    or (.profile == "reused" and .reuse_authorized == false and
+      (.reused_from_full_run|type) == "number")) and
   (.source_tree_sha | test("^[a-f0-9]{40}$")) and
   (.validation_authority_fingerprint | test("^sha256:[a-f0-9]{64}$"))' "$output" >/dev/null ||
   fail 'invalid admission evidence serialization'
-echo "PASS: immutable Docs admission identity written for source=$KAORI_DOCS_SOURCE_SHA tree=$tree fingerprint=sha256:$fingerprint (no reuse granted)"
+echo "PASS: immutable Docs admission identity written for source=$KAORI_DOCS_SOURCE_SHA tree=$tree fingerprint=sha256:$fingerprint (profile=$profile, reusable=$reuse_authorized)"
