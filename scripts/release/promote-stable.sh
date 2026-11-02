@@ -15,7 +15,8 @@ done
 [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]] || fail 'stable publication is intentional manual approval only'
 [[ "$STABLE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]] ||
   fail 'stable tag must be strict SemVer vX.Y.Z'
-[[ "$ACCEPTED_RC_TAG" =~ ^${STABLE_TAG}-rc\.[1-9][0-9]*$ ]] ||
+[[ "$ACCEPTED_RC_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-rc\.[1-9][0-9]*$ &&
+   "${ACCEPTED_RC_TAG%-rc.*}" == "$STABLE_TAG" ]] ||
   fail 'RC version and stable version differ'
 [[ "$REGISTRY_IMAGE" == docker.io/lethisaputri/kaori-docs && "$REGISTRY_HOST" == docker.io ]] ||
   fail 'stable release registry authority differs from approved dedicated Docs image'
