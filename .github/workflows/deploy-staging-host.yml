@@ -11,9 +11,13 @@ on:
   workflow_dispatch:
     inputs:
       candidate_tag:
-        description: Exact approved docs release candidate (vX.Y.Z-rc.N)
+        description: Exact approved staging RC for manual UAT (not required for stable)
         type: string
-        required: true
+        required: false
+      stable_tag:
+        description: Exact accepted main stable version for one-time production UAT (vX.Y.Z)
+        type: string
+        required: false
       approval_reference:
         description: Issue #14 approval comment with exact SHA/tag/digest marker
         type: string
@@ -52,8 +56,10 @@ jobs:
       RC_TAG: ${{ inputs.candidate_tag }}
       APPROVAL_REF: ${{ inputs.approval_reference }}
       KAORI_DOCS_AUTO_POLICY: '0'
-      KAORI_DOCS_STABLE_POLICY: ${{ github.event_name == 'workflow_run' && '1' || '0' }}
-      KAORI_DOCS_MAIN_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || '' }}
+      KAORI_DOCS_STABLE_POLICY: ${{ (github.event_name == 'workflow_run' || (inputs.stable_tag != '' && github.ref == 'refs/heads/main')) && '1' || '0' }}
+      KAORI_DOCS_STABLE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.stable_tag != '' && '1' || '0' }}
+      KAORI_DOCS_MAIN_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || (inputs.stable_tag != '' && github.sha || '') }}
+      KAORI_DOCS_STABLE_TAG: ${{ inputs.stable_tag }}
       KAORI_DOCS_STABLE_RUN_ID: ${{ github.event.workflow_run.id }}
       KAORI_DOCS_ATTACH_EXISTING_EDGE: ${{ github.event_name == 'workflow_run' && '1' || (inputs.publish_existing_edge && '1' || '0') }}
       GH_TOKEN: ${{ github.token }}
@@ -76,6 +82,38 @@ jobs:
           ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Resolve explicitly approved one-time stable UAT without standing auto policy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.stable_tag != '' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main && "$GITHUB_REPOSITORY" == OXY7O/kaori-docs ]] ||
+            { echo 'BLOCK: manual stable release requires main' >&2; exit 1; }
+          [[ "$KAORI_DOCS_STABLE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ &&
+             "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/40#issuecomment-[0-9]+$ ]] ||
+            { echo 'BLOCK: exact main stable tag and issue #40 approval required' >&2; exit 1; }
+          [[ "$KAORI_DOCS_ATTACH_EXISTING_EDGE" == 1 ]] ||
+            { echo 'BLOCK: stable UAT must reconcile approved public Docs-only edge' >&2; exit 1; }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          get() { curl --fail-with-body -fsS "${headers[@]}" "$1"; }
+          [[ "$(get "$api/git/ref/heads/main" | jq -r '.object.sha')" == "$KAORI_DOCS_MAIN_SHA" ]] ||
+            { echo 'BLOCK: stale main source' >&2; exit 1; }
+          release="$(get "$api/releases/tags/$KAORI_DOCS_STABLE_TAG")"
+          [[ "$(jq -r '.draft' <<< "$release")" == false &&
+             "$(jq -r '.prerelease' <<< "$release")" == false &&
+             "$(jq -r '.target_commitish' <<< "$release")" == "$KAORI_DOCS_MAIN_SHA" ]] ||
+            { echo 'BLOCK: unaccepted main stable release' >&2; exit 1; }
+          body="$(jq -r '.body // ""' <<< "$release")"
+          rc="$(grep -E '^Accepted RC: v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$' <<< "$body" | cut -d' ' -f3)"
+          source="$(grep -E '^Accepted RC source SHA: [a-f0-9]{40}$' <<< "$body" | awk '{print $5}')"
+          run="$(grep -E '^Stable publication workflow run: [0-9]+$' <<< "$body" | awk '{print $5}')"
+          [[ "$rc" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ &&
+             "${rc%-rc.*}" == "$KAORI_DOCS_STABLE_TAG" &&
+             "$source" =~ ^[a-f0-9]{40}$ && "$run" =~ ^[0-9]+$ ]] ||
+            { echo 'BLOCK: stable release exact RC/source/run identity missing' >&2; exit 1; }
+          printf 'ACCEPTED_SHA=%s\nRC_TAG=%s\nKAORI_DOCS_STABLE_RUN_ID=%s\n' "$source" "$rc" "$run" >> "$GITHUB_ENV"
+          echo 'PASS: per-digest approved manual stable UAT resolved; crypto/host checks remain mandatory'
       - name: Resolve exact stable main publication and separately approved Docs production policy
         if: ${{ github.event_name == 'workflow_run' }}
         shell: bash
