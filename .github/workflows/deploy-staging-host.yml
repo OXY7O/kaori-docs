@@ -1,0 +1,61 @@
+name: Release Deployment
+run-name: 'Release Deployment · ${{ inputs.candidate_tag }}'
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Exact approved docs release candidate (vX.Y.Z-rc.N)
+        type: string
+        required: true
+      approval_reference:
+        description: Issue #14 approval comment with exact SHA/tag/digest marker
+        type: string
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: kaori-docs-release-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    name: Deploy Release Candidate
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 45
+    env:
+      ACCEPTED_SHA: ${{ github.sha }}
+      RC_TAG: ${{ inputs.candidate_tag }}
+      APPROVAL_REF: ${{ inputs.approval_reference }}
+      GH_TOKEN: ${{ github.token }}
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+      DOCS_HOST: ${{ vars.KAORI_DOCS_HOST }}
+      DOCS_SSH_PORT: ${{ vars.KAORI_DOCS_HOST_PORT }}
+      DOCS_SSH_USER: ${{ vars.KAORI_DOCS_HOST_USER }}
+      DOCS_DEPLOY_ROOT: ${{ vars.KAORI_DOCS_HOST_DEPLOY_ROOT }}
+      DOCS_PUBLIC_DOMAIN: ${{ vars.KAORI_DOCS_PUBLIC_DOMAIN }}
+      DOCS_SSH_KEY: ${{ secrets.KAORI_DOCS_HOST_SSH_PRIVATE_KEY }}
+      DOCS_SSH_PASSPHRASE: ${{ secrets.KAORI_DOCS_HOST_SSH_PASSPHRASE }}
+      DOCS_KNOWN_HOSTS: ${{ secrets.KAORI_DOCS_HOST_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout exact approved source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify prerelease, pinned host and explicit approval reference
+        shell: bash
+        run: bash scripts/release/deploy-release.sh preflight
+      - name: Deploy via separate pinned SSH trust boundary
+        shell: bash
+        run: bash scripts/release/deploy-release.sh deploy
+      - name: Record signed private deployment and acceptance boundary
+        shell: bash
+        run: |
+          printf 'KAORI Docs private deployment: candidate %s, source %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Authorization reference: %s\n' "$APPROVAL_REF" >> "$GITHUB_STEP_SUMMARY"
+          printf 'SIGNED IMMUTABLE DIGEST VERIFIED; LOOPBACK-ONLY HOST DELIVERY.\n' >> "$GITHUB_STEP_SUMMARY"
+          printf 'PUBLIC EDGE/TLS/HOST-SNI, UAT AND HUMAN ACCEPTANCE: PENDING.\n' >> "$GITHUB_STEP_SUMMARY"

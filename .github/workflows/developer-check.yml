@@ -146,6 +146,41 @@ jobs:
         if: ${{ needs.route.outputs.runtime == 'true' }}
         shell: bash
         run: bash scripts/container_smoke.sh "$KAORI_DOCS_SOURCE_SHA"
+      - name: Verify isolated Docs Compose private UAT overlay
+        if: ${{ needs.route.outputs.runtime == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
+          docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
+      - name: Negative admission tests for governed Release Deployment
+        if: ${{ needs.route.outputs.runtime == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          script=scripts/release/deploy-release.sh
+          sha="$KAORI_DOCS_SOURCE_SHA"
+          test -s "$script"
+          if env GITHUB_REF=refs/heads/main ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.1 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: main-branch release dispatch unexpectedly accepted' >&2
+            exit 1
+          fi
+          if env GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: stable/malformed RC tag unexpectedly accepted' >&2
+            exit 1
+          fi
+          if env GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.1 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14 \
+              bash "$script" preflight; then
+            echo 'BLOCK: unscoped release approval URL unexpectedly accepted' >&2
+            exit 1
+          fi
+          echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
+
       - name: Validate static output and public boundary
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
