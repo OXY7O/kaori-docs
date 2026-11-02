@@ -233,6 +233,40 @@ jobs:
             exit 1
           fi
           echo 'PASS: stable main-only, RC-base version and human-approval guards fail closed before mutation'
+          # #40: a completed RC publisher or a fake stable event must not be
+          # allowed to replace a publicly attached Docs frontend.
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              KAORI_DOCS_AUTO_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/33#issuecomment-1 \
+              bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: deprecated RC-to-production auto policy was accepted' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              KAORI_DOCS_STABLE_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              KAORI_DOCS_MAIN_SHA="$sha" KAORI_DOCS_STABLE_TAG=v0.1.0 \
+              KAORI_DOCS_STABLE_RUN_ID=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/40#issuecomment-1 \
+              bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: stable production bypassed public edge safety' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              KAORI_DOCS_STABLE_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              KAORI_DOCS_MAIN_SHA="$sha" KAORI_DOCS_STABLE_TAG=v0.1.0 \
+              KAORI_DOCS_STABLE_RUN_ID=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: stable production accepted RC/UAT approval instead of issue #40' >&2
+            exit 1
+          fi
+          echo 'PASS: deprecated RC-auto, missing edge and wrong stable production authority fail closed'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
       - name: Validate static output and public boundary
