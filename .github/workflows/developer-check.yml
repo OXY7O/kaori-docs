@@ -210,6 +210,29 @@ jobs:
             exit 1
           fi
           echo 'PASS: manual/event impersonation and unapproved public auto release fail closed'
+          # #39: main-only stable promotion must block early, before GitHub API
+          # calls, registry access, stable tag creation or any host activity.
+          if env GITHUB_EVENT_NAME=workflow_dispatch GITHUB_REF=refs/heads/kaori/staging \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              GH_TOKEN=dummy REGISTRY_HOST=docker.io \
+              REGISTRY_IMAGE=docker.io/lethisaputri/kaori-docs \
+              STABLE_TAG=v0.1.0 ACCEPTED_RC_TAG=v0.1.0-rc.2 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/39#issuecomment-1 \
+              bash scripts/release/promote-stable.sh preflight; then
+            echo 'BLOCK: stable publisher accepted non-main source' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_dispatch GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              GH_TOKEN=dummy REGISTRY_HOST=docker.io \
+              REGISTRY_IMAGE=docker.io/lethisaputri/kaori-docs \
+              STABLE_TAG=v0.1.0 ACCEPTED_RC_TAG=v0.2.0-rc.1 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/39#issuecomment-1 \
+              bash scripts/release/promote-stable.sh preflight; then
+            echo 'BLOCK: stable publisher accepted RC from different SemVer train' >&2
+            exit 1
+          fi
+          echo 'PASS: stable main-only, RC-base version and human-approval guards fail closed before mutation'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
       - name: Validate static output and public boundary
