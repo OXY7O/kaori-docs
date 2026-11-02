@@ -1,0 +1,20 @@
+name: kaori-docs-dev
+
+services:
+  workspace:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    command: sleep infinity
+    working_dir: /workspace/kaori-docs
+    volumes:
+      - .:/workspace/kaori-docs
+      - docs_node_modules:/workspace/kaori-docs/node_modules
+    ports:
+      - "127.0.0.1:3000:3000"
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  docs_node_modules:
