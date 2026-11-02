@@ -23,19 +23,25 @@ test('bootstrap is accurate and accessible at six viewports and two themes', asy
     await navigationToggle.click();
   }
 
-  const htmlTheme = await page.locator('html').getAttribute('data-theme');
+  // Docusaurus uses three native choices: system -> light -> dark -> system.
+  // A system-preferring-light browser must click twice before visually turning
+  // dark. Assert each choice and its rendered theme without forcing DOM state.
+  const html = page.locator('html');
+  const initialSystemTheme = await html.getAttribute('data-theme');
+  await expect(html).toHaveAttribute('data-theme-choice', 'system');
   const toggle = page.getByRole('button', {
     name: /Switch between dark and light mode/,
   });
   await expect(toggle).toBeVisible();
   await toggle.click();
-  await expect(page.locator('html')).toHaveAttribute(
-    'data-theme',
-    htmlTheme === 'dark' ? 'light' : 'dark',
-  );
-  // Verify the native switch is reversible on desktop and mobile.
+  await expect(html).toHaveAttribute('data-theme-choice', 'light');
+  await expect(html).toHaveAttribute('data-theme', 'light');
   await toggle.click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', htmlTheme!);
+  await expect(html).toHaveAttribute('data-theme-choice', 'dark');
+  await expect(html).toHaveAttribute('data-theme', 'dark');
+  await toggle.click();
+  await expect(html).toHaveAttribute('data-theme-choice', 'system');
+  await expect(html).toHaveAttribute('data-theme', initialSystemTheme!);
 
   await expect(page.locator('a[href="https://kaori.cloud"]').first()).toHaveAttribute(
     'href',
