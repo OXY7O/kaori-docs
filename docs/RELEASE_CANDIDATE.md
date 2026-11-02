@@ -73,6 +73,23 @@ The immutable digest must come from the **registry's actual manifest/index**, re
 
 **Quarantine record (2026-11-02):** Attempt 2 of [RC run #41447703825](https://github.com/OXY7O/kaori-docs/actions/runs/41447703825) built/pushed the registry tag `v0.1.0-rc.1` from staging source `129336ff33d7e96a76d4ae9ea1df4b35e1628c2e`. Docker push and pull reported digest `sha256:c466a76d617ae3aa92439630b36bc618e9acf191882ab5385e844daf9b4ebc1d`, but strict local `RepoDigests` equality failed **before signature/SBOM attestation and GitHub release finalization**. Therefore `v0.1.0-rc.1` is **INCOMPLETE / QUARANTINED / NEVER DEPLOY**, even though registry storage contains a tag. No mutating retry, retag, overwrite or deletion is authorized by the digest fix. A newly admitted source must use a **new** explicitly approved artifact tag, initially proposed `v0.1.0-rc.2`, with complete signed evidence. Registry tag visibility never substitutes for acceptance.
 
+## Stable-release use of accepted RC (issue #39)
+
+After staging/UAT Human Acceptance and a reviewed `kaori/staging` → `main`
+promotion, the stable SemVer `vX.Y.Z` **must refer to exactly the same signed
+RC OCI digest** as `vX.Y.Z-rc.N`. No new application image build, no
+retag/overwrite of a previously signed RC, and no public production mutation
+from merely creating the stable GitHub Release. Main-only manual stable
+publication runs as a gated job in `Full Admission`, with issue #39
+SHA/tag/digest-bound approval, unchanged application build inputs, signed
+image/SBOM/SLSA verification, and unique SemVer. See
+[Release Deployment](RELEASE_DEPLOYMENT.md).
+
+The historic #33 proposed RC publisher-completion auto-to-public path must
+remain DISABLED: final production deployment is owned by the separate stable
+release/production workstream #40. An RC is staging/UAT evidence, **not**
+proof of stable main acceptance.
+
 ## Automated downstream handoff (issue #33)
 
 GitHub Actions `GITHUB_TOKEN` creates the signed prerelease metadata only
