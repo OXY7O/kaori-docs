@@ -9,10 +9,18 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
   fail 'RC-publisher-to-public automatic deployment retired; use accepted main stable'
 stable_policy="${KAORI_DOCS_STABLE_POLICY:-0}"
 stable_manual="${KAORI_DOCS_STABLE_MANUAL:-0}"
+stage_rc="${KAORI_DOCS_STAGING_UAT:-0}"
+[[ "$stage_rc" =~ ^[01]$ ]] || fail 'invalid separate RC staging/UAT mode'
 [[ "$stable_policy" =~ ^[01]$ && "$stable_manual" =~ ^[01]$ ]] ||
   fail 'invalid stable release policy mode'
 [[ "$stable_manual" == 0 || "$stable_policy" == 1 ]] ||
   fail 'manual stable mode requires stable release authority'
+[[ "$stage_rc" == 0 || ( "$stable_policy" == 0 && "$stable_manual" == 0 ) ]] ||
+  fail 'staging RC mode cannot be combined with stable production release'
+if [[ "$stage_rc" == 1 ]]; then
+  [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 0 ]] ||
+    fail 'staging RC cannot join shared-edge/public routing'
+fi
 auto_policy="$stable_policy"
 if [[ "$stable_policy" == 1 ]]; then
   if [[ "$stable_manual" == 1 ]]; then
@@ -203,10 +211,16 @@ setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$DOCS_SSH_USER@$DOCS_HOST"
 ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+if [[ "$stage_rc" == 1 ]]; then
+  remote_release="/opt/kaori-docs-staging/releases/$ACCEPTED_SHA"
+  remote_deploy_root=/opt/kaori-docs-staging
+else
+  remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+  remote_deploy_root="$DOCS_DEPLOY_ROOT"
+fi
 {
   printf 'set -Eeuo pipefail\n'
-  printf 'deploy_root=%q\nremote_release=%q\n' "$DOCS_DEPLOY_ROOT" "$remote_release"
+  printf 'deploy_root=%q\nremote_release=%q\n' "$remote_deploy_root" "$remote_release"
   cat <<'REMOTE_PREPARE'
 [[ -d "$deploy_root" && ! -L "$deploy_root" && -w "$deploy_root" ]] || { echo 'BLOCK: docs root not provisioned' >&2; exit 1; }
 mkdir -p -- "$remote_release"
@@ -215,10 +229,15 @@ REMOTE_PREPARE
 scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
 {
   printf 'set -Eeuo pipefail\n'
-  printf 'deploy_root=%q\nremote_release=%q\n' "$DOCS_DEPLOY_ROOT" "$remote_release"
+  printf 'deploy_root=%q\nremote_release=%q\n' "$remote_deploy_root" "$remote_release"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$([[ "$stable_policy" == 1 ]] && printf '%s' "$KAORI_DOCS_STABLE_TAG" || printf '%s' "$RC_TAG")"
   printf 'artifact_version=%q\nstable_policy=%q\n' "$RC_TAG" "$stable_policy"
+  if [[ "$stage_rc" == 1 ]]; then
+    printf 'runtime_env=staging\ncompose_project=kaori-docs-staging\nstate_dir=/var/lib/kaori-docs-staging/deploy-state\n'
+  else
+    printf 'runtime_env=production\ncompose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
+  fi
   printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
   printf 'auto_policy=%q\n' "$auto_policy"
   cat <<'REMOTE_DEPLOY'
@@ -249,7 +268,7 @@ if [[ "$attach_existing_edge" == 1 ]]; then
     fi
   fi
 else
-  existing_web="$(docker ps --filter label=com.docker.compose.project=kaori-docs \
+  existing_web="$(docker ps --filter label=com.docker.compose.project="$compose_project" \
     --filter label=com.docker.compose.service=web --format '{{.ID}}')"
   if [[ -n "$existing_web" ]]; then
     while IFS= read -r existing_id; do
@@ -259,8 +278,12 @@ else
     done <<< "$existing_web"
   fi
 fi
-# The release keeps its private loopback; public reattachment is separate.
+# The production and isolated RC/UAT runtimes use different Compose projects,
+# release state and loopback listeners. Neither may touch KAORI App/Website.
 export KAORI_DOCS_RELEASE_LOCAL_ONLY=1
+export KAORI_DOCS_RUNTIME_ENV="$runtime_env"
+export COMPOSE_PROJECT_NAME="$compose_project"
+export KAORI_DOCS_STATE_DIR="$state_dir"
 if [[ "$stable_policy" == 1 ]]; then
   export KAORI_DOCS_STABLE_RELEASE_CONFIRMED=1
   export KAORI_DOCS_ARTIFACT_VERSION="$artifact_version"
