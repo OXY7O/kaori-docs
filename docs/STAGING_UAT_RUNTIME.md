@@ -28,6 +28,16 @@ The RC can be visible on `docs.kaori.cloud` during UAT when **explicitly authori
 
 Both modes automatically select the same host root and Docker Compose project. The current receipt advances only after image/source/health verification succeeds. A failed candidate attempts recovery from the last committed digest and must report failure. The same existing-edge verifier checks `docs.kaori.cloud` and all other shared sites after successful reattachment.
 
+## Request branch automation — #51
+
+Once the request-trigger workflow change has passed its own Developer Check and exact staging Full Admission, `kaori/rc-request` and `kaori/uat-request` become **explicit events**, not deployments or environments. Both refs must point to the *exact current admitted* `kaori/staging` commit; ordinary staging pushes do not publish or deploy.
+
+- `kaori/rc-request` resolves **one unique issue #13 source SHA and RC tag approval** and publishes the existing signed image through the canonical RC pipeline.
+- `kaori/uat-request` resolves **one signed prerelease for the same staging SHA** and **one issue #14 approval comment containing both exact digest markers**, including `KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED`; it replaces the **same existing** `kaori-docs` container only after existing-edge and supply-chain preflight.
+- Manual governed dispatch remains available for operator recovery. Neither request ref can bypass Full Admission, release tag/digest immutability, approver permissions, Cosign/SPDX/SLSA, public-edge verification, rollback, or explicit Human Acceptance.
+
+Do not create parallel Compose projects, a second port, new directories, or a second VPS. When staging SHA changes, request branches must be deliberately updated to the **new** exact admitted SHA; stale requests fail closed.
+
 ## Minimal host preflight
 
 On the **existing** VPS, verify normal Docs/Website/App health and the current single Docs project:
