@@ -24,11 +24,23 @@ SBOM and provenance checks. It never rebuilds or mutates the VPS. Current
 Docs `#33` RC-to-public auto mode is **not** the approved production
 release model and must remain disabled pending issue #40.
 
-Application `kaori/rc-request` and `kaori/uat-request` are exact-SHA request
-triggers. Website uses approved manual `workflow_dispatch` without those
-branches. A future standardization decision on optional request branch parity
-is held under [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201);
-do not infer that all repositories already have those branches.
+KAORI Application already supports exact-SHA `kaori/rc-request` and
+`kaori/uat-request` signals. Under [Docs #51](https://github.com/OXY7O/kaori-docs/issues/51),
+Docs adds the same intentional request triggers to its existing canonical
+publisher/deployer, while retaining manual `workflow_dispatch` recovery.
+This is not an automatic release on ordinary staging push: a request must
+point to the **exact current admitted staging commit** and still requires
+maintainer issue #13 RC approval or the separate issue #14 signed-digest
+deployment approval. Both triggers refuse stale/ambiguous releases.
+`uat-request` deploys **only** to private staging port 18082, never the
+public Docs container or shared edge. Website currently retains its separate
+manual trigger. Cross-repo branch parity authority is [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201).
+
+**Activation dependency:** #51's workflow implementation must be accepted,
+merged and fully admitted before request branches are used. The earlier
+signed `v0.3.0-rc.1` remains attached to its original staging SHA and must
+complete isolated UAT before any staging-changing #51 merge; do not rewrite
+a published RC's source identity.
 
 **Current stable production design (issue #40):** the previously admitted
 #33 RC-publisher → public auto deployment is **retired**; a signed RC from
