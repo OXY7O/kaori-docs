@@ -250,3 +250,47 @@ jobs:
         shell: bash
         run: |
           if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
+
+  admission-evidence:
+    name: Admission Evidence
+    # This job is deliberately downstream of ALL comprehensive gates.
+    # An artifact is never published if any gate is failed, skipped or cancelled.
+    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    if: >-
+      ${{ needs.promotion-source.result == 'success' &&
+          needs.full-admission.result == 'success' &&
+          needs.container-admission.result == 'success' &&
+          needs.browser-evidence.result == 'success' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    env:
+      ADMISSION_PROMOTION: ${{ needs.promotion-source.result }}
+      ADMISSION_FULL: ${{ needs.full-admission.result }}
+      ADMISSION_CONTAINER: ${{ needs.container-admission.result }}
+      ADMISSION_BROWSER: ${{ needs.browser-evidence.result }}
+      ADMISSION_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Checkout exact tested source and tree
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Record full-gate source, tree and validation-authority fingerprint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash scripts/ci/admission-evidence.sh write tmp/ci-artifacts/admission-evidence.json
+          jq -r '"Source SHA: " + .source_sha + "\nSource tree: " +
+            .source_tree_sha + "\nValidation authority: " +
+            .validation_authority_fingerprint + "\nReuse permitted: false"' \
+            tmp/ci-artifacts/admission-evidence.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish immutable source-bound admission artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kaori-docs-admission-${{ env.KAORI_DOCS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ci-artifacts/admission-evidence.json
+          retention-days: 30
+          if-no-files-found: error
