@@ -213,13 +213,10 @@ setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$DOCS_SSH_USER@$DOCS_HOST"
 ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-if [[ "$stage_rc" == 1 ]]; then
-  remote_release="/opt/kaori-docs-staging/releases/$ACCEPTED_SHA"
-  remote_deploy_root=/opt/kaori-docs-staging
-else
-  remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
-  remote_deploy_root="$DOCS_DEPLOY_ROOT"
-fi
+# One approved VPS, one canonical Docs release root for both image slots.
+# The environment is selected by release admission, not by a filesystem root.
+remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+remote_deploy_root="$DOCS_DEPLOY_ROOT"
 {
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\n' "$remote_deploy_root" "$remote_release"
@@ -236,7 +233,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$([[ "$stable_policy" == 1 ]] && printf '%s' "$KAORI_DOCS_STABLE_TAG" || printf '%s' "$RC_TAG")"
   printf 'artifact_version=%q\nstable_policy=%q\n' "$RC_TAG" "$stable_policy"
   if [[ "$stage_rc" == 1 ]]; then
-    printf 'runtime_env=staging\ncompose_project=kaori-docs-staging\nstate_dir=/var/lib/kaori-docs-staging/deploy-state\n'
+    printf 'runtime_env=staging\ncompose_project=kaori-docs-staging\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
   else
     printf 'runtime_env=production\ncompose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
   fi
