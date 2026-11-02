@@ -5,23 +5,28 @@ import Heading from '@theme/Heading';
 const documentationSections = [
   {
     title: 'Getting Started',
-    description: 'An introduction to KAORI, its audience, and how to read the documentation.',
+    description:
+      'An introduction to KAORI, its audience, and how to read the documentation.',
   },
   {
     title: 'Core Concepts',
-    description: 'Capabilities, providers, instances, committed evidence, and cross-domain context.',
+    description:
+      'Capabilities, providers, instances, committed evidence, and cross-domain context.',
   },
   {
     title: 'Product Guides',
-    description: 'Capability-first guidance for inventory and other verified product workflows.',
+    description:
+      'Capability-first guidance for inventory and other verified product workflows.',
   },
   {
     title: 'Integrations',
-    description: 'Domain-specific provider contracts, prerequisites, and verified setup guidance.',
+    description:
+      'Domain-specific provider contracts, prerequisites, and verified setup guidance.',
   },
   {
     title: 'Tutorials & How-to',
-    description: 'Practical, scoped operational walkthroughs with clear expected results.',
+    description:
+      'Practical, scoped operational walkthroughs with clear expected results.',
   },
   {
     title: 'Administration & Security',
@@ -29,7 +34,8 @@ const documentationSections = [
   },
   {
     title: 'Troubleshooting & Reference',
-    description: 'Interpreting evidence, incomplete states, and documented recovery patterns.',
+    description:
+      'Interpreting evidence, incomplete states, and documented recovery patterns.',
   },
   {
     title: 'Releases & Compatibility',
@@ -48,15 +54,17 @@ export default function DocumentationHome(): React.JSX.Element {
           <div className="container">
             <div className="kaori-docs-home__hero-content">
               <p className="kaori-docs-home__eyebrow">KAORI DOCUMENTATION</p>
-              <Heading as="h1" id="docs-home-heading">KAORI Docs</Heading>
+              <Heading as="h1" id="docs-home-heading">
+                KAORI Docs
+              </Heading>
               <p className="kaori-docs-home__lead">
                 A clearer path through infrastructure operations.
               </p>
               <p className="kaori-docs-home__summary">
                 KAORI brings infrastructure visibility, operational workflows, analytics,
                 reporting, and governance into a consistent operational context. This
-                documentation space will explain the platform by capability first, then
-                by integration and provider.
+                documentation space will explain the platform by capability first, then by
+                integration and provider.
               </p>
               <div className="kaori-docs-home__actions" aria-label="Explore this page">
                 <a className="button button--primary" href="#getting-started">
@@ -95,10 +103,12 @@ export default function DocumentationHome(): React.JSX.Element {
           >
             <div className="kaori-docs-home__section-heading">
               <p className="kaori-docs-home__eyebrow">FIRST STEPS</p>
-              <Heading as="h2" id="getting-started-heading">Getting Started</Heading>
+              <Heading as="h2" id="getting-started-heading">
+                Getting Started
+              </Heading>
               <p>
-                Start with the operating model, then follow the evidence to the
-                capability and provider responsible for each piece of context.
+                Start with the operating model, then follow the evidence to the capability
+                and provider responsible for each piece of context.
               </p>
             </div>
             <div className="kaori-docs-home__steps">
@@ -108,8 +118,8 @@ export default function DocumentationHome(): React.JSX.Element {
                 </span>
                 <Heading as="h3">Understand the platform</Heading>
                 <p>
-                  KAORI is an infrastructure operations layer. It is not a replacement
-                  for every integrated management or monitoring system.
+                  KAORI is an infrastructure operations layer. It is not a replacement for
+                  every integrated management or monitoring system.
                 </p>
               </article>
               <article className="kaori-docs-home__step">
@@ -118,9 +128,8 @@ export default function DocumentationHome(): React.JSX.Element {
                 </span>
                 <Heading as="h3">Follow source authority</Heading>
                 <p>
-                  External systems own their source data and execution. KAORI
-                  normalizes and connects the evidence needed for operational
-                  decisions.
+                  External systems own their source data and execution. KAORI normalizes
+                  and connects the evidence needed for operational decisions.
                 </p>
               </article>
               <article className="kaori-docs-home__step">
@@ -148,8 +157,8 @@ export default function DocumentationHome(): React.JSX.Element {
               </Heading>
               <p>
                 These are the approved documentation topics, not a claim that every
-                underlying product capability is released. Articles will become
-                navigable when verified and published.
+                underlying product capability is released. Articles will become navigable
+                when verified and published.
               </p>
             </div>
             <div className="kaori-docs-home__catalog">
@@ -175,14 +184,13 @@ export default function DocumentationHome(): React.JSX.Element {
                 A consistent source of operational context
               </Heading>
               <p>
-                Organize by capability and domain, then by provider and instance.
-                External systems remain authoritative for their own data and
-                execution; KAORI connects normalized, committed evidence across
-                operational domains.
+                Organize by capability and domain, then by provider and instance. External
+                systems remain authoritative for their own data and execution; KAORI
+                connects normalized, committed evidence across operational domains.
               </p>
               <p>
-                This is a conceptual explanation of KAORI's product direction,
-                not a description of a particular deployed environment.
+                This is a conceptual explanation of KAORI's product direction, not a
+                description of a particular deployed environment.
               </p>
               <p className="kaori-docs-home__source">
                 Product authority:{' '}
