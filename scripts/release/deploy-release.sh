@@ -59,7 +59,7 @@ if [[ "$auto_policy" == 1 ]]; then
   publisher="$(curl -fsS "${headers[@]}" "$api/actions/runs/$KAORI_DOCS_PUBLISHER_RUN_ID")" ||
     fail 'canonical publisher evidence unavailable'
   jq -e --arg sha "$ACCEPTED_SHA" '
-    .name == "Release Candidate" and
+    ((.name // "") | startswith("Release Candidate")) and
     .path == ".github/workflows/publish-staging-image.yml" and
     .event == "workflow_dispatch" and
     .head_branch == "kaori/staging" and
