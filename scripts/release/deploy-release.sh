@@ -3,12 +3,26 @@ set -Eeuo pipefail
 mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
-[[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'dispatch from staging only'
+auto_policy="${KAORI_DOCS_AUTO_POLICY:-0}"
+[[ "$auto_policy" =~ ^[01]$ ]] || fail 'invalid automated release policy mode'
+if [[ "$auto_policy" == 1 ]]; then
+  # The orchestrator only runs after the canonical publisher completes. It does
+  # not inherit arbitrary release event data, PR code, or public DNS ownership.
+  [[ "$GITHUB_EVENT_NAME" == workflow_run && "$GITHUB_REF" == refs/heads/main ]] ||
+    fail 'automatic deployment requires the default-branch publisher completion event'
+  [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
+    fail 'automatic release cannot bypass existing-public-edge reconciliation'
+  [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/33#issuecomment-([0-9]+)$ ]] ||
+    fail 'standing deployment policy approval must belong to issue #33'
+else
+  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual deployment must use kaori/staging'
+  [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-([0-9]+)$ ]] ||
+    fail 'exact issue #14 approval comment URL required'
+fi
+approval_id="${BASH_REMATCH[1]}"
 [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
 [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || fail 'public edge option must be 0 or 1'
-[[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-([0-9]+)$ ]] || fail 'exact issue #14 approval comment URL required'
-approval_id="${BASH_REMATCH[1]}"
 [[ "${DOCS_PUBLIC_DOMAIN:-}" == docs.kaori.cloud ]] || fail 'Docs domain variable must be docs.kaori.cloud'
 [[ -n "${REGISTRY_HOST:-}" && "$REGISTRY_IMAGE" == "$REGISTRY_HOST/"* ]] || fail 'docs registry variables missing or inconsistent'
 [[ "$REGISTRY_IMAGE" == */kaori-docs ]] || fail 'docs image namespace is not dedicated; deployment blocked'
@@ -35,8 +49,30 @@ image_ref="$REGISTRY_IMAGE@$digest"
 [[ "$body" == *"Deployment authority: $image_ref"* ]] || fail 'RC registry identity does not match Docs configuration'
 [[ "$body" == *'Trivy security and signed SBOM/provenance: PASS'* ]] || fail 'RC publication security evidence missing'
 approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$approval_id")" || fail 'approval inaccessible'
-[[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/14" ]] || fail 'deployment approval does not belong to issue #14'
-grep -Fxq "KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" || fail 'deployment approval marker SHA/tag/digest mismatch'
+if [[ "$auto_policy" == 1 ]]; then
+  [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/33" ]] ||
+    fail 'standing auto-deploy policy approval does not belong to issue #33'
+  grep -Fxq 'KAORI_DOCS_AUTO_DEPLOY_POLICY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:existing-public-only' <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+    fail 'standing Docs-only existing-public deployment policy is not approved'
+  [[ "${KAORI_DOCS_PUBLISHER_RUN_ID:-}" =~ ^[0-9]+$ ]] ||
+    fail 'publisher workflow run id required in automatic mode'
+  publisher="$(curl -fsS "${headers[@]}" "$api/actions/runs/$KAORI_DOCS_PUBLISHER_RUN_ID")" ||
+    fail 'canonical publisher evidence unavailable'
+  jq -e --arg sha "$ACCEPTED_SHA" '
+    .name == "Release Candidate" and
+    .path == ".github/workflows/publish-staging-image.yml" and
+    .event == "workflow_dispatch" and
+    .head_branch == "kaori/staging" and
+    .head_sha == $sha and
+    .status == "completed" and .conclusion == "success" and
+    .head_repository.full_name == "OXY7O/kaori-docs"
+  ' <<< "$publisher" >/dev/null || fail 'successful canonical publisher identity/source mismatch'
+else
+  [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/14" ]] ||
+    fail 'deployment approval does not belong to issue #14'
+  grep -Fxq "KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+    fail 'deployment approval marker SHA/tag/digest mismatch'
+fi
 approval_user="$(jq -r '.user.login // ""' <<< "$approval")"
 [[ "$approval_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid approval author'
 approval_permission="$(curl -fsS "${headers[@]}" "$api/collaborators/$approval_user/permission" | jq -r '.permission')" || fail 'cannot verify approval authority'
