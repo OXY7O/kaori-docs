@@ -41,6 +41,16 @@ Actions variable `KAORI_DOCS_STABLE_AUTO_DEPLOY_ENABLED=true` and the
 separate issue #40 Docs-only owner-approved standing marker are present.
 The workflow revalidates stable main tag/RC digest, exact publisher
 run, current main and admitted original RC before any SSH mutation.
+Before enabling standing auto-deploy, perform one **manual stable cutover UAT**
+using the same `Release Deployment` workflow on `main` with
+`stable_tag=vX.Y.Z`, `publish_existing_edge=true` and an issue #40
+write-authorized approval-reference comment containing the exact marker
+`KAORI_DOCS_STABLE_DEPLOY_APPROVED:<main-SHA>:<RC-tag>:<stable-tag>:<sha256-digest>`.
+The workflow independently verifies the actual signed stable release,
+successful publisher run and unchanged signed RC digest; it must not require
+the standing auto policy for this bounded manual UAT. Only after public
+Docs-only cutover/rollback, all-site edge verification and Human Acceptance
+may the separate auto-deploy variable and standing approval be enabled.
 The runtime uses the existing isolated `kaori-docs` Compose, committed
 receipt and Docs-only shared-edge reattachment, then full all-site
 verification. Staging RC/UAT and main stable are **distinct version
