@@ -12,8 +12,12 @@ test('documentation home is accurate and accessible at six viewports and two the
   await expect(
     page.getByText('No public product documentation version is available here yet.'),
   ).toBeVisible();
-  await expect(page.getByRole('heading', {level: 2, name: 'Getting Started'})).toBeVisible();
-  await expect(page.getByRole('heading', {level: 2, name: 'Explore Capabilities'})).toBeVisible();
+  await expect(
+    page.getByRole('heading', {level: 2, name: 'Getting Started'}),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', {level: 2, name: 'Explore Capabilities'}),
+  ).toBeVisible();
   await expect(page.locator('.kaori-docs-home__category')).toHaveCount(8);
   await expect(page.locator('a[href="#getting-started"]')).toBeVisible();
   await expect(page.locator('a[href="#explore-capabilities"]')).toBeVisible();
@@ -81,7 +85,9 @@ test('same-page discovery and unpublished features stay honest', async ({page}) 
 
   await page.getByRole('link', {name: 'Explore Capabilities'}).click();
   await expect(page).toHaveURL(/#explore-capabilities$/);
-  await expect(page.getByRole('heading', {level: 3, name: 'Core Concepts'})).toBeVisible();
+  await expect(
+    page.getByRole('heading', {level: 3, name: 'Core Concepts'}),
+  ).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(0);
   await expect(page.getByRole('link', {name: /version/i})).toHaveCount(0);
   await expect(page.getByRole('heading', {level: 1})).toHaveCount(1);

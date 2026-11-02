@@ -64,7 +64,10 @@ export default function DocumentationHome(): React.JSX.Element {
                 <a className="button button--primary" href="#getting-started">
                   Get Started
                 </a>
-                <a className="button button--outline button--secondary" href="#explore-capabilities">
+                <a
+                  className="button button--outline button--secondary"
+                  href="#explore-capabilities"
+                >
                   Explore Capabilities
                 </a>
               </div>
