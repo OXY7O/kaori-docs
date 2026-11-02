@@ -1,0 +1,16 @@
+# RC/UAT only: separate project/ports/networks from production kaori-docs.
+# Do not register with edge-public or bind a public port.
+name: kaori-docs-staging
+
+services:
+  web:
+    networks:
+      - docs-internal
+      - docs-release-loopback
+    ports:
+      - '127.0.0.1:18082:8080'
+
+networks:
+  docs-release-loopback:
+    driver: bridge
+    internal: false
