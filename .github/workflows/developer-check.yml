@@ -130,6 +130,51 @@ jobs:
         run: |
           set -Eeuo pipefail
           while IFS= read -r path; do bash -n "$path"; done < <(git ls-files '*.sh')
+      - name: Enforce RC and UAT request boundaries before any external mutation
+        if: ${{ needs.route.outputs.site == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha="$KAORI_DOCS_SOURCE_SHA"
+          # These negative cases must terminate at local guards, before
+          # making any GitHub API, registry, signing, or SSH requests.
+          expect_block() {
+            expected="$1"
+            shift
+            if result="$("$@" 2>&1)"; then
+              echo "BLOCK: request negative test unexpectedly succeeded: $expected" >&2
+              exit 1
+            fi
+            grep -Fq "BLOCK: $expected" <<< "$result" || {
+              echo "BLOCK: expected request failure '$expected' but got: $result" >&2
+              exit 1
+            }
+          }
+          rc=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GH_TOKEN=invalid
+            ACCEPTED_SHA="$sha" RC_TAG=v0.3.0-rc.7)
+          expect_block 'RC request must point to the exact accepted staging SHA' \
+            "${rc[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/staging \
+            GITHUB_SHA="$sha" bash scripts/release/publish-candidate.sh preflight
+          expect_block 'RC request must point to the exact accepted staging SHA' \
+            "${rc[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/rc-request \
+            GITHUB_SHA=0000000000000000000000000000000000000000 \
+            bash scripts/release/publish-candidate.sh preflight
+          uat=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GH_TOKEN=invalid
+            KAORI_DOCS_STAGING_UAT=1 KAORI_DOCS_STABLE_POLICY=0
+            ACCEPTED_SHA="$sha" RC_TAG=v0.3.0-rc.7
+            APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1)
+          expect_block 'UAT request must match the accepted staging source and private mode' \
+            "${uat[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/main \
+            GITHUB_SHA="$sha" bash scripts/release/deploy-release.sh preflight
+          expect_block 'UAT request must match the accepted staging source and private mode' \
+            "${uat[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/uat-request \
+            GITHUB_SHA=0000000000000000000000000000000000000000 \
+            bash scripts/release/deploy-release.sh preflight
+          expect_block 'staging RC cannot join shared-edge/public routing' \
+            "${uat[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/uat-request \
+            GITHUB_SHA="$sha" KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+            bash scripts/release/deploy-release.sh preflight
+          echo 'PASS: wrong request ref, stale SHA and public RC exposure rejected locally'
       - name: Verify admission evidence identity fail-closed contract
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
