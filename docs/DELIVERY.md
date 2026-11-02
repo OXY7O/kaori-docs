@@ -63,6 +63,10 @@ separate authorizations and runtime evidence; source admission is not UAT.
 
 The initial repository contains only `main`, so issue #11 first creates `kaori/staging` from its existing README commit and then an issue-owned bootstrap work branch. The staging branch creation alone is **not** an approved staging merge. Each later issue remains a bounded workstream.
 
+## Explicit release request branches — issue #51
+
+`kaori/rc-request` is an **exact admitted staging-SHA** signal to publish the approved signed Docs RC. `kaori/uat-request` is the same SHA signal to select an existing signed prerelease and one **write-authorized issue #14 approval with both per-digest RC and public swap markers**. Those refs are not additional environments: both RC and accepted main stable replace the same `kaori-docs` Compose service on the same VPS. Normal `kaori/staging` pushes do not automatically deploy RC. `workflow_dispatch` remains a governed operator fallback; no request event grants Human Acceptance.
+
 ## Quality and operational boundaries
 
 - Four canonical workflow names: **Developer Check**, **Full Admission**, **Release Candidate**, **Release Deployment**. CI is implemented separately under #12/#13/#14.
