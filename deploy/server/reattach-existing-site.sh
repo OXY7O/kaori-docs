@@ -33,7 +33,7 @@ done
 
 docker network inspect edge-public >/dev/null 2>&1 ||
     fail 'standalone edge-public network not present'
-[[ -x "$edge_root/runtime/verify.sh" ]] ||
+[[ -f "$edge_root/runtime/verify.sh" && ! -L "$edge_root/runtime/verify.sh" && -r "$edge_root/runtime/verify.sh" ]] ||
     fail 'standalone shared-edge verifier is not installed'
 command -v curl >/dev/null || fail 'curl is required for public readiness'
 
