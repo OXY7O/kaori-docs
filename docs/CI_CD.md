@@ -4,13 +4,13 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 ## Runner eligibility (must be verified live)
 
-| Workflow | Runner label set | Authority |
-| --- | --- | --- |
-| Developer Check: Route Checks and Docs Validation | `self-hosted, linux, x64, platform-ci` | Exact issue-linked PR head |
-| Full Admission: promotion policy | `self-hosted, linux, x64, platform-ci` | Staging/main gate |
-| Full Admission: static, container, browser | `self-hosted, linux, x64, kaori-ci` | Exact staging SHA; promotion PR to main |
-| Release Candidate (future #13) | existing approved release control-plane runner | Explicit manual acceptance |
-| Release Deployment (future #14) | approved release runner and SSH adapter | Manual signed digest and host trust |
+| Workflow                                          | Runner label set                               | Authority                               |
+| ------------------------------------------------- | ---------------------------------------------- | --------------------------------------- |
+| Developer Check: Route Checks and Docs Validation | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
+| Full Admission: promotion policy                  | `self-hosted, linux, x64, platform-ci`         | Staging/main gate                       |
+| Full Admission: static, container, browser        | `self-hosted, linux, x64, kaori-ci`            | Exact staging SHA; promotion PR to main |
+| Release Candidate (future #13)                    | existing approved release control-plane runner | Explicit manual acceptance              |
+| Release Deployment (future #14)                   | approved release runner and SSH adapter        | Manual signed digest and host trust     |
 
 **The runner group must explicitly allow the private `OXY7O/kaori-docs` repository.** Label matching does not grant permission. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
 

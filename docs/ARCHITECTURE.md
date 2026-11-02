@@ -14,13 +14,13 @@ Authority order: the current approved KAORI Application product/design/release s
 
 ## Public vs internal
 
-| Path | Role | Public build |
-| --- | --- | --- |
-| `src/pages/` | Approved static pages; initial preparation fixture | Yes |
-| `static/` | Reviewed public assets; logo and restrictive robots policy | Yes |
-| `content/` | Native Docusaurus article/version content after #15 approval | **Disabled** for bootstrap |
-| `docs/` | Internal engineering, authoring and governance material | **No** |
-| `.github/`, `.devcontainer/`, `compose.dev.yml` | Development and CI metadata | **No** |
+| Path                                            | Role                                                         | Public build               |
+| ----------------------------------------------- | ------------------------------------------------------------ | -------------------------- |
+| `src/pages/`                                    | Approved static pages; initial preparation fixture           | Yes                        |
+| `static/`                                       | Reviewed public assets; logo and restrictive robots policy   | Yes                        |
+| `content/`                                      | Native Docusaurus article/version content after #15 approval | **Disabled** for bootstrap |
+| `docs/`                                         | Internal engineering, authoring and governance material      | **No**                     |
+| `.github/`, `.devcontainer/`, `compose.dev.yml` | Development and CI metadata                                  | **No**                     |
 
 The Docusaurus classic preset currently sets `docs: false` and `blog: false` explicitly. This avoids Docusaurus defaulting to repository `docs/` and mistakenly publishing internal engineering material. Do not enable a docs plugin until #15 implements a release-evidence-backed source path, routes and draft exclusion tests. Release-specific docs, the version selector and local search must remain absent until their respective issues and evidence gates are accepted.
 

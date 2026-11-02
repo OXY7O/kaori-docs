@@ -37,13 +37,9 @@ test('bootstrap is accurate and accessible at six viewports and two themes', asy
   );
   expect(overflow, 'No horizontal overflow').toBeLessThanOrEqual(1);
 
-  const scan = await new AxeBuilder({page}).withTags([
-    'wcag2a',
-    'wcag2aa',
-    'wcag21a',
-    'wcag21aa',
-    'wcag22aa',
-  ]).analyze();
+  const scan = await new AxeBuilder({page})
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+    .analyze();
   expect(scan.violations, JSON.stringify(scan.violations, null, 2)).toEqual([]);
   await page.screenshot({
     path: testInfo.outputPath('kaori-docs-bootstrap.png'),
