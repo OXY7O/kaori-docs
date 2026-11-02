@@ -12,6 +12,24 @@ Follow the [KAORI Engineering Delivery Workflow](https://github.com/OXY7O/KAORI/
 8. Collect staging/server UAT, accessibility/light-dark/mobile/six-viewport evidence and explicit human acceptance.
 9. Promote via a `kaori/staging` → `main` PR; publish only after all relevant release and public-edge gates, with separately approved DNS/TLS/Host/SNI changes.
 
+**Approved version/environment contract (issue #38 / #39):**
+KAORI Application and Website already treat `vX.Y.Z-rc.N` as the staging
+candidate/UAT identity and `vX.Y.Z` as the promoted **main** stable identity
+with **the same signed immutable OCI digest**. The Docs bootstrap currently has
+no stable tag, so `main` promotion alone is **not** a stable product release.
+The stable publisher is an explicit main-only `Full Admission`
+`workflow_dispatch` with `stable_version`, `accepted_candidate_tag`,
+and `stable_approval_reference`, plus independent RC lineage, digest, signer,
+SBOM and provenance checks. It never rebuilds or mutates the VPS. Current
+Docs `#33` RC-to-public auto mode is **not** the approved production
+release model and must remain disabled pending issue #40.
+
+Application `kaori/rc-request` and `kaori/uat-request` are exact-SHA request
+triggers. Website uses approved manual `workflow_dispatch` without those
+branches. A future standardization decision on optional request branch parity
+is held under [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201);
+do not infer that all repositories already have those branches.
+
 **Future recurring Docs releases (#33):** once the canonical release workflows
 are admitted/promoted to default `main`, first-public Docs DNS/TLS under
 [KAORI#4196](https://github.com/OXY7O/KAORI/issues/4196) is verified, and
