@@ -224,10 +224,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
           export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
           docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
-          COMPOSE_PROJECT_NAME=kaori-docs-staging docker compose \
-            -f deploy/server/compose.docs.yml -f deploy/server/compose.staging.yml config --quiet
+          test ! -e deploy/server/compose.staging.yml
           bash -n scripts/release/deploy-release.sh deploy/server/deploy.sh deploy/server/rollback.sh
-          echo "PASS: fresh Docs staging/production Compose and release guard smoke from trusted full #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "PASS: fresh single-slot Docs Compose and RC/stable release guards from trusted full #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
 
   browser-evidence:
     name: Browser Quality Evidence
