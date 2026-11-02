@@ -45,6 +45,14 @@ The workflow uses SSH with `StrictHostKeyChecking=yes`, exact known_hosts matchi
 
 **GitHub default-branch limitation:** A `workflow_dispatch` workflow generally needs to exist on the default branch for its Run Workflow entry to appear. This branch does not activate the workflow. Promotion/activation must follow reviewed KAORI release governance; never push to `main` directly.
 
+## Temporary staging-only activation — issue #28
+
+Before Docs UAT and promotion to `main`, private GitHub default-branch rules prevent `workflow_dispatch` for the canonical deploy workflow. Issue #28 temporarily permits a one-time **push-triggered activation of the existing canonical workflow**, not a new deployment engine. This requires both a change to `.github/workflows/deploy-staging-host.yml` in an accepted **two-parent staging merge** and the exact merge-message marker `[KAORI_DOCS_DEPLOY_ISSUE_28]`. Ordinary pushes, forks and PRs do not deploy.
+
+The initial bootstrap checks for exactly one issue #14 comment with the exact merged staging SHA, RC tag and immutable digest marker. Without it, the job must fail **before registry/SSH access**. After a signed #13 candidate exists for that exact SHA and its Full Admission is successful, the maintainer must give separate #14 authorization and explicitly rerun the failed job. The canonical `deploy-release.sh` revalidates release, digest, signature, SPDX/SLSA attestations, author permissions, host key and Docs-owned host prerequisites. It does not create missing privileged host directories or modify public DNS/TLS.
+
+The same final staging merge must change the canonical RC workflow too, with the independently reviewed `[KAORI_DOCS_RC_ISSUE_24]` marker, to publish a **new** signed candidate for that SHA. Never deploy a candidate from an earlier commit. After private deployment evidence is accepted, remove both temporary triggers through reviewed issue-linked cleanup PRs and retain canonical manual workflows.
+
 ## Verification, receipt and rollback
 
 The host adapter requires exact non-root image identity, healthy Docker healthcheck, internal `/healthz` and root HTTP, effective loopback mapping `127.0.0.1:18081` **and a successful loopback curl**. Only after these checks does it commit a receipt and preserve the previous release pointer. If candidate deployment fails, the previous digest is restored, its health is checked, and the candidate receipt remains uncommitted. Failed rollback is **CRITICAL**.
