@@ -1,0 +1,83 @@
+@import '@fontsource-variable/inter/index.css';
+
+:root {
+  --ifm-font-family-base: 'Inter Variable', Inter, system-ui, sans-serif;
+  --ifm-color-primary: #7c3aed;
+  --ifm-color-primary-dark: #6d28d9;
+  --ifm-color-primary-darker: #5b21b6;
+  --ifm-color-primary-darkest: #4c1d95;
+  --ifm-color-primary-light: #8b5cf6;
+  --ifm-color-primary-lighter: #a78bfa;
+  --ifm-color-primary-lightest: #c4b5fd;
+  --ifm-background-color: #f8fafc;
+  --ifm-font-color-base: #1f2937;
+  --ifm-navbar-background-color: #ffffff;
+  --ifm-footer-background-color: #f1f5f9;
+  --ifm-link-color: #6d28d9;
+}
+
+html[data-theme='dark'] {
+  --ifm-color-primary: #a78bfa;
+  --ifm-color-primary-dark: #8b5cf6;
+  --ifm-color-primary-darker: #7c3aed;
+  --ifm-color-primary-darkest: #6d28d9;
+  --ifm-color-primary-light: #b9a2ff;
+  --ifm-color-primary-lighter: #c4b5fd;
+  --ifm-color-primary-lightest: #ddd6fe;
+  --ifm-background-color: #111827;
+  --ifm-font-color-base: #e5e7eb;
+  --ifm-navbar-background-color: #1f2937;
+  --ifm-footer-background-color: #1f2937;
+  --ifm-link-color: #c4b5fd;
+}
+
+:where(a, button, [tabindex]):focus-visible {
+  outline: 3px solid var(--ifm-color-primary);
+  outline-offset: 3px;
+}
+
+.kaori-foundation {
+  display: flex;
+  align-items: center;
+  min-height: 55vh;
+  padding: 3rem 0;
+}
+
+.kaori-foundation__content {
+  max-width: 44rem;
+}
+
+.kaori-foundation__eyebrow {
+  color: var(--ifm-color-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.kaori-foundation__content h1 {
+  font-size: clamp(1.75rem, 4vw, 2.5rem);
+  line-height: 1.2;
+}
+
+/* Links in prose must remain distinguishable without relying on violet alone.
+   This addresses axe WCAG 1.4.1 link-in-text-block on the actual dark theme. */
+.kaori-foundation__content a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.kaori-foundation__notice {
+  border-left: 3px solid var(--ifm-color-primary);
+  padding: 0.75rem 1rem;
+  background: var(--ifm-hover-overlay);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

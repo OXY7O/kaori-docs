@@ -1,0 +1,194 @@
+name: Release Deployment
+run-name: 'Release Deployment · ${{ inputs.candidate_tag || github.event.workflow_run.head_sha || github.sha }}'
+on:
+  # Issue #33: GitHub GITHUB_TOKEN-created release.published will NOT trigger a
+  # second workflow. workflow_run is the supported canonical publisher handoff,
+  # and activates only after reviewed workflow promotion to default main.
+  workflow_run:
+    workflows: [Release Candidate]
+    types: [completed]
+    branches: [kaori/staging]
+  # Issue #30 requires a new exact-SHA signed RC before this private deploy
+  # may be retried; never consume the quarantined partial v0.1.0-rc.1.
+  # Temporary one-time issue #28 staging-only private deployment activation;
+  # remove after accepted signed RC private deployment evidence.
+  push:
+    branches:
+      - kaori/staging
+    paths:
+      - .github/workflows/deploy-staging-host.yml
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Exact approved docs release candidate (vX.Y.Z-rc.N)
+        type: string
+        required: true
+      approval_reference:
+        description: Issue #14 approval comment with exact SHA/tag/digest marker
+        type: string
+        required: true
+      publish_existing_edge:
+        description: Reconcile only an already approved docs.kaori.cloud registration (never first publication)
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+  actions: read
+  issues: read
+concurrency:
+  group: kaori-docs-release-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    name: Deploy Release Candidate
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && contains(github.event.head_commit.message, '[KAORI_DOCS_DEPLOY_ISSUE_28]')) ||
+        (
+          github.event_name == 'workflow_run' &&
+          vars.KAORI_DOCS_AUTO_DEPLOY_ENABLED == 'true' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'workflow_dispatch' &&
+          github.event.workflow_run.head_branch == 'kaori/staging' &&
+          github.event.workflow_run.head_repository.full_name == github.repository
+        )
+      }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 45
+    env:
+      ACCEPTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      RC_TAG: ${{ inputs.candidate_tag }}
+      APPROVAL_REF: ${{ inputs.approval_reference }}
+      KAORI_DOCS_AUTO_POLICY: ${{ github.event_name == 'workflow_run' && '1' || '0' }}
+      KAORI_DOCS_PUBLISHER_RUN_ID: ${{ github.event.workflow_run.id }}
+      KAORI_DOCS_ATTACH_EXISTING_EDGE: ${{ github.event_name == 'workflow_run' && '1' || (inputs.publish_existing_edge && '1' || '0') }}
+      GH_TOKEN: ${{ github.token }}
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+      DOCS_HOST: ${{ vars.KAORI_DOCS_HOST }}
+      DOCS_SSH_PORT: ${{ vars.KAORI_DOCS_HOST_PORT }}
+      DOCS_SSH_USER: ${{ vars.KAORI_DOCS_HOST_USER }}
+      DOCS_DEPLOY_ROOT: ${{ vars.KAORI_DOCS_HOST_DEPLOY_ROOT }}
+      DOCS_PUBLIC_DOMAIN: ${{ vars.KAORI_DOCS_PUBLIC_DOMAIN }}
+      DOCS_SSH_KEY: ${{ secrets.KAORI_DOCS_HOST_SSH_PRIVATE_KEY }}
+      DOCS_SSH_PASSPHRASE: ${{ secrets.KAORI_DOCS_HOST_SSH_PASSPHRASE }}
+      DOCS_KNOWN_HOSTS: ${{ secrets.KAORI_DOCS_HOST_KNOWN_HOSTS }}
+    steps:
+      - name: Checkout exact approved source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.ACCEPTED_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve approved canonical publisher handoff and standing policy
+        if: ${{ github.event_name == 'workflow_run' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/main ]] || { echo 'BLOCK: default-branch auto-deploy authority missing' >&2; exit 1; }
+          [[ "$GITHUB_REPOSITORY" == OXY7O/kaori-docs ]] || exit 1
+          [[ "$ACCEPTED_SHA" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$current" == "$ACCEPTED_SHA" ]] || { echo 'BLOCK: publisher source is no longer current staging' >&2; exit 1; }
+          # An approved publisher must have produced exactly one signed
+          # prerelease for this source. The deployment adapter verifies the
+          # digest, source labels, Cosign/SPDX/SLSA and publisher run again.
+          releases="$(curl -fsS "${headers[@]}" "$api/releases?per_page=100")"
+          matching="$(jq -c --arg sha "$ACCEPTED_SHA" '
+            [.[] | select(.draft == false and .prerelease == true and .target_commitish == $sha)
+                 | select(.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[1-9][0-9]*$"))]
+          ' <<< "$releases")"
+          [[ "$(jq length <<< "$matching")" == 1 ]] || {
+            echo 'BLOCK: need exactly one admitted Docs prerelease for publisher SHA' >&2
+            exit 1
+          }
+          tag="$(jq -r '.[0].tag_name' <<< "$matching")"
+          tag_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/tags/$tag" | jq -r '.object.sha')"
+          [[ "$tag_sha" == "$ACCEPTED_SHA" ]] || { echo 'BLOCK: release tag does not point to admitted publisher source' >&2; exit 1; }
+          # This standing authorization is issued only after KAORI#4196 public
+          # acceptance and is held separately from the per-release #13 signer
+          # approval. Without it, every automated release must fail closed.
+          comments="$(curl -fsS "${headers[@]}" "$api/issues/33/comments?per_page=100")"
+          approved="$(jq -c '
+            [.[] | select((.body // "" | split("\n") |
+              index("KAORI_DOCS_AUTO_DEPLOY_POLICY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:existing-public-only")) != null)]
+          ' <<< "$comments")"
+          [[ "$(jq length <<< "$approved")" == 1 ]] || {
+            echo 'BLOCK: standing public Docs auto-deploy policy is not uniquely authorized' >&2
+            exit 1
+          }
+          approval_ref="$(jq -r '.[0].html_url' <<< "$approved")"
+          [[ "$approval_ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/33#issuecomment-[0-9]+$ ]] || exit 1
+          printf 'RC_TAG=%s\nAPPROVAL_REF=%s\n' "$tag" "$approval_ref" >> "$GITHUB_ENV"
+          echo 'PASS: bounded signed publisher handoff and standing policy resolved; independent cryptographic and host checks still required'
+      - name: Resolve one-time issue #28 private deployment approval
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/deploy-staging-host.yml@refs/heads/kaori/staging' ]] || {
+            echo 'BLOCK: deployment workflow identity changed' >&2
+            exit 1
+          }
+          [[ "$(git cat-file -p "$ACCEPTED_SHA" | grep -c '^parent ')" == 2 ]] || {
+            echo 'BLOCK: private deploy activation requires exact two-parent staging merge' >&2
+            exit 1
+          }
+          git diff --name-only "$ACCEPTED_SHA^1" "$ACCEPTED_SHA" -- \
+            .github/workflows/deploy-staging-host.yml |
+            grep -Fxq '.github/workflows/deploy-staging-host.yml' || {
+              echo 'BLOCK: accepted merge must change canonical deployment workflow' >&2
+              exit 1
+            }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          comments="$(curl -fsS "${headers[@]}" "$api/issues/14/comments?per_page=100")"
+          approved="$(jq -c --arg sha "$ACCEPTED_SHA" '
+            [.[] | . as $c
+              | (.body // "" | split("\n")
+                | map(select(startswith("KAORI_DOCS_DEPLOY_APPROVED:" + $sha + ":")))
+                | unique) as $markers
+              | select($markers | length == 1)
+              | {url:$c.html_url, marker:$markers[0]}]
+          ' <<< "$comments")"
+          [[ "$(jq length <<< "$approved")" == 1 ]] || {
+            echo 'BLOCK: requires exactly one issue #14 private deploy approval for exact staging SHA' >&2
+            exit 1
+          }
+          marker="$(jq -r '.[0].marker' <<< "$approved")"
+          # The canonical deploy-release.sh independently checks exact digest,
+          # signed RC, author permission, full admission and pinned SSH trust.
+          [[ "$marker" =~ ^KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:(v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*):sha256:[a-f0-9]{64}$ ]] || {
+            echo 'BLOCK: deployment approval marker/tag/digest format invalid' >&2
+            exit 1
+          }
+          tag="${BASH_REMATCH[1]}"
+          approval_ref="$(jq -r '.[0].url' <<< "$approved")"
+          [[ "$approval_ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-[0-9]+$ ]] || exit 1
+          printf 'RC_TAG=%s\nAPPROVAL_REF=%s\n' "$tag" "$approval_ref" >> "$GITHUB_ENV"
+          echo 'PASS: one-time gated deployment inputs resolved; exact RC and host trust remain independent mandatory checks'
+      - name: Verify prerelease, pinned host and explicit approval reference
+        shell: bash
+        run: bash scripts/release/deploy-release.sh preflight
+      - name: Deploy via separate pinned SSH trust boundary
+        shell: bash
+        run: bash scripts/release/deploy-release.sh deploy
+      - name: Record signed private deployment and acceptance boundary
+        shell: bash
+        run: |
+          printf 'KAORI Docs private deployment: candidate %s, source %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Authorization reference: %s\n' "$APPROVAL_REF" >> "$GITHUB_STEP_SUMMARY"
+          printf 'SIGNED IMMUTABLE DIGEST VERIFIED; HOST RELEASE RECEIPT COMMITTED.\n' >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$KAORI_DOCS_ATTACH_EXISTING_EDGE" == 1 ]]; then
+            printf 'PREVIOUSLY PUBLISHED DOCS EDGE REATTACHED; FULL SHARED-EDGE VERIFICATION PASS.\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'PRIVATE LOOPBACK ONLY; PUBLIC EDGE/DNS/TLS: NOT VERIFIED.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf 'HUMAN VISUAL ACCEPTANCE / PROMOTION: PENDING.\n' >> "$GITHUB_STEP_SUMMARY"

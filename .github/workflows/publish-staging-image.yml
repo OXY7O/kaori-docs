@@ -1,0 +1,151 @@
+name: Release Candidate
+run-name: 'Release Candidate · ${{ inputs.candidate_tag || github.sha }}'
+on:
+  # Issue #30 re-arms canonical RC only for a NEW exact admitted staging SHA;
+  # the unsigned partial v0.1.0-rc.1 remains quarantined and is never reused.
+  # One-time issue #24 activation; remove after approved RC is published.
+  # Issue #28 private-deploy activation also requires a new signed RC on its
+  # exact merged staging SHA; never reuse the previous commit's candidate.
+  # Path-scoped staging push is insufficient alone: the issue marker, exact
+  # license, maintainer approval and signed artifact gates all still apply.
+  push:
+    branches:
+      - kaori/staging
+    paths:
+      - .github/workflows/publish-staging-image.yml
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Explicit Docs artifact SemVer candidate (vX.Y.Z-rc.N)
+        required: true
+        type: string
+      approval_reference:
+        description: Approved issue #13 comment URL with source SHA/tag marker
+        required: true
+        type: string
+      license_identifier:
+        description: Reviewed SPDX license identifier (NOASSERTION blocked)
+        required: true
+        type: string
+      resume_existing:
+        description: Resume same digest without rebuilding or retagging
+        required: true
+        type: boolean
+        default: false
+      expected_digest:
+        description: Exact prior sha256 OCI digest, required only for resume
+        required: false
+        type: string
+permissions:
+  contents: write
+  actions: read
+  issues: read
+  id-token: write
+concurrency:
+  group: kaori-docs-release-candidate
+  cancel-in-progress: false
+jobs:
+  publish:
+    name: Publish Release Candidate
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[KAORI_DOCS_RC_ISSUE_24]')) }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 120
+    env:
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+      RC_TAG: ${{ inputs.candidate_tag }}
+      APPROVAL_REF: ${{ inputs.approval_reference }}
+      APP_LICENSE: ${{ inputs.license_identifier }}
+      RESUME_EXISTING: ${{ inputs.resume_existing }}
+      EXPECTED_DIGEST: ${{ inputs.expected_digest }}
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact admitted candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Resolve one-time issue #24 staging approval without publishing on ordinary push
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@refs/heads/kaori/staging' ]] || {
+            echo 'BLOCK: release workflow signing identity changed' >&2
+            exit 1
+          }
+          # A GitHub merge commit has two parents. Plain diff-tree -r does not
+          # report its changed paths: compare the accepted merge against the
+          # first (previous staging) parent explicitly, fail closed otherwise.
+          [[ "$(git cat-file -p "$ACCEPTED_SHA" | grep -c '^parent ')" == 2 ]] || {
+            echo 'BLOCK: bootstrap must be a two-parent staging merge commit' >&2
+            exit 1
+          }
+          git diff --name-only "$ACCEPTED_SHA^1" "$ACCEPTED_SHA" -- \
+            .github/workflows/publish-staging-image.yml |
+            grep -Fxq '.github/workflows/publish-staging-image.yml' || {
+              echo 'BLOCK: bootstrap requires exact canonical workflow change in staging merge' >&2
+              exit 1
+            }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          # Approval must refer to this merge SHA. Missing/ambiguous approvals
+          # fail safely; operator can post the comment then rerun this job.
+          comments="$(curl -fsS "${headers[@]}" "$api/issues/13/comments?per_page=100")"
+          approved="$(jq -c --arg sha "$ACCEPTED_SHA" '
+            [.[] | . as $c
+              | (.body // "" | split("\n")
+                | map(select(startswith("KAORI_DOCS_RC_APPROVED:" + $sha + ":")))
+                | unique) as $markers
+              | select($markers | length == 1)
+              | {url:$c.html_url, marker:$markers[0]}]
+          ' <<< "$comments")"
+          [[ "$(jq length <<< "$approved")" == 1 ]] || {
+            echo 'BLOCK: requires exactly one issue #13 approval for exact admitted staging SHA' >&2
+            exit 1
+          }
+          tag="$(jq -r '.[0].marker' <<< "$approved")"
+          tag="${tag##*:}"
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || {
+            echo 'BLOCK: approved RC tag is not a prerelease' >&2
+            exit 1
+          }
+          approval_ref="$(jq -r '.[0].url' <<< "$approved")"
+          [[ "$approval_ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/13#issuecomment-[0-9]+$ ]] || exit 1
+          printf 'RC_TAG=%s\nAPPROVAL_REF=%s\nAPP_LICENSE=LicenseRef-KAORI-Internal-Use\nRESUME_EXISTING=false\n'             "$tag" "$approval_ref" >> "$GITHUB_ENV"
+          echo 'PASS: one-time source-scoped RC inputs resolved; publisher preflight must independently verify approval authority'
+
+      - name: Verify approval, exact admitted SHA, registry, licence and trust
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build once, scan, sign and publish digest
+        if: ${{ !inputs.resume_existing }}
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Resume verification of previously evidenced digest
+        if: ${{ inputs.resume_existing }}
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh resume
+      - name: Retain RC evidence (including failed partial publications)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kaori-docs-rc-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            docs-sbom.spdx.json
+            docs-provenance.json
+            docs-signature-verification.json
+            verification-spdxjson.json
+            verification-slsaprovenance1.json
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Logout from Docs registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
