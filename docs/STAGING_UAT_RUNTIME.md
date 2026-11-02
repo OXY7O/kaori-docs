@@ -69,7 +69,7 @@ branch **cannot** attach to `docs.kaori.cloud`, replace the production
 
 The already signed `v0.3.0-rc.1` remains bound to source
 `5c6987c32b344d926a151fee1fa6363ae7863fa3`; complete its separate
-isolated UAT *before* integrating the source-changing #51 workflow PR. A
+isolated UAT _before_ integrating the source-changing #51 workflow PR. A
 new staging source requires its own admission, tag and signed candidate.
 
 ## Rollback and acceptance
