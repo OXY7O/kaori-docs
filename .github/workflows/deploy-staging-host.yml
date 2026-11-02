@@ -1,5 +1,5 @@
 name: Release Deployment
-run-name: 'Release Deployment · ${{ inputs.candidate_tag }}'
+run-name: 'Release Deployment · ${{ inputs.candidate_tag || github.event.workflow_run.head_sha || github.sha }}'
 on:
   # Issue #33: GitHub GITHUB_TOKEN-created release.published will NOT trigger a
   # second workflow. workflow_run is the supported canonical publisher handoff,
@@ -42,7 +42,19 @@ concurrency:
 jobs:
   deploy:
     name: Deploy Release Candidate
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[KAORI_DOCS_DEPLOY_ISSUE_28]')) || (github.event_name == 'workflow_run' && vars.KAORI_DOCS_AUTO_DEPLOY_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.head_branch == 'kaori/staging' && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && contains(github.event.head_commit.message, '[KAORI_DOCS_DEPLOY_ISSUE_28]')) ||
+        (
+          github.event_name == 'workflow_run' &&
+          vars.KAORI_DOCS_AUTO_DEPLOY_ENABLED == 'true' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'workflow_dispatch' &&
+          github.event.workflow_run.head_branch == 'kaori/staging' &&
+          github.event.workflow_run.head_repository.full_name == github.repository
+        )
+      }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 45
     env:
