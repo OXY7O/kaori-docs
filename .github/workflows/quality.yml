@@ -70,9 +70,40 @@ jobs:
             [[ "$GITHUB_REF" == refs/heads/kaori/staging || "$GITHUB_REF" == refs/heads/main ]] || exit 1
           fi
 
+  validation-profile:
+    name: Resolve Admission Evidence
+    needs: promotion-source
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reuse: ${{ steps.evidence.outputs.reuse }}
+      evidence_run_id: ${{ steps.evidence.outputs.evidence_run_id }}
+      reason: ${{ steps.evidence.outputs.reason }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ADMISSION_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Checkout exact integrated Docs source with ancestry
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify immutable source/tree and route existing evidence
+        id: evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
+          python3 scripts/ci/admission-reuse.py resolve
+          echo 'Evidence is advisory until fresh smoke or comprehensive fallback PASS' >> "$GITHUB_STEP_SUMMARY"
+
   full-admission:
     name: Full Admission
-    needs: promotion-source
+    needs: [promotion-source, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 40
@@ -100,22 +131,43 @@ jobs:
           test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
           test -s package-lock.json || { echo 'BLOCK: missing reproducible lockfile.' >&2; exit 1; }
           printf 'Source: %s\nTree: %s\n' "$(git rev-parse HEAD)" "$(git show -s --format=%T HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Report verified reuse or full fallback
+        shell: bash
+        env:
+          REUSE: ${{ needs.validation-profile.outputs.reuse }}
+          EVIDENCE_RUN_ID: ${{ needs.validation-profile.outputs.evidence_run_id }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$REUSE" == true ]]; then
+            [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] ||
+              { echo 'BLOCK: reuse lacks trusted prior full run' >&2; exit 1; }
+            printf 'REUSED: Full Admission evidence from trusted staging run #%s. Fresh Browser/Runtime Smoke still mandatory.\n' "$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'FALLBACK: full formatting, TypeScript, security audit and Docusaurus build required.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Set up pinned Node
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
         with:
           node-version: '22.23.2'
           cache: npm
       - name: Install locked dependencies
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm ci --no-audit --no-fund
       - name: Check formatting
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run check-format
       - name: Check TypeScript and MDX configuration
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run check
       - name: Dependency security audit
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm audit --audit-level=high
       - name: Build static documentation
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run build
       - name: Check approved static scope
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -135,7 +187,7 @@ jobs:
 
   container-admission:
     name: Container Admission
-    needs: full-admission
+    needs: [full-admission, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 35
@@ -146,6 +198,7 @@ jobs:
           ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
           persist-credentials: false
       - name: Enforce runtime admission when runtime implementation exists
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -160,9 +213,25 @@ jobs:
             printf 'NOT APPLICABLE: no production image exists yet; #13 owns image runtime admission.\n' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Fresh Compose and release-contract smoke for verified reuse
+        if: ${{ needs.validation-profile.outputs.reuse == 'true' }}
+        shell: bash
+        env:
+          EVIDENCE_RUN_ID: ${{ needs.validation-profile.outputs.evidence_run_id }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || exit 1
+          test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
+          export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
+          docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
+          COMPOSE_PROJECT_NAME=kaori-docs-staging docker compose \
+            -f deploy/server/compose.docs.yml -f deploy/server/compose.staging.yml config --quiet
+          bash -n scripts/release/deploy-release.sh deploy/server/deploy.sh deploy/server/rollback.sh
+          echo "PASS: fresh Docs staging/production Compose and release guard smoke from trusted full #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
   browser-evidence:
     name: Browser Quality Evidence
-    needs: [promotion-source, full-admission]
+    needs: [promotion-source, full-admission, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 35
@@ -190,9 +259,21 @@ jobs:
           set -Eeuo pipefail
           test "$(npx playwright --version)" = "Version 1.56.1"
       - name: Build exact browser candidate
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run build
       - name: Test browser layout, navigation, theme, keyboard and accessibility
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run test:browser
+      - name: Fresh bounded browser and static-site Fast Smoke for verified reuse
+        if: ${{ needs.validation-profile.outputs.reuse == 'true' }}
+        shell: bash
+        env:
+          EVIDENCE_RUN_ID: ${{ needs.validation-profile.outputs.evidence_run_id }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || exit 1
+          bash scripts/ci/fast-smoke.sh "$KAORI_DOCS_SOURCE_SHA"
+          echo "PASS: fresh Docs Fast Smoke after REUSED Full Admission run #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload browser evidence (including failures)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -253,9 +334,16 @@ jobs:
 
   admission-evidence:
     name: Admission Evidence
-    # This job is deliberately downstream of ALL comprehensive gates.
-    # An artifact is never published if any gate is failed, skipped or cancelled.
-    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    # Fresh FULL artifacts are eligible for later verified reuse; REUSED
+    # artifacts cannot be chained to bypass the original full authority.
+    needs:
+      [
+        promotion-source,
+        validation-profile,
+        full-admission,
+        container-admission,
+        browser-evidence,
+      ]
     if: >-
       ${{ needs.promotion-source.result == 'success' &&
           needs.full-admission.result == 'success' &&
@@ -271,6 +359,8 @@ jobs:
       ADMISSION_FULL: ${{ needs.full-admission.result }}
       ADMISSION_CONTAINER: ${{ needs.container-admission.result }}
       ADMISSION_BROWSER: ${{ needs.browser-evidence.result }}
+      ADMISSION_PROFILE: ${{ needs.validation-profile.outputs.reuse == 'true' && 'reused' || 'full' }}
+      ADMISSION_REUSED_FROM: ${{ needs.validation-profile.outputs.evidence_run_id }}
       ADMISSION_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
     steps:
       - name: Checkout exact tested source and tree
@@ -285,7 +375,7 @@ jobs:
           bash scripts/ci/admission-evidence.sh write tmp/ci-artifacts/admission-evidence.json
           jq -r '"Source SHA: " + .source_sha + "\nSource tree: " +
             .source_tree_sha + "\nValidation authority: " +
-            .validation_authority_fingerprint + "\nReuse permitted: false"' \
+            .validation_authority_fingerprint + "\nProfile: " + .profile + "\nReuse permitted: " + (.reuse_authorized|tostring)' \
             tmp/ci-artifacts/admission-evidence.json >> "$GITHUB_STEP_SUMMARY"
       - name: Publish immutable source-bound admission artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

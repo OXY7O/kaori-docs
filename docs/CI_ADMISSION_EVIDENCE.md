@@ -1,60 +1,89 @@
-# KAORI Docs admission evidence and Fast Smoke
+# KAORI Docs admission evidence reuse and Fast Smoke
 
-Authority: [Docs #45](https://github.com/OXY7O/kaori-docs/issues/45),
-[KAORI Delivery Workflow](https://github.com/OXY7O/KAORI/blob/main/docs/engineering/KAORI_DELIVERY_WORKFLOW.md),
-and the existing Docs [delivery contract](DELIVERY.md).
+Authority: [Docs #45](https://github.com/OXY7O/kaori-docs/issues/45)
+and the approved
+[KAORI Delivery Workflow](https://github.com/OXY7O/KAORI/blob/main/docs/engineering/KAORI_DELIVERY_WORKFLOW.md).
 
-## Evidence contract
+## Source and validation authority
 
-**Current phase: evidence production only. Reuse is NOT active.**
+Docs uses the same KAORI principle:
 
-The existing Full Admission, Container Admission, and Browser Quality Evidence
-jobs still run on every governed source integration. A new downstream
-**Admission Evidence** job executes only if all four required gates report
-`success` for the current canonical run. It emits an artifact containing:
+> Same immutable source tree and validation authority fingerprint means full
+> evidence may be reused **only after independent verification**, followed by
+> a fresh Fast Smoke. Otherwise, run one fresh Full Admission.
 
-- Exact tested source SHA and Git source tree SHA.
-- Deterministic SHA-256 validation-authority fingerprint.
-- Canonical workflow execution identity and workflow SHA.
-- GitHub run ID, attempt, event, source ref, and repository.
-- Required gate conclusions and `reuse_authorized: false`.
+The fingerprint covers workflows, CI and release scripts, browser/runtime
+tests, dependency lock and toolchain, Docusaurus/TypeScript/Playwright
+configuration, Dockerfile, Nginx and Compose authority. The source Git
+tree SHA is bound independently; a matching fingerprint alone does not
+authorize reuse of tests for changed content.
 
-The authority fingerprint covers existing workflows, scripts, tests,
-dependency lock, pinned toolchains, TypeScript/Playwright/Docusaurus
-configuration, Dockerfile, Compose and runtime/release controls. It is not a
-standalone cache key. An exact source tree and fingerprint are both necessary
-for future reuse, but neither proves acceptance, correct run provenance,
-completeness, UAT, or release eligibility on its own.
+The canonical staging `Full Admission` publishes a 30-day artifact
+containing source SHA, tree SHA, fingerprint, workflow execution SHA/ref,
+run and attempt, repository, event, required gate conclusions, timestamp,
+and `profile`.
 
-The artifact has 30-day retention and is not uploaded when an admission gate
-is failed, cancelled or skipped. Existing npm/BuildKit/Trivy caches are
-performance caches only, not PASS evidence.
+A **fresh full** result carries `schema_version: 2`,
+`profile: full` and `reuse_authorized: true` only after Promotion Policy,
+Full Admission, Container Admission, and Browser Quality all succeed.
+A **reused** result records its original Full Admission run and
+`reuse_authorized: false`. Reused evidence must never become a new full
+source in a transitive trust chain.
 
-## Fresh bounded smoke contract
+## Trusted resolution and fallback
 
-`scripts/ci/fast-smoke.sh <exact-source-SHA>` implements a fresh, bounded
-Docusaurus static build and one pinned desktop browser/keyboard/navigation
-test. It is intended to run only **after** a future dedicated trusted
-artifact-reuse verifier establishes all required source-tree, authority,
-workflow/job and promotion-lineage constraints. The script does not grant
-reuse or skip any existing Full Admission job.
+Before any comprehensive job is skipped, `Resolve Admission Evidence`
+uses the GitHub Actions API to inspect previously **completed-successful
+canonical staging push** runs. It accepts evidence only when:
 
-When a verifier is implemented in a later #45 integration, it must reject
-missing, wrong-repository, wrong-workflow, partial, expired, stale, cancelled,
-failed, skipped, or modified evidence and use **one fresh Full Admission
-fallback** on staging/main. Changed content, browser configuration, security
-rules, runtime, or build inputs must not inherit an unrelated green result.
+- Repository, workflow path and event identity are trusted.
+- The prior commit is in the current source ancestry and its tree matches.
+- The validation authority fingerprint and source SHA are exact.
+- The source artifact is unique, unexpired and its ZIP SHA-256 matches
+  GitHub's recorded artifact digest.
+- The evidence schema, timestamp, original run/attempt, workflow SHA,
+  profile and all mandatory gate results are intact.
+- GitHub's original run contains exactly one successful job for each
+  required gate, including the artifact-publishing gate.
+- For a promotion PR, the source is exactly the same-repository
+  `kaori/staging` branch targeting `main`.
 
-Do not permit release publisher/deployer source authorization from an npm
-cache, a browser screenshot artifact, or merely matching commit messages.
-Cryptographically signed immutable RC evidence, stable-main acceptance,
-Docs-only production deployment, human UAT, and rollback remain independent
-hard gates.
+Any missing, stale, malformed, changed, failed, skipped, cancelled,
+untrusted or ambiguous result produces explicit **FALLBACK**, not a
+synthetic PASS or a bypass. The existing comprehensive validation jobs
+then run normally on that governed integration SHA.
 
-## Future activation
+## Fresh Fast Smoke for verified reuse
 
-A separate reviewed #45 commit must implement and test the full trusted
-evidence-reader, strict fingerprint/lineage matching, and fresh Fast Smoke
-routing **before any comprehensive test is skipped**. This artifact writer
-deliberately sets `reuse_authorized: false` so that its initial staging
-admission cannot be mistaken for permission to bypass later tests.
+Only a verified `REUSED` decision permits the lighter checks. Fresh
+checks still require source SHA and committed lock identity, Docusaurus
+build/approved public content boundary, pinned desktop browser keyboard
+and navigation test, staging and production Compose render, and
+release-script syntax and safety guards.
+
+When a tree, workflow, browser test, security input, dependency lock,
+Dockerfile or release contract changes, fingerprints/trees differ and
+the full formatting, TypeScript, npm audit, runtime/Trivy and six-viewport
+light/dark Browser Quality gates run normally.
+
+CI test reuse never implies release/UAT acceptance. Signed immutable RC
+identity, exact full admission lineage, stable main release with the
+same digest, host deployment receipt, shared-edge verification, rollback,
+and explicit Human Acceptance remain independent mandatory controls.
+
+## Activation and rollback of the CI routing
+
+This #45 implementation changes **only** the canonical Docs quality
+workflow and helper scripts. The initial staging integration of this
+policy must itself execute one fresh Full Admission. It may create the
+first schema-v2 reusable artifact only after all tests pass.
+
+If the resolver encounters network issues or missing evidence, its
+fail-closed default is `FALLBACK`. If fresh Fast Smoke fails, the
+governed transition fails; it does **not** silently convert a failed
+Fast Smoke into successful reuse. Correct the issue on an issue-linked
+branch and rerun normal validation.
+
+Do not set any release auto-deploy flag as a cache workaround. The
+legacy #33 RC-public auto trigger remains inactive; the #40 stable
+production policy and private RC/UAT #43 have separate acceptance gates.
