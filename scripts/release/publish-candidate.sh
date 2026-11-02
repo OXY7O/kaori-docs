@@ -34,6 +34,8 @@ approval_permission="$(curl -fsS "${headers[@]}" "$api/collaborators/$approval_u
 case "$approval_permission" in admin|maintain|write) ;; *) fail 'approval author lacks write authority' ;; esac
 
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
+# Fail before any image build/push if registry-manifest tooling is absent.
+docker buildx version >/dev/null || fail 'registry manifest inspection requires existing Docker buildx'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
 runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
@@ -85,7 +87,6 @@ docker pull "$image:$tag"
 # Registry manifests, not Docker's locally familiarized RepoDigests spelling,
 # are authoritative for the digest that was actually pushed/pulled.
 # Buildx preserves the multi-platform OCI index digest, including provenance.
-docker buildx version >/dev/null || fail 'registry manifest inspection requires existing Docker buildx'
 manifest_json="$(docker buildx imagetools inspect "$image:$tag" --format '{{json .Manifest}}')" || fail 'registry manifest lookup failed'
 digest="$(jq -er '.digest | strings | select(test("^sha256:[a-f0-9]{64}$"))' <<< "$manifest_json")" || fail 'registry manifest digest unavailable'
 if [[ "$mode" == resume ]]; then
