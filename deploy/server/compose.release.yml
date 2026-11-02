@@ -1,0 +1,15 @@
+# Private Release ingress only: keep base network internal and attach a separate
+# dedicated bridge for effective localhost port publishing.
+# No public binding, KAORI App attachment or shared-edge mutation.
+services:
+  web:
+    networks:
+      - docs-internal
+      - docs-release-loopback
+    ports:
+      - "127.0.0.1:18081:8080"
+
+networks:
+  docs-release-loopback:
+    driver: bridge
+    internal: false
