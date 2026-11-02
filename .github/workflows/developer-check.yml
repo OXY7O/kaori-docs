@@ -130,6 +130,19 @@ jobs:
       - name: Audit dependency authority changes
         if: ${{ needs.route.outputs.dependencies == 'true' }}
         run: npm audit --audit-level=high
+      - name: Capture format-only review changes on validation failure
+        if: failure()
+        shell: bash
+        run: npx prettier --write .github/workflows/publish-staging-image.yml docs/CI_CD.md
+      - name: Upload format-only review changes
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kaori-docs-rc-format-${{ github.event.pull_request.head.sha }}
+          path: |
+            .github/workflows/publish-staging-image.yml
+            docs/CI_CD.md
+          if-no-files-found: error
       - name: Check TypeScript
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check
