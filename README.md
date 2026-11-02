@@ -46,11 +46,11 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-**Bootstrap validation blocker:** The first source scaffold does not yet have a registry-resolved `package-lock.json`. `npm ci`, the Dev Container post-create step and production build must be treated as **BLOCKED**, not PASS, until the exact pinned dependency graph is resolved, committed and verified in a network-enabled approved environment. Do not substitute `npm install` in the CI gate or assert deterministic installation prematurely. See [development guidance](docs/DEVELOPMENT.md).
+**Bootstrap validation:** A registry-resolved `package-lock.json` is committed in the combined #11/#12 review branch. The [self-hosted Developer Check run #41396567726](https://github.com/OXY7O/kaori-docs/actions/runs/41396567726) passed on SHA `f2e13e631c71fa416c6c2f1f95b2b3cea43f7e4c`, including `npm ci`, formatting, TypeScript, npm security audit and Docusaurus build. Every later change requires a **new exact-head** gate. Full Admission, browser/server UAT and human acceptance remain separate, unclaimed checks. See [development guidance](docs/DEVELOPMENT.md).
 
 ## Quality checks
 
-After the reviewed lockfile exists:
+Using the reviewed committed lockfile:
 
 ```bash
 npm ci
@@ -68,6 +68,7 @@ A complete acceptance requires actual Developer Check, browser light/dark/mobile
 - [Development and Dev Container](docs/DEVELOPMENT.md)
 - [Public authoring and content safety](docs/CONTENT_SAFETY.md)
 - [Governed delivery](docs/DELIVERY.md)
+- [CI/CD and quality gates](docs/CI_CD.md)
 - [KAORI product authority](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md)
 - [KAORI Design System](https://github.com/OXY7O/KAORI/blob/main/docs/design/KAORI_DESIGN_SYSTEM.md)
 

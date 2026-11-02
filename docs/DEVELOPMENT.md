@@ -19,21 +19,25 @@ docker compose -f compose.dev.yml exec workspace npm run dev
 
 Stop with `docker compose -f compose.dev.yml down`. Do not remove the named volume unless intentionally discarding local dependencies.
 
-## Deterministic install blocker
+## Reproducible install and real CI evidence
 
-The bootstrap authoring environment could not access `registry.npmjs.org`. Initial dependency versions are explicitly pinned against the Docusaurus 3.10.2 supported Node.js matrix, but no registry-resolved `package-lock.json` has been created. This is a **BLOCKER**, not a skipped PASS. Resolve the lock in an approved network-enabled environment:
+The original authoring environment could not resolve `registry.npmjs.org`. The approved `platform-ci` self-hosted runner resolved the pinned Docusaurus dependencies, and `package-lock.json` is now committed in the combined #11/#12 review branch.
+
+The [Developer Check #41396567726](https://github.com/OXY7O/kaori-docs/actions/runs/41396567726) passed on exact SHA `f2e13e631c71fa416c6c2f1f95b2b3cea43f7e4c` using Node `22.23.2`; its executed checks include `npm ci`, Prettier, `npm audit --audit-level=high`, TypeScript and Docusaurus production build. This is **source/build acceptance only**, not browser, runtime-image, staging deployment or public release acceptance. New commits require new exact-head results.
+
+To reproduce in an approved network-enabled environment:
 
 ```bash
 node --version
 npm --version
-npm install --package-lock-only --ignore-scripts
 npm ci
 npm run check-format
+npm audit --audit-level=high
 npm run check
 npm run build
 ```
 
-Commit the generated `package-lock.json` to this #11 work branch; inspect the dependency tree, npm audit findings and source integrity before accepting it. Never hand-write an invented lockfile. Re-run the exact-head checks and verify native Docusaurus + pinned package compatibility. Until then `npm ci` and Dev Container post-create are expected to fail, and #11 must stay Draft/blocked.
+Do not regenerate or edit the lockfile without a reviewed dependency-authority change. Preserve issue-branch and exact-head provenance; an uncommitted dependency graph is never a passing gate.
 
 ## Public-output review
 
