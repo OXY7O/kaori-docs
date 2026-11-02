@@ -294,6 +294,21 @@ jobs:
             echo 'BLOCK: RC request accepted without isolated staging identity' >&2
             exit 1
           fi
+          if env KAORI_DOCS_RUNTIME_ENV=staging COMPOSE_PROJECT_NAME=kaori-docs \
+              KAORI_DOCS_STATE_DIR=/var/lib/kaori-docs-staging/deploy-state \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              bash deploy/server/rollback.sh; then
+            echo 'BLOCK: staging rollback accepted production Compose project' >&2
+            exit 1
+          fi
+          if env KAORI_DOCS_RUNTIME_ENV=staging COMPOSE_PROJECT_NAME=kaori-docs-staging \
+              KAORI_DOCS_STATE_DIR=/var/lib/kaori-docs-staging/deploy-state \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              bash deploy/server/rollback.sh; then
+            echo 'BLOCK: staging rollback permitted public edge mutation' >&2
+            exit 1
+          fi
+          echo 'PASS: isolated RC rollback rejects production project and edge attachment'
           echo 'PASS: staging RC cannot be combined with public edge or stable production'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
