@@ -48,6 +48,12 @@ The host pulls the approved digest and reconciles the same `kaori-docs` Compose 
 
 A public-edge reconciliation failure is **not** a successful deployment even when the container itself is healthy. Collect its error and the actual last-known-good/receipt state; do not report production or UAT PASS until the public site and rollback evidence are verified.
 
+## Governed request branch triggers
+
+Issue [#51](https://github.com/OXY7O/kaori-docs/issues/51) adds optional `push` request signals: `kaori/rc-request` selects the exact admitted staging SHA and a uniquely approved RC publication; `kaori/uat-request` selects the uniquely signed RC for that exact SHA and the issue #14 **public swap** approval. Both use the existing canonical workflows, same Compose project `kaori-docs`, loopback 18081, and one release receipt. No alternate staging target is created.
+
+Manual `workflow_dispatch` remains a governed fallback. Request branch events do **not** mean preapproved Human UAT, stable release, main promotion or public deployment without the issue #14 exact-digest consent and all cryptographic/edge checks.
+
 ## Existing VPS preflight
 
 ```bash

@@ -1,6 +1,11 @@
 name: Release Deployment
 run-name: 'Release Deployment · ${{ inputs.candidate_tag || github.event.workflow_run.head_sha || github.sha }}'
 on:
+  # #51: a request branch signals exact admitted staging SHA. It is never
+  # a second runtime or alternate release authority.
+  push:
+    branches:
+      - kaori/uat-request
   # Issue #40: only successful MAIN stable publication, never signed RC alone.
   # GitHub GITHUB_TOKEN-issued releases do not trigger another release workflow;
   # workflow_run completion is the canonical, independently verified handoff.
@@ -40,6 +45,7 @@ jobs:
     if: >-
       ${{
         github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/kaori/uat-request') ||
         (
           github.event_name == 'workflow_run' &&
           vars.KAORI_DOCS_STABLE_AUTO_DEPLOY_ENABLED == 'true' &&
@@ -58,11 +64,11 @@ jobs:
       KAORI_DOCS_AUTO_POLICY: '0'
       KAORI_DOCS_STABLE_POLICY: ${{ (github.event_name == 'workflow_run' || (inputs.stable_tag != '' && github.ref == 'refs/heads/main')) && '1' || '0' }}
       KAORI_DOCS_STABLE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.stable_tag != '' && '1' || '0' }}
-      KAORI_DOCS_STAGING_UAT: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/kaori/staging' && '1' || '0' }}
+      KAORI_DOCS_STAGING_UAT: ${{ ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/kaori/staging') || (github.event_name == 'push' && github.ref == 'refs/heads/kaori/uat-request')) && '1' || '0' }}
       KAORI_DOCS_MAIN_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || (inputs.stable_tag != '' && github.sha || '') }}
       KAORI_DOCS_STABLE_TAG: ${{ inputs.stable_tag }}
       KAORI_DOCS_STABLE_RUN_ID: ${{ github.event.workflow_run.id }}
-      KAORI_DOCS_ATTACH_EXISTING_EDGE: ${{ github.event_name == 'workflow_run' && '1' || (inputs.publish_existing_edge && '1' || '0') }}
+      KAORI_DOCS_ATTACH_EXISTING_EDGE: ${{ (github.event_name == 'workflow_run' || (github.event_name == 'push' && github.ref == 'refs/heads/kaori/uat-request')) && '1' || (inputs.publish_existing_edge && '1' || '0') }}
       GH_TOKEN: ${{ github.token }}
       REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
       REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
@@ -103,6 +109,76 @@ jobs:
             echo 'BLOCK: manual release dispatch permitted only on admitted staging RC or main stable' >&2
             exit 1
           fi
+      - name: Resolve signed prerelease and exact deployment approval for UAT request
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REPOSITORY" == OXY7O/kaori-docs &&
+             "$GITHUB_EVENT_NAME" == push &&
+             "$GITHUB_REF" == refs/heads/kaori/uat-request &&
+             "$KAORI_DOCS_STAGING_UAT" == 1 &&
+             "$KAORI_DOCS_STABLE_POLICY" == 0 &&
+             "$KAORI_DOCS_ATTACH_EXISTING_EDGE" == 1 &&
+             "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/deploy-staging-host.yml@refs/heads/kaori/uat-request' ]] || {
+            echo 'BLOCK: UAT request must target the one approved Docs release slot and exact workflow identity' >&2
+            exit 1
+          }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          get() { curl -fsS "${headers[@]}" "$1"; }
+          staging="$(get "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$staging" =~ ^[a-f0-9]{40}$ && "$ACCEPTED_SHA" == "$staging" &&
+             "$GITHUB_SHA" == "$staging" ]] || {
+            echo 'BLOCK: UAT request is stale relative to admitted staging' >&2
+            exit 1
+          }
+          releases="$(get "$api/releases?per_page=100")"
+          candidates="$(jq -c --arg sha "$staging" '
+            [.[] | select(.draft == false and .prerelease == true and
+               .target_commitish == $sha and
+               (.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-rc\\.[1-9][0-9]*$")))]
+          ' <<< "$releases")"
+          [[ "$(jq length <<< "$candidates")" == 1 ]] || {
+            echo 'BLOCK: UAT request needs exactly one signed Docs RC for staging SHA' >&2
+            exit 1
+          }
+          tag="$(jq -r '.[0].tag_name' <<< "$candidates")"
+          [[ "$(get "$api/git/ref/tags/$tag" | jq -r '.object.sha')" == "$staging" ]] || {
+            echo 'BLOCK: RC Git tag differs from accepted staging' >&2
+            exit 1
+          }
+          body="$(jq -r '.[0].body // ""' <<< "$candidates")"
+          grep -Fxq "Staging source SHA: $staging" <<< "$body" || {
+            echo 'BLOCK: prerelease source evidence missing' >&2
+            exit 1
+          }
+          digest="$(grep -E '^Immutable digest: sha256:[a-f0-9]{64}$' <<< "$body" | awk '{print $3}')"
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || {
+            echo 'BLOCK: prerelease immutable digest missing' >&2
+            exit 1
+          }
+          # Public RC replacement needs fresh, explicit per-digest consent.
+          # A previously approved private-only RC must never replace the
+          # currently displayed public Docs image.
+          marker="KAORI_DOCS_DEPLOY_APPROVED:$staging:$tag:$digest"
+          public_marker="KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED:$staging:$tag:$digest"
+          comments="$(get "$api/issues/14/comments?per_page=100")"
+          approved="$(jq -c --arg marker "$marker" --arg public "$public_marker" '
+            [.[] | select((.body // "" | split("\n")) as $lines |
+              (($lines | index($marker)) != null and ($lines | index($public)) != null))]
+          ' <<< "$comments")"
+          [[ "$(jq length <<< "$approved")" == 1 ]] || {
+            echo 'BLOCK: exact issue #14 RC public-swap authorization missing or ambiguous' >&2
+            exit 1
+          }
+          ref="$(jq -r '.[0].html_url' <<< "$approved")"
+          [[ "$ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-[0-9]+$ ]] || exit 1
+          {
+            printf 'RC_TAG=%s\n' "$tag"
+            printf 'APPROVAL_REF=%s\n' "$ref"
+          } >> "$GITHUB_ENV"
+          echo 'PASS: signed RC and exact SHA approval resolved; cryptographic and host gates still mandatory'
       - name: Checkout exact approved source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

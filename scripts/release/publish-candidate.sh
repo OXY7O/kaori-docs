@@ -12,7 +12,18 @@ image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
 [[ "$repo" == "OXY7O/kaori-docs" ]] || fail 'wrong repository authority'
-[[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'RC dispatch must use kaori/staging'
+# Both entrypoints must execute the exact current admitted staging tree.
+# A request branch is only a signal; it cannot become a second source of truth.
+if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+    fail 'manual RC must be dispatched from kaori/staging'
+elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+  [[ "$GITHUB_REF" == refs/heads/kaori/rc-request &&
+     "$GITHUB_SHA" == "$sha" ]] ||
+    fail 'RC request must point to the exact accepted staging SHA'
+else
+  fail 'RC event is neither governed request nor manual dispatch'
+fi
 [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'source mismatch'
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'candidate must use vX.Y.Z-rc.N'
 [[ -n "$host" && "$image" == "$host/"* && "$host" != *://* ]] || fail 'registry variables missing or inconsistent'

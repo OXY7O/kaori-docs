@@ -359,6 +359,55 @@ jobs:
           echo 'PASS: RC and stable require explicit existing public-edge reconciliation'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
+      - name: Request-branch fail-closed identity and single-slot negative checks
+        if: ${{ needs.route.outputs.runtime == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha="$KAORI_DOCS_SOURCE_SHA"
+          wrong="$(printf 'f%.0s' {1..40})"
+          rc=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GH_TOKEN=dummy
+            ACCEPTED_SHA="$sha" RC_TAG=v0.3.0-rc.99 GITHUB_SHA="$sha")
+          if "${rc[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/staging \
+               bash scripts/release/publish-candidate.sh preflight; then
+            echo 'BLOCK: ordinary staging push published an RC without rc-request' >&2
+            exit 1
+          fi
+          if "${rc[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/rc-request \
+               GITHUB_SHA="$wrong" bash scripts/release/publish-candidate.sh preflight; then
+            echo 'BLOCK: rc-request accepted a stale SHA' >&2
+            exit 1
+          fi
+          uat=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_EVENT_NAME=push
+            GITHUB_REF=refs/heads/kaori/uat-request
+            GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/deploy-staging-host.yml@refs/heads/kaori/uat-request
+            GITHUB_SHA="$sha" ACCEPTED_SHA="$sha" KAORI_DOCS_STAGING_UAT=1
+            KAORI_DOCS_ATTACH_EXISTING_EDGE=1)
+          if "${uat[@]}" GITHUB_REF=refs/heads/kaori/staging \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: untrusted staging push bypassed uat-request' >&2
+            exit 1
+          fi
+          if "${uat[@]}" GITHUB_SHA="$wrong" \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: uat-request accepted a stale SHA' >&2
+            exit 1
+          fi
+          if "${uat[@]}" KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: uat-request created an unapproved private parallel runtime' >&2
+            exit 1
+          fi
+          if "${uat[@]}" GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/evil.yml@refs/heads/kaori/uat-request \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: uat-request accepted an untrusted workflow identity' >&2
+            exit 1
+          fi
+          grep -Fq 'KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED:' scripts/release/deploy-release.sh
+          grep -Fq 'public_marker=' .github/workflows/deploy-staging-host.yml
+          test ! -e deploy/server/compose.staging.yml
+          echo 'PASS: request branches cannot bypass exact SHA/workflow identity or create a second Docs runtime'
+
       - name: Validate static output and public boundary
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
