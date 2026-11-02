@@ -9,7 +9,7 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 | Developer Check: Route Checks and Docs Validation | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
 | Full Admission: promotion policy                  | `self-hosted, linux, x64, platform-ci`         | Staging/main gate                       |
 | Full Admission: static, container, browser        | `self-hosted, linux, x64, kaori-ci`            | Exact staging SHA; promotion PR to main |
-| Release Candidate (future #13)                    | existing approved release control-plane runner | Explicit manual acceptance              |
+| Release Candidate (#13, manual-only)                    | existing approved release control-plane runner | Explicit manual acceptance              |
 | Release Deployment (future #14)                   | approved release runner and SSH adapter        | Manual signed digest and host trust     |
 
 **The runner group must explicitly allow the private `OXY7O/kaori-docs` repository.** Label matching does not grant permission. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
@@ -34,7 +34,7 @@ The browser container uses the same bounded self-hosted checkout ownership-repai
 
 ## Release/deployment boundary
 
-The four canonical workflow names remain **Developer Check**, **Full Admission**, **Release Candidate** (#13), **Release Deployment** (#14). The latter two must not be replaced with push-to-deploy scripts. Release Candidate requires separate repository-scoped registry metadata/secrets (#10), exact admitted SHA, signature, digest, vulnerability scan, SPDX SBOM and provenance. Release Deployment requires that accepted immutable candidate, manual approval, pinned SSH host identity, isolated `/opt/kaori-docs` runtime, health and verified rollback. Public `docs.kaori.cloud` DNS/TLS/shared-edge registration is separately authorized.
+The four canonical workflow names remain **Developer Check**, **Full Admission**, **Release Candidate** (#13), **Release Deployment** (#14). The #13 publisher authority and activation conditions are documented in [Immutable Release Candidate](RELEASE_CANDIDATE.md). The latter two must not be replaced with push-to-deploy scripts. Release Candidate requires separate repository-scoped registry metadata/secrets (#10), exact admitted SHA, signature, digest, vulnerability scan, SPDX SBOM and provenance. Release Deployment requires that accepted immutable candidate, manual approval, pinned SSH host identity, isolated `/opt/kaori-docs` runtime, health and verified rollback. Public `docs.kaori.cloud` DNS/TLS/shared-edge registration is separately authorized.
 
 CI PASS on the self-hosted staging runner is **not staging VPS UAT**, browser Human Acceptance, stable main promotion or deployment verification.
 

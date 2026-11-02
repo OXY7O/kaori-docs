@@ -62,7 +62,7 @@ jobs:
           while IFS= read -r path; do
             echo "Changed: $path"
             case "$path" in
-              src/*|static/*|content/*|tests/*|docusaurus.config.ts|sidebars.ts|tsconfig.json|playwright.config.ts|package.json|package-lock.json|.npmrc|.nvmrc|.prettierrc.json|.prettierignore|.github/workflows/*|.devcontainer/*|compose.dev.yml|Dockerfile|deploy/*|scripts/*)
+              src/*|static/*|content/*|tests/*|docusaurus.config.ts|sidebars.ts|tsconfig.json|playwright.config.ts|package.json|package-lock.json|.npmrc|.nvmrc|.prettierrc.json|.prettierignore|.github/workflows/*|.devcontainer/*|compose.dev.yml|Dockerfile|.dockerignore|deploy/*|scripts/*)
                 site=true ;;
               docs/*|README.md|.github/PULL_REQUEST_TEMPLATE.md|.gitignore)
                 ;;
@@ -118,6 +118,12 @@ jobs:
       - name: Install locked dependencies
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm ci --no-audit --no-fund
+      - name: Validate issue-owned shell syntax
+        if: ${{ needs.route.outputs.site == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          while IFS= read -r path; do bash -n "$path"; done < <(git ls-files '*.sh')
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format

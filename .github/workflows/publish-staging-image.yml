@@ -1,0 +1,73 @@
+name: Release Candidate
+run-name: "Release Candidate · ${{ inputs.candidate_tag }}"
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_tag:
+        description: Explicit Docs artifact SemVer candidate (vX.Y.Z-rc.N)
+        required: true
+        type: string
+      approval_reference:
+        description: Approved issue #13 comment URL with source SHA/tag marker
+        required: true
+        type: string
+      license_identifier:
+        description: Reviewed SPDX license identifier (NOASSERTION blocked)
+        required: true
+        type: string
+      resume_existing:
+        description: Resume same digest without rebuilding or retagging
+        required: true
+        type: boolean
+        default: false
+      expected_digest:
+        description: Exact prior sha256 OCI digest, required only for resume
+        required: false
+        type: string
+permissions:
+  contents: write
+  actions: read
+  id-token: write
+concurrency:
+  group: kaori-docs-release-candidate
+  cancel-in-progress: false
+jobs:
+  publish:
+    name: Publish Release Candidate
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 120
+    env:
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+      RC_TAG: ${{ inputs.candidate_tag }}
+      APPROVAL_REF: ${{ inputs.approval_reference }}
+      APP_LICENSE: ${{ inputs.license_identifier }}
+      RESUME_EXISTING: ${{ inputs.resume_existing }}
+      EXPECTED_DIGEST: ${{ inputs.expected_digest }}
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout exact admitted candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify approval, exact admitted SHA, registry, licence and trust
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build once, scan, sign and publish digest
+        if: ${{ !inputs.resume_existing }}
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Resume verification of previously evidenced digest
+        if: ${{ inputs.resume_existing }}
+        shell: bash
+        run: bash scripts/release/publish-candidate.sh resume
+      - name: Logout from Docs registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
