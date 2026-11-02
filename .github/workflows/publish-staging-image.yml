@@ -1,5 +1,5 @@
 name: Release Candidate
-run-name: "Release Candidate · ${{ inputs.candidate_tag }}"
+run-name: 'Release Candidate · ${{ inputs.candidate_tag }}'
 on:
   workflow_dispatch:
     inputs:
