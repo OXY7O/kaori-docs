@@ -10,7 +10,7 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 stable_policy="${KAORI_DOCS_STABLE_POLICY:-0}"
 stable_manual="${KAORI_DOCS_STABLE_MANUAL:-0}"
 stage_rc="${KAORI_DOCS_STAGING_UAT:-0}"
-[[ "$stage_rc" =~ ^[01]$ ]] || fail 'invalid separate RC staging/UAT mode'
+[[ "$stage_rc" =~ ^[01]$ ]] || fail 'invalid RC request indicator'
 [[ "$stable_policy" =~ ^[01]$ && "$stable_manual" =~ ^[01]$ ]] ||
   fail 'invalid stable release policy mode'
 [[ "$stable_manual" == 0 || "$stable_policy" == 1 ]] ||
@@ -18,11 +18,12 @@ stage_rc="${KAORI_DOCS_STAGING_UAT:-0}"
 [[ "$stage_rc" == 0 || ( "$stable_policy" == 0 && "$stable_manual" == 0 ) ]] ||
   fail 'staging RC mode cannot be combined with stable production release'
 [[ "$stable_policy" == 1 || "$stage_rc" == 1 ]] ||
-  fail 'manual RC must use isolated staging runtime; production cannot accept an RC'
-if [[ "$stage_rc" == 1 ]]; then
-  [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 0 ]] ||
-    fail 'staging RC cannot join shared-edge/public routing'
-fi
+  fail 'RC release requires explicit RC request and signed-digest authorization'
+# This limited-size development deployment has ONE active Docs frontend.
+# RC and stable both replace its image and reconcile ONLY the pre-approved
+# Docs edge. They can never run in parallel.
+[[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
+  fail 'single-slot Docs release requires existing-edge reconciliation; no private parallel stage'
 auto_policy="$stable_policy"
 if [[ "$stable_policy" == 1 ]]; then
   if [[ "$stable_manual" == 1 ]]; then
@@ -147,6 +148,10 @@ else
     fail 'RC/UAT approval issue mismatch'
   grep -Fxq "KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
     fail 'RC/UAT approval marker SHA/tag/digest mismatch'
+  # Previous issue #14 approval was for PRIVATE RC staging only. It cannot
+  # authorize replacing the publicly served Docs image.
+  grep -Fxq "KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+    fail 'RC requires new explicit public single-slot replacement authorization'
 fi
 approval_user="$(jq -r '.user.login // ""' <<< "$approval")"
 [[ "$approval_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid approval author'
@@ -232,11 +237,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$([[ "$stable_policy" == 1 ]] && printf '%s' "$KAORI_DOCS_STABLE_TAG" || printf '%s' "$RC_TAG")"
   printf 'artifact_version=%q\nstable_policy=%q\n' "$RC_TAG" "$stable_policy"
-  if [[ "$stage_rc" == 1 ]]; then
-    printf 'runtime_env=staging\ncompose_project=kaori-docs-staging\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
-  else
-    printf 'runtime_env=production\ncompose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
-  fi
+  printf 'compose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
   printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
   printf 'auto_policy=%q\n' "$auto_policy"
   cat <<'REMOTE_DEPLOY'
@@ -277,10 +278,9 @@ else
     done <<< "$existing_web"
   fi
 fi
-# The production and isolated RC/UAT runtimes use different Compose projects,
-# release state and loopback listeners. Neither may touch KAORI App/Website.
+# RC and stable are mutually exclusive images in ONE Docs container.
+# Only the existing Docs registration may be reattached after replacement.
 export KAORI_DOCS_RELEASE_LOCAL_ONLY=1
-export KAORI_DOCS_RUNTIME_ENV="$runtime_env"
 export COMPOSE_PROJECT_NAME="$compose_project"
 export KAORI_DOCS_STATE_DIR="$state_dir"
 if [[ "$stable_policy" == 1 ]]; then
@@ -309,5 +309,5 @@ if [[ "$stable_policy" == 1 ]]; then
 elif [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
   printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\n' "$digest"
 else
-  printf 'PASS: accepted Docs release candidate %s installed privately at digest %s; no public edge/DNS/TLS changes. Browser UAT and human acceptance still PENDING.\n' "$RC_TAG" "$digest"
+  fail 'single-slot release did not reconcile the existing public Docs edge'
 fi
