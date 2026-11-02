@@ -23,7 +23,7 @@ on:
         type: string
         required: true
       publish_existing_edge:
-        description: Required true: reconcile already approved Docs edge after RC/stable image swap
+        description: 'Required true: reconcile already approved Docs edge after RC/stable image swap'
         type: boolean
         required: true
         default: true
