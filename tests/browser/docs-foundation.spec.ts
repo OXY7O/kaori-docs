@@ -83,7 +83,7 @@ test('same-page discovery and unpublished features stay honest', async ({page}) 
   });
   expect(focused, 'Keyboard focus must be visible on an interactive control').toBe(true);
 
-  await page.getByRole('link', {name: 'Explore Capabilities'}).click();
+  await page.getByRole('link', {name: 'Explore Capabilities', exact: true}).click();
   await expect(page).toHaveURL(/#explore-capabilities$/);
   await expect(
     page.getByRole('heading', {level: 3, name: 'Core Concepts'}),
