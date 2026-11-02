@@ -173,13 +173,7 @@ jobs:
           echo 'PASS: exact source/tree fingerprint emitted, skipped gate and fake workflow rejected'
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
-        run: |
-          if ! npm run check-format; then
-            echo 'KAORI_FORMAT_BEGIN'
-            npx prettier .github/workflows/quality.yml
-            echo 'KAORI_FORMAT_END'
-            exit 1
-          fi
+        run: npm run check-format
       - name: Audit dependency authority changes
         if: ${{ needs.route.outputs.dependencies == 'true' }}
         run: npm audit --audit-level=high
