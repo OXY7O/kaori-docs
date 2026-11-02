@@ -17,6 +17,8 @@ stage_rc="${KAORI_DOCS_STAGING_UAT:-0}"
   fail 'manual stable mode requires stable release authority'
 [[ "$stage_rc" == 0 || ( "$stable_policy" == 0 && "$stable_manual" == 0 ) ]] ||
   fail 'staging RC mode cannot be combined with stable production release'
+[[ "$stable_policy" == 1 || "$stage_rc" == 1 ]] ||
+  fail 'manual RC must use isolated staging runtime; production cannot accept an RC'
 if [[ "$stage_rc" == 1 ]]; then
   [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 0 ]] ||
     fail 'staging RC cannot join shared-edge/public routing'
