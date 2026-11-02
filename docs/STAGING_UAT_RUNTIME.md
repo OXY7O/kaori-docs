@@ -6,14 +6,9 @@ Docs `vX.Y.Z-rc.N` is a staging/UAT artifact; Docs `vX.Y.Z` is a production rele
 
 ## Isolation contract
 
-| Surface | Existing public production | New private staging/UAT |
-| --- | --- | --- |
-| Compose project | `kaori-docs` | `kaori-docs-staging` |
-| Release scripts | `/opt/kaori-docs/releases/<SHA>/server` | `/opt/kaori-docs-staging/releases/<SHA>/server` |
-| Committed receipt | `/var/lib/kaori-docs/deploy-state` | `/var/lib/kaori-docs-staging/deploy-state` |
-| Loopback frontend | `127.0.0.1:18081` | `127.0.0.1:18082` |
-| Shared-edge | Approved `docs.kaori.cloud` | **Never attached** |
-| Deployment version | Accepted stable `vX.Y.Z` | Admitted RC `vX.Y.Z-rc.N` |
+**Production:** Compose project `kaori-docs`, release scripts under `/opt/kaori-docs/releases/<SHA>/server`, committed receipt under `/var/lib/kaori-docs/deploy-state`, and listener `127.0.0.1:18081` registered with the approved shared-edge site `docs.kaori.cloud`. The public release is stable `vX.Y.Z`.
+
+**Staging/UAT:** Compose project `kaori-docs-staging`, release scripts under `/opt/kaori-docs-staging/releases/<SHA>/server`, committed receipt under `/var/lib/kaori-docs-staging/deploy-state`, and private loopback-only listener `127.0.0.1:18082`. This instance is **never** attached to the shared edge. The UAT release is the exact signed `vX.Y.Z-rc.N`.
 
 Each Compose project owns its own bridge networks and `web` container. The staging overlay `deploy/server/compose.staging.yml` sets `name: kaori-docs-staging` and publishes only loopback port 18082. The remote adapter also exports and verifies the exact project identity; an environment name alone cannot silently redirect production.
 
