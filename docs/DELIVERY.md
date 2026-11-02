@@ -69,3 +69,16 @@ The initial repository contains only `main`, so issue #11 first creates `kaori/s
 - Private GitHub plan restrictions can make branch protection/environment controls unenforceable. Document a manual compensating procedure; do not claim server-enforced protection without proof.
 - Keep issue/PR assignee, canonical labels and native relationships accurate. GitHub Project status, sprint, type, priority and points require operator reconciliation where connector tooling cannot mutate them.
 - Docs is a static, non-authenticated publication; production credentials, external providers, application internals and shared-edge mutation are out of scope for content work.
+
+## Full Admission evidence cache — issue #45
+
+The existing npm, Docker BuildKit, Trivy and hashed-static-asset caches
+improve runtime performance but **do not reuse passed tests**. The first
+implementation stage emits immutable source/tree/validation-authority
+evidence only **after** all four comprehensive admission gates pass. It
+includes a separately defined fresh browser/keyboard Fast Smoke contract.
+**No comprehensive gate is currently skipped**, and a future independently
+validated same-tree/fingerprint reuse with fresh smoke must be admitted
+before switching to the KAORI Application reuse model.
+
+See [Admission Evidence and Fast Smoke](CI_ADMISSION_EVIDENCE.md).
