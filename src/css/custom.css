@@ -59,6 +59,13 @@ html[data-theme='dark'] {
   line-height: 1.2;
 }
 
+/* Links in prose must remain distinguishable without relying on violet alone.
+   This addresses axe WCAG 1.4.1 link-in-text-block on the actual dark theme. */
+.kaori-foundation__content a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 .kaori-foundation__notice {
   border-left: 3px solid var(--ifm-color-primary);
   padding: 0.75rem 1rem;
