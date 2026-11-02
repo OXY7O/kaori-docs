@@ -51,6 +51,27 @@ ssh -N -L 18082:127.0.0.1:18082 -p <approved-port> <approved-user>@<approved-hos
 
 Then inspect `http://127.0.0.1:18082/`, `/healthz`, desktop/mobile, light/dark, keyboard and navigation. Reconfirm that `https://docs.kaori.cloud`, `https://kaori.cloud` and `https://app.kaori.cloud` remain unchanged. Collect Docker project/port/receipt and SSH tunnel evidence without leaking credentials.
 
+## Governed UAT request branch — Docs #51
+
+After the [#51 request-branch change](https://github.com/OXY7O/kaori-docs/issues/51)
+is independently admitted and a **new** signed candidate exists on its exact
+staging SHA, the operator may request UAT by moving `kaori/uat-request` to
+that same SHA. The existing `Release Deployment` workflow resolves **exactly
+one** non-draft prerelease for that SHA, checks the Git tag and immutable image
+digest, and requires **exactly one** issue #14 approval marker
+`KAORI_DOCS_DEPLOY_APPROVED:<SHA>:<RC>:<sha256-digest>`.
+
+Only after those checks can the canonical deploy adapter verify Cosign,
+SPDX/SLSA, the pinned SSH host and private staging Compose. The request
+branch **cannot** attach to `docs.kaori.cloud`, replace the production
+`kaori-docs` container, or constitute Human UAT acceptance. Manual
+`workflow_dispatch` against staging remains the reviewed recovery path.
+
+The already signed `v0.3.0-rc.1` remains bound to source
+`5c6987c32b344d926a151fee1fa6363ae7863fa3`; complete its separate
+isolated UAT *before* integrating the source-changing #51 workflow PR. A
+new staging source requires its own admission, tag and signed candidate.
+
 ## Rollback and acceptance
 
 A separately approved staging-only recovery uses the previous staging receipt with explicit environment identity:
