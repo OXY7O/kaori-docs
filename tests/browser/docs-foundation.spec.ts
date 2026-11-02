@@ -5,6 +5,8 @@ test('bootstrap is accurate and accessible at six viewports and two themes', asy
   page,
 }, testInfo) => {
   await page.goto('/');
+  // The static shell renders before Docusaurus hydrates its native color-mode state.
+  await expect(page.locator('html')).toHaveAttribute('data-has-hydrated', 'true');
   await expect(page).toHaveTitle(/KAORI Docs/);
   await expect(page.getByRole('heading', {level: 1, name: 'KAORI Docs'})).toHaveCount(1);
   await expect(
@@ -12,25 +14,40 @@ test('bootstrap is accurate and accessible at six viewports and two themes', asy
   ).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(light|dark)$/);
 
+  // On compact viewports Docusaurus puts the real theme control and nav links
+  // inside its responsive navigation drawer. Open that drawer, never force-click
+  // a hidden desktop control or mutate the DOM to simulate theme behavior.
+  const navigationToggle = page.getByRole('button', {name: 'Toggle navigation bar'});
+  const compactNavigation = await navigationToggle.isVisible();
+  if (compactNavigation) {
+    await navigationToggle.click();
+  }
+
   const htmlTheme = await page.locator('html').getAttribute('data-theme');
-  const toggle = page.getByRole('button', {name: /dark|light/i}).first();
+  const toggle = page.getByRole('button', {
+    name: /Switch between dark and light mode/,
+  });
   await expect(toggle).toBeVisible();
   await toggle.click();
   await expect(page.locator('html')).toHaveAttribute(
     'data-theme',
     htmlTheme === 'dark' ? 'light' : 'dark',
   );
-  // Toggle back using the real native Docusaurus control.
+  // Verify the native switch is reversible on desktop and mobile.
   await toggle.click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', htmlTheme!);
 
-  await expect(page.getByRole('link', {name: 'KAORI Website'}).first()).toHaveAttribute(
+  await expect(page.locator('a[href="https://kaori.cloud"]').first()).toHaveAttribute(
     'href',
     'https://kaori.cloud',
   );
-  await expect(page.getByRole('link', {name: 'Open Application'})).toHaveAttribute(
+  await expect(page.locator('a[href="https://app.kaori.cloud"]').first()).toHaveAttribute(
     'href',
     'https://app.kaori.cloud',
   );
+  if (compactNavigation) {
+    await expect(page.getByRole('link', {name: /Open Application/})).toBeVisible();
+  }
 
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
