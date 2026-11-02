@@ -56,8 +56,8 @@ Then inspect `http://127.0.0.1:18082/`, `/healthz`, desktop/mobile, light/dark, 
 After the [#51 request-branch change](https://github.com/OXY7O/kaori-docs/issues/51)
 is independently admitted and a **new** signed candidate exists on its exact
 staging SHA, the operator may request UAT by moving `kaori/uat-request` to
-that same SHA. The existing `Release Deployment` workflow resolves **exactly
-one** non-draft prerelease for that SHA, checks the Git tag and immutable image
+that same SHA. The existing `Release Deployment` workflow resolves
+**exactly one** non-draft prerelease for that SHA, checks the Git tag and immutable image
 digest, and requires **exactly one** issue #14 approval marker
 `KAORI_DOCS_DEPLOY_APPROVED:<SHA>:<RC>:<sha256-digest>`.
 
