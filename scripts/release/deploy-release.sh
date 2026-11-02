@@ -41,7 +41,18 @@ if [[ "$stable_policy" == 1 ]]; then
   [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/40#issuecomment-([0-9]+)$ ]] ||
     fail 'stable production policy approval must belong to issue #40'
 else
-  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC/UAT deployment must use kaori/staging'
+  # A private request push is equivalent only at the exact current
+  # admitted staging SHA. It never authorizes public production attachment.
+  if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+    [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+      fail 'manual RC/UAT dispatch must use kaori/staging'
+  elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+    [[ "$GITHUB_REF" == refs/heads/kaori/uat-request &&
+       "$GITHUB_SHA" == "$ACCEPTED_SHA" && "$stage_rc" == 1 ]] ||
+      fail 'UAT request must match the accepted staging source and private mode'
+  else
+    fail 'unsupported RC/UAT request event'
+  fi
   [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-([0-9]+)$ ]] ||
     fail 'exact issue #14 RC/UAT deployment approval comment required'
 fi
@@ -174,9 +185,20 @@ chmod 700 "$trust_dir"
 cleanup_trust() { rm -rf -- "$trust_dir"; }
 trap cleanup_trust EXIT
 printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$trust_dir" docker login "$REGISTRY_HOST" --username "$REGISTRY_USER" --password-stdin >/dev/null
-identity="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@refs/heads/kaori/staging"
+# Exact pinned source workflow identities: pre-existing staging manual RC
+# and the #51 request-branch RC. Neither arbitrary refs nor release bodies
+# may expand this signer allowlist. Every attestation uses the same identity.
 cosign=(docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker -v "$trust_dir:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3)
-"${cosign[@]}" verify --certificate-identity "$identity" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" || fail 'RC signature verification failed'
+identity=''
+for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
+  candidate="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@$allowed_ref"
+  if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" 2>/dev/null; then
+    identity="$candidate"
+    break
+  fi
+done
+[[ -n "$identity" && -s "$trust_dir/signature-verification.json" ]] ||
+  fail 'RC signature does not match either approved canonical publisher identity'
 test -s "$trust_dir/signature-verification.json" || fail 'RC signature evidence empty'
 for kind in spdxjson slsaprovenance1; do
   "${cosign[@]}" verify-attestation --certificate-identity "$identity" --certificate-oidc-issuer https://token.actions.githubusercontent.com --type "$kind" "$image_ref" > "$trust_dir/attestation-$kind.json" || fail "RC $kind attestation verification failed"
