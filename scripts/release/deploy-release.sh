@@ -8,11 +8,20 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ "${KAORI_DOCS_AUTO_POLICY:-0}" == 0 ]] ||
   fail 'RC-publisher-to-public automatic deployment retired; use accepted main stable'
 stable_policy="${KAORI_DOCS_STABLE_POLICY:-0}"
-[[ "$stable_policy" =~ ^[01]$ ]] || fail 'invalid stable release policy mode'
+stable_manual="${KAORI_DOCS_STABLE_MANUAL:-0}"
+[[ "$stable_policy" =~ ^[01]$ && "$stable_manual" =~ ^[01]$ ]] ||
+  fail 'invalid stable release policy mode'
+[[ "$stable_manual" == 0 || "$stable_policy" == 1 ]] ||
+  fail 'manual stable mode requires stable release authority'
 auto_policy="$stable_policy"
 if [[ "$stable_policy" == 1 ]]; then
-  [[ "$GITHUB_EVENT_NAME" == workflow_run && "$GITHUB_REF" == refs/heads/main ]] ||
-    fail 'stable auto deployment requires canonical completed default-branch publication'
+  if [[ "$stable_manual" == 1 ]]; then
+    [[ "$GITHUB_EVENT_NAME" == workflow_dispatch && "$GITHUB_REF" == refs/heads/main ]] ||
+      fail 'one-time stable UAT must be manually dispatched against main'
+  else
+    [[ "$GITHUB_EVENT_NAME" == workflow_run && "$GITHUB_REF" == refs/heads/main ]] ||
+      fail 'stable auto deployment requires canonical completed default-branch publication'
+  fi
   [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
     fail 'stable production must reconcile the already registered Docs-only public edge'
   [[ "${KAORI_DOCS_MAIN_SHA:-}" =~ ^[a-f0-9]{40}$ &&
@@ -71,8 +80,10 @@ approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$approval_id")" || f
 if [[ "$stable_policy" == 1 ]]; then
   [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/40" ]] ||
     fail 'standing production policy approval does not belong to issue #40'
-  grep -Fxq 'KAORI_DOCS_STABLE_AUTO_DEPLOY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:main-stable-only' <<< "$(jq -r '.body // ""' <<< "$approval")" ||
-    fail 'Docs-only main-stable public auto-deploy policy is not approved'
+  if [[ "$stable_manual" != 1 ]]; then
+    grep -Fxq 'KAORI_DOCS_STABLE_AUTO_DEPLOY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:main-stable-only' <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+      fail 'Docs-only main-stable public auto-deploy policy is not approved'
+  fi
   stable="$(curl -fsS "${headers[@]}" "$api/releases/tags/$KAORI_DOCS_STABLE_TAG")" ||
     fail 'accepted main stable release not found'
   [[ "$(jq -r '.draft' <<< "$stable")" == false && "$(jq -r '.prerelease' <<< "$stable")" == false &&
@@ -81,6 +92,12 @@ if [[ "$stable_policy" == 1 ]]; then
   stable_tag_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/tags/$KAORI_DOCS_STABLE_TAG" | jq -r '.object.sha')"
   [[ "$stable_tag_sha" == "$KAORI_DOCS_MAIN_SHA" ]] || fail 'stable Git tag not pinned to accepted main'
   stable_body="$(jq -r '.body // ""' <<< "$stable")"
+  if [[ "$stable_manual" == 1 ]]; then
+    stable_digest="$(grep -oE '^Immutable digest: sha256:[a-f0-9]{64}$' <<< "$stable_body" | awk '{print $3}')" ||
+      fail 'stable immutable digest missing'
+    grep -Fxq "KAORI_DOCS_STABLE_DEPLOY_APPROVED:$KAORI_DOCS_MAIN_SHA:$RC_TAG:$KAORI_DOCS_STABLE_TAG:$stable_digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+      fail 'exact issue #40 per-release stable manual UAT approval mismatch'
+  fi
   for line in     "Accepted RC: $RC_TAG"     "Accepted RC source SHA: $ACCEPTED_SHA"     "Stable main source SHA: $KAORI_DOCS_MAIN_SHA"     "Immutable digest: $digest"     "Deployment authority: $image_ref"     "Stable publication workflow run: $KAORI_DOCS_STABLE_RUN_ID"; do
     grep -Fxq "$line" <<< "$stable_body" ||
       fail "stable release failed exact identity check: $line"
