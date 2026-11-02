@@ -29,3 +29,15 @@ GitHub generally requires workflow_dispatch workflows to exist on the default br
 ## Evidence boundary
 
 A source CI PASS is not registry authentication, signed publication, deployment or UAT. Issue #14 may only consume an explicitly accepted immutable digest. Public DNS/TLS/shared-edge, real host health, rollback, manual zoom/screen-reader QA and human acceptance are independent gates.
+
+## Review and evidence retention
+
+The Developer Check invokes the existing runtime smoke only for changes to the Dockerfile,
+Docker context or runtime server adapter. This is a pre-merge engineering signal;
+Full Admission still reruns Container Admission on the exact staging merge SHA.
+The publisher rechecks staging HEAD before creating release metadata, since a
+long-running build must not silently publish a superseded staging source.
+The manual workflow retains generated SPDX, provenance and cryptographic
+verification JSON as private, run-scoped Actions artifacts for 30 days,
+including partial-run evidence when a later step fails. A missing artifact,
+failed signing step or incomplete publication is not an accepted release.

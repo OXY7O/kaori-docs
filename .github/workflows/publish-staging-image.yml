@@ -66,6 +66,19 @@ jobs:
         if: ${{ inputs.resume_existing }}
         shell: bash
         run: bash scripts/release/publish-candidate.sh resume
+      - name: Retain RC evidence (including failed partial publications)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kaori-docs-rc-evidence-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            docs-sbom.spdx.json
+            docs-provenance.json
+            docs-signature-verification.json
+            verification-spdxjson.json
+            verification-slsaprovenance1.json
+          retention-days: 30
+          if-no-files-found: ignore
       - name: Logout from Docs registry
         if: always()
         shell: bash

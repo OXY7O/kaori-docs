@@ -156,6 +156,9 @@ for kind in spdxjson slsaprovenance1; do
   test -s "verification-$kind.json"
 done
 sbom_sha="sha256:$(sha256sum docs-sbom.spdx.json | awk '{print $1}')"
+# Release source must still be current after the long-running build/sign process.
+latest_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+[[ "$latest_sha" == "$sha" ]] || fail 'staging advanced during candidate publication'
 # Git tag/release are registered only after digest, scanning, signature and attestations verify.
 tag_status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")"
 case "$tag_status" in
