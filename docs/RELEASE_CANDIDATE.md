@@ -87,7 +87,7 @@ image/SBOM/SLSA verification, and unique SemVer. See
 
 The historic #33 proposed RC publisher-completion auto-to-public path must
 remain DISABLED: final production deployment is owned by the separate stable
-release/production workstream #40. An RC is staging/UAT evidence, **not**
+release/production workstream #40. An RC is staging/UAT evidence rather than accepted stable identity, **not**
 proof of stable main acceptance.
 
 ## Production handoff from stable main only (issue #40)

@@ -53,17 +53,20 @@ Docs-only cutover/rollback, all-site edge verification and Human Acceptance
 may the separate auto-deploy variable and standing approval be enabled.
 The runtime uses the existing isolated `kaori-docs` Compose, committed
 receipt and Docs-only shared-edge reattachment, then full all-site
-verification. Staging RC/UAT and main stable are **distinct version
-authorities**, although the currently deployed single Docs VPS is not
-a separately isolated staging environment. Deployment automation
-and its public cutover UAT are currently **not active/accepted**.
+verification. Staging RC/UAT and main stable are **distinct version authorities**,
+but share **one** active Docs deployment slot on the existing KAORI VPS.
+An approved signed RC intentionally replaces the current Docs public image
+during development; stable later replaces the same slot using the accepted
+signed digest. Short replacement downtime is an accepted development
+tradeoff. The two releases never run concurrently. Deployment/UAT require
+separate authorizations and runtime evidence; source admission is not UAT.
 
 The initial repository contains only `main`, so issue #11 first creates `kaori/staging` from its existing README commit and then an issue-owned bootstrap work branch. The staging branch creation alone is **not** an approved staging merge. Each later issue remains a bounded workstream.
 
 ## Quality and operational boundaries
 
 - Four canonical workflow names: **Developer Check**, **Full Admission**, **Release Candidate**, **Release Deployment**. CI is implemented separately under #12/#13/#14.
-- The #14 [signed deployment adapter](RELEASE_DEPLOYMENT.md) uses existing Website-style digest, receipt and rollback controls. Issue #43 isolates RC/UAT on project `kaori-docs-staging`, loopback `127.0.0.1:18082` and its own receipt; accepted stable production remains project `kaori-docs` at loopback `127.0.0.1:18081` behind the existing shared-edge. See [staging/UAT runtime](STAGING_UAT_RUNTIME.md). Source PR/CI alone cannot authorize host deployment.
+- The #14 [signed deployment adapter](RELEASE_DEPLOYMENT.md) uses existing Website-style digest, receipt and rollback controls. Issue #43 uses a **single** project `kaori-docs`, loopback `127.0.0.1:18081`, and one current/previous receipt for either approved RC or accepted stable. No second staging project, port or receipt. See [staging/UAT runtime](STAGING_UAT_RUNTIME.md). Source PR/CI alone cannot authorize host deployment.
 - No lockfile or npm registry access means no deterministic install/build PASS. Do not override the block with a placeholder lockfile.
 - Runner labels `platform-ci` and `kaori-ci` require confirmed repository access. Labels do not themselves authorize the private Docs repository.
 - Private GitHub plan restrictions can make branch protection/environment controls unenforceable. Document a manual compensating procedure; do not claim server-enforced protection without proof.

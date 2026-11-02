@@ -22,29 +22,19 @@ fi
 command -v docker >/dev/null || fail 'Docker is not available'
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_DOCS_COMPOSE_FILE:-$script_dir/compose.docs.yml}"
-runtime_env="${KAORI_DOCS_RUNTIME_ENV:-production}"
-[[ "$runtime_env" == production || "$runtime_env" == staging ]] || fail 'unknown Docs runtime environment'
-if [[ "$runtime_env" == staging ]]; then
-    [[ "${KAORI_DOCS_STATE_DIR:-}" == /var/lib/kaori-docs-staging/deploy-state ]] ||
-        fail 'staging must use its dedicated release state'
-    [[ "${COMPOSE_PROJECT_NAME:-}" == kaori-docs-staging ]] ||
-        fail 'staging must use independent Compose project'
-    state_dir=/var/lib/kaori-docs-staging/deploy-state
-else
-    [[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
-        fail 'production must retain canonical Docs Compose project'
-    state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
-fi
+# Docs has exactly one active image slot on the existing shared KAORI VPS.
+# RC/stable is a governed release identity, not an additional Compose runtime.
+[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
+    fail 'only the canonical Docs Compose project may be deployed'
+state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
+[[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
+    fail 'only the canonical Docs release receipt is permitted'
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'docs release state directory must be prepared and writable by deployment identity'
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_DOCS_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
-    if [[ "$runtime_env" == staging ]]; then
-        override="$script_dir/compose.staging.yml"
-    else
-        override="$script_dir/compose.release.yml"
-    fi
+    override="$script_dir/compose.release.yml"
     [[ -f "$override" && ! -L "$override" ]] || { echo 'BLOCK: missing trusted loopback override' >&2; exit 1; }
     compose_args+=(-f "$override")
 fi
