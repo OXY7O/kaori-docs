@@ -19,6 +19,10 @@ headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.gi
 [[ "$image" == */kaori-docs ]] || fail 'docs image must use dedicated /kaori-docs repository, never KAORI Application image'
 [[ -n "${REGISTRY_USER:-}" && -n "${REGISTRY_PASSWORD:-}" ]] || fail 'registry credentials missing'
 [[ "${APP_LICENSE:-}" =~ ^[A-Za-z0-9._-]+$ && "$APP_LICENSE" != NOASSERTION ]] || fail 'reviewed SPDX license identifier required'
+[[ "${APP_LICENSE:-}" == LicenseRef-KAORI-Internal-Use ]] || fail 'KAORI-owned Docs requires the approved proprietary LicenseRef-KAORI-Internal-Use'
+[[ -f LICENSE && ! -L LICENSE && -s LICENSE ]] || fail 'approved KAORI Internal Use License source file absent'
+grep -Fxq 'KAORI INTERNAL USE LICENSE' LICENSE || fail 'unrecognized KAORI license authority'
+grep -Fxq 'Copyright (c) 2026 OXY7O. All rights reserved.' LICENSE || fail 'invalid KAORI license ownership'
 [[ "${APPROVAL_REF:-}" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/13#issuecomment-([0-9]+)$ ]] || fail 'exact issue #13 approval comment URL required'
 approval_id="${BASH_REMATCH[1]}"
 approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$approval_id")" || fail 'approval inaccessible'
@@ -98,6 +102,20 @@ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
   aquasec/trivy:0.74.0 image --cache-dir /root/.cache/trivy \
   --format spdx-json --output /workspace/docs-sbom.spdx.json "$ref"
 test -s docs-sbom.spdx.json
+# The KAORI-owned material is proprietary; keep third-party package license records unchanged.
+# SPDX LicenseRef requires the complete extracted license text in the attested document.
+sbom_tmp="$(mktemp)"
+jq --rawfile license_text LICENSE '
+  .hasExtractedLicensingInfos = (
+    ((.hasExtractedLicensingInfos // []) | map(select(.licenseId != "LicenseRef-KAORI-Internal-Use")))
+    + [{licenseId:"LicenseRef-KAORI-Internal-Use",
+        name:"KAORI Internal Use License",
+        extractedText:$license_text}]
+  )
+' docs-sbom.spdx.json > "$sbom_tmp"
+test -s "$sbom_tmp" || fail 'SPDX custom license evidence missing'
+mv -- "$sbom_tmp" docs-sbom.spdx.json
+jq -e --arg expected "$APP_LICENSE"   '.hasExtractedLicensingInfos | any(.licenseId == $expected and (.extractedText | length > 100))'   docs-sbom.spdx.json >/dev/null || fail 'SPDX proprietary license text unverified'
 jq -n --arg src "$repo" --arg source_sha "$sha" --arg run "$GITHUB_RUN_ID" \
   '{buildDefinition:{buildType:"https://slsa.dev/provenance/v1",
      resolvedDependencies:[{uri:("https://github.com/"+$src),digest:{gitCommit:$source_sha}}]},

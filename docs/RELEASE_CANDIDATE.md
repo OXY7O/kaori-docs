@@ -6,9 +6,58 @@
 
 The multi-stage Dockerfile builds Docusaurus using locked Node 22 dependencies, then serves static assets from the existing Website-approved digest-pinned unprivileged Nginx runtime on internal port 8080. Internal engineering docs are excluded from the image. The staging Container Admission runs the shared-style scripts/container_smoke.sh check for non-root, read-only runtime, Nginx, /healthz, root page and Trivy HIGH/CRITICAL. It does not deploy a server.
 
+## License authority
+
+The rights holder selected **the same proprietary KAORI Internal Use License**
+as the Application (the Website has no separate open-source grant). The exact
+root [LICENSE](../LICENSE) is copied from the approved KAORI source; do not
+substitute MIT or Apache-2.0. The OCI license identifier for KAORI-owned
+material is `LicenseRef-KAORI-Internal-Use`, a valid SPDX custom reference,
+**not** an entry in the SPDX License List. The signed SPDX document must
+contain a `hasExtractedLicensingInfos` record with the complete license
+text. Never replace licenses of third-party packages. The label and signed SBOM
+are not authorization to publish internal KAORI source or sensitive docs.
+
+## Staging-only RC activation — temporary issue #24
+
+GitHub requires `workflow_dispatch` definitions to exist on default `main`,
+which is intentionally not promoted before Docs UAT. Issue #24 temporarily
+adds a **path-scoped staging `push` trigger to the canonical**
+`.github/workflows/publish-staging-image.yml`. It is not a new publisher or a
+permanent automatic push-to-release pipeline. Unlike a copied `rc-once.yml`,
+the actual signer remains the canonical workflow identity already pinned by
+`deploy-release.sh`.
+
+The push path must change the **publisher workflow itself**, and its accepted
+staging merge commit message must contain the exceptional marker
+`[KAORI_DOCS_RC_ISSUE_24]`. Missing the marker, ordinary staging pushes,
+PRs, forks and non-staging branches cannot start its publish job. This trigger
+must only be merged after an issue #24 review and explicit maintainer
+authorization of the upcoming staging RC bootstrap. Exact-source **new**
+Full Admission on that merge SHA is mandatory.
+
+The bootstrap attempts a lookup for **exactly one authorized issue #13
+approval comment** containing `KAORI_DOCS_RC_APPROVED:<current-merge-sha>:<rc-tag>`.
+It rejects zero or multiple matches. The canonical publisher subsequently
+revalidates the comment's origin, author repository permission, current
+staging HEAD, successful Full Admission, registry identity/credentials,
+proprietary license, tag uniqueness, Trivy, OCI digest, Cosign signature and
+signed SPDX/SLSA attestations. No automatic publication is allowed without
+this second approval. Because the merge SHA is not known before integration,
+a first attempt will normally **fail closed**; the maintainer must post the
+approval after new Full Admission PASS, then explicitly **rerun the same
+failed GitHub Actions job** on the exact, unchanged SHA. This is an intentional
+manual approval step and does not bypass immutable source verification.
+
+After RC acceptance, a separate issue-linked PR must **remove the temporary
+push trigger/bootstrap step**, retain normal workflow_dispatch and keep
+previous signed release evidence. Its removal is part of #24 completion.
+Do not use this bootstrap for stable release or public DNS/TLS, and do not
+promote Docs to `main` solely to enable manual workflow execution.
+
 ## Manual release authority
 
-The canonical Release Candidate workflow is .github/workflows/publish-staging-image.yml. It is manual-only and must run against kaori/staging at an exact SHA with a completed-success Full Admission run. Complete the repository-specific Variables/Secrets and registry robot-scope checks in #10 before dispatch. The image repository must end with /kaori-docs.
+The canonical Release Candidate workflow is .github/workflows/publish-staging-image.yml. It is manual-only except for the explicitly guarded one-time #24 staging bootstrap described above, and must run against kaori/staging at an exact SHA with a completed-success Full Admission run. Complete the repository-specific Variables/Secrets and registry robot-scope checks in #10 before dispatch. The image repository must end with /kaori-docs.
 
 Provide a permanent GitHub comment URL as approval_reference. That comment must belong to issue #13 and include a complete approval marker line of the form:
 

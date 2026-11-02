@@ -76,6 +76,21 @@ A complete acceptance requires actual Developer Check, browser light/dark/mobile
 
 The Docs Home (#1), introductory article (#2), version mapping (#15), local search (#16), CI (#12), immutable publisher (#13), and deployment adapter (#14) are separate issue-owned workstreams.
 
+## License
+
+KAORI Docs uses the same [KAORI Internal Use License](LICENSE) as the
+[KAORI Application](https://github.com/OXY7O/KAORI/blob/main/LICENSE).
+This is **proprietary, not an OSI open-source license**; repository access does
+not grant permission to redistribute source or publish internal operational data.
+The Website repository declares no separate open-source license and follows
+the approved KAORI product ownership policy.
+
+The container uses the SPDX-compatible custom reference
+`LicenseRef-KAORI-Internal-Use`, with the complete existing license text in the
+signed SPDX SBOM. Third-party dependencies retain their independent licenses.
+Public read-only documentation publication requires separate approved content
+and release acceptance; it is not permission to distribute the source code.
+
 ## Security and ownership
 
 This repository is private and maintained under KAORI issue-linked delivery governance. Public output must contain only reviewed, release-authorized content. Do not commit secrets, internal endpoints, hostnames, private inventory or operational evidence. No release badge is displayed until an actual signed Docs release has been verified.
