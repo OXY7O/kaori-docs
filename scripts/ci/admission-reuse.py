@@ -85,6 +85,8 @@ def valid_evidence(
         if created > now + timedelta(minutes=5) or now - created > timedelta(days=30):
             return False
         gates = evidence.get("mandatory_gate_conclusions", {})
+        if not isinstance(gates, dict):
+            return False
         return all((
             evidence.get("schema_version") == 2,
             evidence.get("profile") == "full",
@@ -298,6 +300,7 @@ def main() -> int:
             {"executed_workflow_ref": "untrusted"},
             {"evidence_run_id": 11},
             {"source_event": "pull_request"},
+            {"mandatory_gate_conclusions": ["success"]},
             {"created_at": (now - timedelta(days=40)).isoformat()},
             {"mandatory_gate_conclusions": {**baseline["mandatory_gate_conclusions"],
                                             "Browser Quality Evidence": "skipped"}},
