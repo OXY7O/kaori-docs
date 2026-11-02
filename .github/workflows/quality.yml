@@ -1,0 +1,200 @@
+name: Full Admission
+run-name: "Full Admission · ${{ github.event_name == 'pull_request' && format('PR #{0}', github.event.pull_request.number) || github.ref_name }} · ${{ github.sha }}"
+
+on:
+  push:
+    branches:
+      - kaori/staging
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: kaori-docs-admission-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  KAORI_DOCS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  promotion-source:
+    name: Promotion Policy
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 5
+    steps:
+      - name: Verify permitted source and target
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            [[ "$BASE_REF" == main && "$HEAD_REPO" == "$GITHUB_REPOSITORY" && "$HEAD_REF" == kaori/staging ]] || {
+              echo 'Only kaori/staging may open a promotion PR to main.' >&2
+              exit 1
+            }
+          elif [[ "$EVENT_NAME" == workflow_dispatch ]]; then
+            [[ "$GITHUB_REF" == refs/heads/kaori/staging || "$GITHUB_REF" == refs/heads/main ]] || {
+              echo 'Manual admission is limited to governed branches.' >&2
+              exit 1
+            }
+          else
+            [[ "$GITHUB_REF" == refs/heads/kaori/staging || "$GITHUB_REF" == refs/heads/main ]] || exit 1
+          fi
+
+  full-admission:
+    name: Full Admission
+    needs: promotion-source
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 40
+    steps:
+      - name: Recover only runner checkout ownership from prior browser job
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          uid="$(id -u)"
+          gid="$(id -g)"
+          [[ -n "$GITHUB_WORKSPACE" && -d "$GITHUB_WORKSPACE" ]] || exit 1
+          docker run --rm --network=none --user 0 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE,dst=/workspace" \
+            --entrypoint /usr/bin/chown mcr.microsoft.com/playwright:v1.56.1-noble \
+            -R "$uid:$gid" /workspace
+      - name: Checkout accepted exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Require lock and verify exact SHA
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
+          test -s package-lock.json || { echo 'BLOCK: missing reproducible lockfile.' >&2; exit 1; }
+          printf 'Source: %s\nTree: %s\n' "$(git rev-parse HEAD)" "$(git show -s --format=%T HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Set up pinned Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: '22.23.2'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check formatting
+        run: npm run check-format
+      - name: Check TypeScript and MDX configuration
+        run: npm run check
+      - name: Dependency security audit
+        run: npm audit --audit-level=high
+      - name: Build static documentation
+        run: npm run build
+      - name: Check approved static scope
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -s build/index.html
+          test -s build/branding/kaori-logo.svg
+          grep -q 'KAORI Docs' build/index.html
+          for path in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github .devcontainer package.json package-lock.json content; do
+            test ! -e "build/$path" || { echo "Public scope leaked: $path" >&2; exit 1; }
+          done
+          if [[ -d build/v0.0 ]]; then
+            echo 'Unverified application version route is forbidden.' >&2
+            exit 1
+          fi
+          # #15 will replace this bootstrap-only assertion with verified release mapping.
+          grep -q 'No public product documentation version is available' build/index.html
+          echo 'PASS: bootstrap public scope, no release claims.' >> "$GITHUB_STEP_SUMMARY"
+
+  container-admission:
+    name: Container Admission
+    needs: full-admission
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Enforce runtime admission when runtime implementation exists
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
+          if [[ -f Dockerfile || -d deploy/server ]]; then
+            test -f scripts/container_smoke.sh || {
+              echo 'BLOCK: runtime image exists without the reviewed runtime smoke contract (#13).' >&2
+              exit 1
+            }
+            bash scripts/container_smoke.sh "$KAORI_DOCS_SOURCE_SHA"
+          else
+            printf 'NOT APPLICABLE: no production image exists yet; #13 owns image runtime admission.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  browser-evidence:
+    name: Browser Quality Evidence
+    needs: [promotion-source, full-admission]
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: [self-hosted, linux, x64, kaori-ci]
+    timeout-minutes: 35
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+      options: --init --ipc=host
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact admitted source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Set up pinned Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
+        with:
+          node-version: '22.23.2'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Verify browser package identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(npx playwright --version)" = "Version 1.56.1"
+      - name: Build exact browser candidate
+        run: npm run build
+      - name: Test browser layout, navigation, theme, keyboard and accessibility
+        run: npm run test:browser
+      - name: Upload browser evidence (including failures)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kaori-docs-browser-${{ github.sha }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Restore host runner checkout ownership
+        if: always()
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          owner="$(stat -c '%u:%g' "$RUNNER_TEMP")"
+          [[ "$owner" =~ ^[0-9]+:[0-9]+$ ]] || exit 1
+          chown -R "$owner" "$GITHUB_WORKSPACE"
