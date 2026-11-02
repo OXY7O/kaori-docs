@@ -114,6 +114,30 @@ See [Release Deployment](RELEASE_DEPLOYMENT.md).
 
 If an earlier attempt already pushed the candidate but was interrupted, use resume_existing=true with the exact previously evidenced expected_digest. The workflow pulls rather than rebuilds, refuses a changed digest, checks OCI labels and reruns scan/signature/attestation verification. A mismatched Git tag or prerelease is rejected. Never overwrite or silently republish an existing candidate.
 
+
+## Governed RC request branch — Docs #51
+
+The Application request-branch convention is being adopted for Docs by
+[Docs #51](https://github.com/OXY7O/kaori-docs/issues/51) under the
+[KAORI branch-parity decision](https://github.com/OXY7O/KAORI/issues/4201).
+**Do not activate until #51 is merged and its new staging SHA passes Full Admission.**
+
+After recording one unambiguous, write-authorized issue #13 comment containing
+`KAORI_DOCS_RC_APPROVED:<exact-staging-SHA>:<vX.Y.Z-rc.N>`, move
+`kaori/rc-request` to that exact commit. A branch ref update is a request,
+not release approval. The canonical `Release Candidate` workflow verifies
+the ref, repository, current staging commit, exact admission result, marker
+and author before any registry build/signing. The signed artifact uses the
+immutable digest, SPDX/SLSA and Cosign controls unchanged.
+
+The branch trigger resolves the existing approval URL itself; the operator
+does not enter one through a workflow form. If the candidate tag already
+exists, the publisher fails closed rather than overwriting it. Use the
+existing manual `workflow_dispatch` from `kaori/staging` for reviewed
+recovery. Do not reset a published RC to a new SHA. The signed
+`v0.3.0-rc.1` was published from the previous accepted source and remains
+in-flight for UAT.
+
 ## Default-branch dispatch limitation
 
 GitHub generally requires workflow_dispatch workflows to exist on the default branch. Current Docs main promotion is separately governed. Do not push this workflow directly to main or invent a bypass. A missing Run Workflow button means activation is blocked until an accepted promotion or separately reviewed dispatch adapter is available.
