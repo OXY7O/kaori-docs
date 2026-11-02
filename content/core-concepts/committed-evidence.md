@@ -60,4 +60,4 @@ An infrastructure asset may have a previously committed inventory record while i
 
 Before acting, verify the source scope, observation freshness, authorization, and current operational boundary.
 
-**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially *Asset Inventory*, *Operational Analytics*, *Reporting and Historical Context*, and *Honest operational state*. Specific implementation details require separate accepted application evidence.
+**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Asset Inventory_, _Operational Analytics_, _Reporting and Historical Context_, and _Honest operational state_. Specific implementation details require separate accepted application evidence.
