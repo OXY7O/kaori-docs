@@ -96,7 +96,8 @@ for attestation in spdxjson slsaprovenance1; do
 done
 echo 'PASS: accepted immutable RC image, SPDX and SLSA cryptography reverified'
 
-stable_body="$(jq -n --arg tag "$STABLE_TAG" --arg main "$GITHUB_SHA"   --arg rc "$ACCEPTED_RC_TAG" --arg rcsha "$rc_sha" --arg digest "$digest"   --arg image "$image_ref" --arg acceptance "$APPROVAL_REF" '
+[[ "${GITHUB_RUN_ID:-}" =~ ^[0-9]+$ ]] || fail 'canonical stable publisher run ID missing'
+stable_body="$(jq -n --arg tag "$STABLE_TAG" --arg main "$GITHUB_SHA"   --arg rc "$ACCEPTED_RC_TAG" --arg rcsha "$rc_sha" --arg digest "$digest"   --arg image "$image_ref" --arg acceptance "$APPROVAL_REF" --arg run "$GITHUB_RUN_ID" '
   ["KAORI Docs stable artifact: " + $tag,
    "Accepted RC: " + $rc,
    "Accepted RC source SHA: " + $rcsha,
@@ -105,6 +106,7 @@ stable_body="$(jq -n --arg tag "$STABLE_TAG" --arg main "$GITHUB_SHA"   --arg rc
    "Deployment authority: " + $image,
    "Cosign image signature + SPDX/SLSA verification: PASS",
    "Human acceptance authority: " + $acceptance,
+   "Stable publication workflow run: " + $run,
    "No image rebuild or retag was performed; production host deployment requires a separate governed action."] | join("\n")')"
 payload="$(jq -n --arg tag "$STABLE_TAG" --arg sha "$GITHUB_SHA" --arg body "$stable_body"   '{tag_name:$tag,target_commitish:$sha,name:("KAORI Docs "+$tag),body:$body,draft:false,prerelease:false,make_latest:"true"}')"
 published="$(curl --fail-with-body -fsS "${headers[@]}" -H 'Content-Type: application/json'   -X POST --data "$payload" "$api/releases")" ||

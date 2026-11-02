@@ -87,68 +87,6 @@ existing public Docs VPS is not a true isolated staging/production environment;
 do not claim two independent environments or deploy an unaccepted RC to public
 production merely because it has passed Full Admission.
 
-## Signed-release automatic deployment — issue #33
-
-The canonical `Release Deployment` workflow can **optionally** run after a
-**successfully completed canonical Release Candidate publisher workflow** through
-GitHub Actions `workflow_run: completed`, **not** `release.published`.
-The current publisher creates tags/prereleases with `GITHUB_TOKEN`, and GitHub
-does not dispatch arbitrary new workflows for `release` events caused by that
-token. `workflow_run` is an explicit supported handoff. It only becomes
-operational after this workflow exists on the repository's **default `main`**
-via an accepted `kaori/staging` promotion PR. Merely merging this change into
-staging does **not** activate automatic deployment.
-
-Automatic mode is **disabled by default** and requires both:
-
-1. Repository Actions **Variable** `KAORI_DOCS_AUTO_DEPLOY_ENABLED=true`,
-   intentionally enabled only after first public DNS/TLS readiness and
-   maintainer Human Acceptance under
-   [KAORI #4196](https://github.com/OXY7O/KAORI/issues/4196).
-2. Exactly one **write-authorized maintainer** comment on
-   [Docs issue #33](https://github.com/OXY7O/kaori-docs/issues/33)
-   containing this standing policy marker verbatim:
-
-   ```text
-   KAORI_DOCS_AUTO_DEPLOY_POLICY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:existing-public-only
-   ```
-
-Do **not** post the marker or enable the repository variable before the first
-public Docs release has been accepted. The two controls are a reversible
-standing release-to-deployment policy, **not a waiver of per-release signing**.
-The publisher retains the separate exact-SHA/tag approval on #13. Revocation:
-set the variable to any value other than `true` and/or edit the approval
-comment to remove the marker.
-
-Auto-deploy accepts only `workflow_run` completion of the **canonical,
-successful, same-repository, manually dispatched** Release Candidate publisher
-on `kaori/staging` with source equal to the current staging HEAD. It resolves
-exactly one non-draft, properly tagged prerelease targeting that source and
-verifies the exact Git tag. The existing deployment adapter independently
-verifies publisher identity/run ID, issue #33 standing policy/author permission,
-current admitted staging SHA, exact Full Admission, Docs registry identity and
-OCI digest, then Cosign signature and signed SPDX/SLSA attestations. It deploys
-through the same pinned SSH trust boundary and requires the **already approved**
-Docs-only public edge preflight and reattachment from issue #32.
-
-Automatic retries on an already deployed identical SHA/tag/digest are no-ops
-after checking public Docs health; they do **not** overwrite the prior receipt.
-Changed releases use the existing container health, committed receipt and
-bounded runtime rollback before independent public-edge reconciliation. If
-reconciliation fails after a healthy commit, the release remains committed and
-publication is a separate failed incident; do not restart KAORI Application or
-Website.
-
-Normal `workflow_dispatch` retains its per-digest issue #14 authorization for
-operator-controlled deploy/recovery. The temporary staging push routes #24/#28
-are historical one-time activation paths, not recurrence triggers; retire them
-through reviewed PRs once the main-branch workflow is operational.
-
-**No automatic deployment or public staging mutation is claimed by merely
-authoring this source.** Require a later admitted test RC, real public-edge
-verification across all active sites and human release acceptance before
-calling the recurring-release contract operational.
-
 ## Subsequent public release reconciliation — issue #32
 
 First-time DNS, TLS and edge registration are **not** owned by the Docs release

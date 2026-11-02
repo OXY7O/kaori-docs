@@ -90,18 +90,25 @@ remain DISABLED: final production deployment is owned by the separate stable
 release/production workstream #40. An RC is staging/UAT evidence, **not**
 proof of stable main acceptance.
 
-## Automated downstream handoff (issue #33)
+## Production handoff from stable main only (issue #40)
 
-GitHub Actions `GITHUB_TOKEN` creates the signed prerelease metadata only
-after immutable digest, Trivy, Cosign and signed SPDX/SLSA verification.
-GitHub suppresses downstream `release.published` workflow triggers
-generated with the same token; release auto-deployment therefore uses the
-canonical publisher's completed-success `workflow_run` on the default branch
-after separate issue #33 standing policy and first-public/UAT acceptance.
-Publisher approval remains **per exact staging SHA and RC tag** under #13.
-The deployment workflow revalidates the signed release; publisher success
-alone is not server-change authority. Details:
-[Release Deployment](RELEASE_DEPLOYMENT.md).
+The previously proposed successful `Release Candidate` →
+public Docs auto-deployment under #33 is obsolete and explicitly
+fail-closed. RC `vX.Y.Z-rc.N` remains the **staging/UAT artifact**,
+which is not accepted as a stable production version on the strength
+of signature or CI alone.
+
+After explicit RC/UAT Human Acceptance and reviewed promotion into
+`main`, the main-only signed stable publisher #39 creates
+`vX.Y.Z` GitHub Release metadata containing the **unchanged RC
+digest and source** plus the exact successful main publisher run ID.
+It does **not** rebuild the container image. GitHub suppresses
+follow-up `release.published` events from `GITHUB_TOKEN`:
+the release deployment workflow therefore listens for completion of
+the exact successful main `Full Admission` stable publication run,
+then rechecks stable release/RC/digest/human approval and separate
+production issue #40 standing authorization. Default is disabled.
+See [Release Deployment](RELEASE_DEPLOYMENT.md).
 
 ## Recovery without mutation
 
