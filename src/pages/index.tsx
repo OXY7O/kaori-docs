@@ -16,8 +16,8 @@ export default function DocumentationPreparation(): React.JSX.Element {
             <Heading as="h1">KAORI Docs</Heading>
             <p>
               A dedicated home for KAORI product documentation is being prepared.
-              Versioned product guides and release notes will appear only after review
-              and release qualification.
+              Versioned product guides and release notes will appear only after review and
+              release qualification.
             </p>
             <p className="kaori-foundation__notice" role="status">
               No public product documentation version is available here yet.

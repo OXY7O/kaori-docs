@@ -1,19 +1,13 @@
 {
   "name": "KAORI Docs Development",
-  "dockerComposeFile": [
-    "../compose.dev.yml"
-  ],
+  "dockerComposeFile": ["../compose.dev.yml"],
   "service": "workspace",
-  "runServices": [
-    "workspace"
-  ],
+  "runServices": ["workspace"],
   "workspaceFolder": "/workspace/kaori-docs",
   "shutdownAction": "stopCompose",
   "remoteUser": "node",
   "updateRemoteUserUID": true,
-  "forwardPorts": [
-    3000
-  ],
+  "forwardPorts": [3000],
   "portsAttributes": {
     "3000": {
       "label": "KAORI Docs (Docusaurus)",
@@ -22,10 +16,7 @@
   },
   "customizations": {
     "vscode": {
-      "extensions": [
-        "esbenp.prettier-vscode",
-        "redhat.vscode-yaml"
-      ],
+      "extensions": ["esbenp.prettier-vscode", "redhat.vscode-yaml"],
       "settings": {
         "files.eol": "\n",
         "editor.defaultFormatter": "esbenp.prettier-vscode"
