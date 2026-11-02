@@ -87,80 +87,17 @@ existing public Docs VPS is not a true isolated staging/production environment;
 do not claim two independent environments or deploy an unaccepted RC to public
 production merely because it has passed Full Admission.
 
-## Stable production automatic deployment — issue #40 (inactive until accepted)
+## Stable production automatic deployment — issue #40
 
-**Only a stable `vX.Y.Z` published from `main` may trigger production
-automation.** The earlier #33 RC publisher-completion → public production
-route has been retired from the workflow and explicitly rejected by the
-deployment adapter. RC `vX.Y.Z-rc.N` remains staging/UAT release identity,
-not production authorization.
+The earlier #33 automatic RC publisher → public Docs deployment has been retired. An admitted staging `vX.Y.Z-rc.N` is **UAT**, not stable production authority. The existing `Release Deployment` workflow now listens only for a completed successful **main `Full Admission`** workflow with event `workflow_dispatch`, and requires its **Publish Accepted Stable Release** job to have succeeded. The publisher records its immutable workflow run ID in the stable GitHub Release `vX.Y.Z`. The deployment resolver requires exactly one stable tag for that same run and current main SHA.
 
-The canonical `Release Deployment` workflow listens for successful
-`workflow_run: completed` of the `Full Admission` workflow on `main`
-with upstream event `workflow_dispatch`. It rejects a validation-only run:
-the upstream run must contain a successful **Publish Accepted Stable Release**
-job. The stable publisher writes its exact run ID into the stable GitHub
-Release; the orchestrator selects **exactly one** non-draft, non-prerelease
-stable tag bound to that successful run and current main SHA.
+**Production auto-deploy is OFF by default.** Activation requires repository Actions variable `KAORI_DOCS_STABLE_AUTO_DEPLOY_ENABLED=true` and exactly one write-authorized issue #40 comment containing the standalone policy marker `KAORI_DOCS_STABLE_AUTO_DEPLOY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:main-stable-only`. Neither gate is created or enabled by this PR. The obsolete `KAORI_DOCS_AUTO_DEPLOY_ENABLED` and #33 RC-public standing approval must remain disabled. Revocation is setting the stable variable other than `true` and/or removing the issue #40 standing marker.
 
-**Disabled by default, independent activation gates:**
+Before SSH or registry access, the adapter checks main source, stable tag and GitHub Release identity, exact publisher run and successful stable job, accepted RC source/tag/digest, SHA ancestry, signed staging Full Admission, issue #39 per-release Human Acceptance, issue #40 standing policy, and both approvers' repository write authority. It re-verifies the immutable **original RC image** with Cosign signature, SPDX and SLSA, using the existing pinned SSH and Docker Compose adapter. There is no image rebuild or mutable stable registry retag.
 
-1. Repository Actions variable
-   `KAORI_DOCS_STABLE_AUTO_DEPLOY_ENABLED=true`, only after signed RC/UAT,
-   same-digest stable publisher and Docs-only rollback/cutover human
-   acceptance. Leave the old `KAORI_DOCS_AUTO_DEPLOY_ENABLED` unset/false.
-2. One **write-authorized** maintainer comment on
-   [issue #40](https://github.com/OXY7O/kaori-docs/issues/40)
-   with this standalone marker:
+The host receipt records `KAORI_DOCS_VERSION=vX.Y.Z` and `KAORI_DOCS_ARTIFACT_VERSION=vX.Y.Z-rc.N` alongside source SHA and immutable digest. OCI labels must match the accepted RC image identity, even though the accepted deployment is stable. The existing Docs-only public-edge preflight, isolated frontend cutover, committed receipt, idempotent same-digest retry, recovery and shared-edge all-site verification are preserved. A public-edge failure after a healthy runtime commit is recorded as a separate incident and must never mutate KAORI Application or Website.
 
-   ```text
-   KAORI_DOCS_STABLE_AUTO_DEPLOY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:main-stable-only
-   ```
-
-Neither activation gate is granted by creating or merging this PR. In
-particular, the initial public bootstrap Human Acceptance for PR #37 does
-**not** authorize automatic stable releases. Revocation is removing the
-standing comment marker and/or setting the variable other than `true`.
-
-With these gates present, the adapter checks current main SHA, stable Git
-tag/source/release metadata, matching accepted RC tag and RC source SHA
-ancestor, identical registry digest, accepted issue #39 per-release human
-approval, exact successful main Full Admission/stable-publication run,
-write-authorized approvers and admitted RC Full Admission. It then
-independently verifies the **original RC digest** using Cosign image
-signature and signed SPDX/SLSA attestations. Nothing rebuilds or retags
-the original immutable image.
-
-The release deployer reuses the existing pinned SSH host trust and Docker
-Compose adapter, passing *stable public version* `vX.Y.Z` with original
-*artifact version* `vX.Y.Z-rc.N`. Image metadata must match the RC.
-The receipt stores `KAORI_DOCS_VERSION` (stable) and
-`KAORI_DOCS_ARTIFACT_VERSION` (RC) alongside the original source and
-digest so rollback can verify the genuine OCI label. Before replacing
-the currently healthy public Docs frontend, it verifies the existing
-`kaori-docs.env` route and `edge-public` alias; after committing the
-new digest it reconnects **only** Docs and runs the canonical all-site
-shared-edge verifier. A same-digest stable retry is an idempotent
-verified no-op. Any post-commit public-edge failure stays a separate
-incident; never silently roll back KAORI App/Website.
-
-**Current infrastructure caveat:** a *single* `kaori-docs` Compose project
-on the publicly routed VPS is not an isolated staging/UAT environment.
-Do **not** call an RC deployed there an independently isolated staging
-release; approved UAT is a release candidate on the existing public
-Docs origin. True simultaneous staging/production separation needs
-an explicit approved second runtime/namespace and private UAT ingress.
-Existing manual RC `workflow_dispatch` remains per-digest approved
-under issue #14; it defaults to private mode and fails closed rather
-than detaching an attached public Docs frontend. That is intentional.
-
-The historical one-time staging trigger #28 has been removed from the
-deployment workflow. Issue #24 publisher-only RC bootstrap trigger is a
-separate previously reviewed cleanup item; production must never rely
-on it. GitHub `GITHUB_TOKEN` created releases do not fire downstream
-`release.published`; the successful main `workflow_run` handoff is
-the supported model. Actual stable publication, host cutover, rollback,
-UAT and activation remain pending real evidence.
+**Infrastructure boundary:** the existing single public Docs Compose project is not a separately isolated staging environment. Manual RC `workflow_dispatch` remains independently issue #14 approved, private by default, and fails closed when an already publicly attached frontend would be replaced without explicit operator UAT authority. True isolated staging needs a separately approved runtime/ingress workstream. The #28 one-time staging deployment push trigger has been removed; #24 RC publisher activation cleanup remains separately governed. No stable publication, production cutover, rollback drill or release-specific Human Acceptance is claimed by this code change.
 
 ## Subsequent public release reconciliation — issue #32
 
