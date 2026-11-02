@@ -16,6 +16,19 @@ on:
       - ready_for_review
       - converted_to_draft
   workflow_dispatch:
+    inputs:
+      stable_version:
+        description: 'Approved Docs stable SemVer, e.g. v0.1.0 (optional; absent means validation only)'
+        type: string
+        required: false
+      accepted_candidate_tag:
+        description: 'Exactly accepted, signed RC for stable promotion, e.g. v0.1.0-rc.3'
+        type: string
+        required: false
+      stable_approval_reference:
+        description: 'Human-accepted issue #39 comment URL binding main/RC/stable/digest'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -198,3 +211,42 @@ jobs:
           owner="$(stat -c '%u:%g' "$RUNNER_TEMP")"
           [[ "$owner" =~ ^[0-9]+:[0-9]+$ ]] || exit 1
           chown -R "$owner" "$GITHUB_WORKSPACE"
+
+  stable-publication:
+    name: Publish Accepted Stable Release
+    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.stable_version != '' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+      issues: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      STABLE_TAG: ${{ inputs.stable_version }}
+      ACCEPTED_RC_TAG: ${{ inputs.accepted_candidate_tag }}
+      APPROVAL_REF: ${{ inputs.stable_approval_reference }}
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout admitted main identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preflight approved stable RC without mutation
+        shell: bash
+        run: bash scripts/release/promote-stable.sh preflight
+      - name: Verify same signed RC digest and publish stable metadata
+        shell: bash
+        run: bash scripts/release/promote-stable.sh publish
+      - name: Registry logout
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
