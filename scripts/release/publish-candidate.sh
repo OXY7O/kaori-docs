@@ -34,6 +34,8 @@ approval_permission="$(curl -fsS "${headers[@]}" "$api/collaborators/$approval_u
 case "$approval_permission" in admin|maintain|write) ;; *) fail 'approval author lacks write authority' ;; esac
 
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
+# Fail before any image build/push if registry-manifest tooling is absent.
+docker buildx version >/dev/null || fail 'registry manifest inspection requires existing Docker buildx'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
 runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
@@ -82,13 +84,19 @@ else
   [[ "${RESUME_EXISTING:-false}" == true && "${EXPECTED_DIGEST:-}" =~ ^sha256:[a-f0-9]{64}$ ]] || fail 'resume requires exact previously committed digest'
 fi
 docker pull "$image:$tag"
-qualified="$(docker image inspect --format '{{index .RepoDigests 0}}' "$image:$tag")"
-digest="${qualified#*@}"
-[[ "$qualified" == "$image@$digest" && "$digest" =~ ^sha256:[a-f0-9]{64}$ ]] || fail 'qualified image digest unavailable'
+# Registry manifests, not Docker's locally familiarized RepoDigests spelling,
+# are authoritative for the digest that was actually pushed/pulled.
+# Buildx preserves the multi-platform OCI index digest, including provenance.
+manifest_json="$(docker buildx imagetools inspect "$image:$tag" --format '{{json .Manifest}}')" || fail 'registry manifest lookup failed'
+digest="$(jq -er '.digest | strings | select(test("^sha256:[a-f0-9]{64}$"))' <<< "$manifest_json")" || fail 'registry manifest digest unavailable'
 if [[ "$mode" == resume ]]; then
   [[ "$digest" == "$EXPECTED_DIGEST" ]] || fail 'registry tag digest changed: reject retry'
 fi
 ref="$image@$digest"
+# Pin the content-addressable registry object explicitly before scanning and
+# verifying OCI revision/version/license. Never sign an image ID or mutable tag.
+docker pull "$ref" || fail 'immutable registry digest is not retrievable'
+printf 'PASS: registry manifest digest resolved for Docs image: %s\n' "$digest"
 revision="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$ref")"
 version="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$ref")"
 license="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.licenses"}}' "$ref")"

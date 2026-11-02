@@ -1,6 +1,8 @@
 name: Release Candidate
 run-name: 'Release Candidate · ${{ inputs.candidate_tag || github.sha }}'
 on:
+  # Issue #30 re-arms canonical RC only for a NEW exact admitted staging SHA;
+  # the unsigned partial v0.1.0-rc.1 remains quarantined and is never reused.
   # One-time issue #24 activation; remove after approved RC is published.
   # Issue #28 private-deploy activation also requires a new signed RC on its
   # exact merged staging SHA; never reuse the previous commit's candidate.

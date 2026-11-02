@@ -1,6 +1,8 @@
 name: Release Deployment
 run-name: 'Release Deployment · ${{ inputs.candidate_tag }}'
 on:
+  # Issue #30 requires a new exact-SHA signed RC before this private deploy
+  # may be retried; never consume the quarantined partial v0.1.0-rc.1.
   # Temporary one-time issue #28 staging-only private deployment activation;
   # remove after accepted signed RC private deployment evidence.
   push:
