@@ -165,7 +165,22 @@ after governed promotion, not converted into automatic push-to-deploy.
 
 The host adapter requires exact non-root image identity, healthy Docker healthcheck, internal `/healthz` and root HTTP, effective loopback mapping `127.0.0.1:18081` **and a successful loopback curl**. Only after these checks does it commit a receipt and preserve the previous release pointer. If candidate deployment fails, the previous digest is restored, its health is checked, and the candidate receipt remains uncommitted. Failed rollback is **CRITICAL**.
 
-A separately approved manual rollback can use the previous trusted receipt:
+A separately approved manual rollback can use the previous trusted receipt.
+The default private rollback **fails closed** if its current Docs frontend is already
+publicly attached; it must not silently detach the existing Docs route.
+After approved public publication, explicitly opt in to the same existing
+Docs-only `edge-public` preflight/reattachment and full shared-edge verification:
+
+```bash
+KAORI_DOCS_RELEASE_LOCAL_ONLY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+  bash /opt/kaori-docs/releases/<accepted-source-SHA>/server/rollback.sh
+```
+
+The existing signed/committed release receipt remains authoritative, and a
+failed rollback/public reattachment is reported as failure/CRITICAL rather than
+claiming successful service recovery.
+
+A private-only rollback (when the current Docs web is **not** publicly attached) uses:
 
 ```bash
 KAORI_DOCS_RELEASE_LOCAL_ONLY=1 bash /opt/kaori-docs/releases/<accepted-source-SHA>/server/rollback.sh
