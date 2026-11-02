@@ -24,16 +24,25 @@ script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_DOCS_COMPOSE_FILE:-$script_dir/compose.docs.yml}"
 runtime_env="${KAORI_DOCS_RUNTIME_ENV:-production}"
 [[ "$runtime_env" == production || "$runtime_env" == staging ]] || fail 'unknown Docs runtime environment'
+# One existing Docs deployment root and state directory on ONE VPS.
+# Independent environment-scoped receipt FILENAMES (not separate directories)
+# protect production rollback from staging mutations.
 if [[ "$runtime_env" == staging ]]; then
-    [[ "${KAORI_DOCS_STATE_DIR:-}" == /var/lib/kaori-docs-staging/deploy-state ]] ||
-        fail 'staging must use its dedicated release state'
+    [[ "${KAORI_DOCS_STATE_DIR:-}" == /var/lib/kaori-docs/deploy-state ]] ||
+        fail 'staging must use the existing canonical Docs state directory'
     [[ "${COMPOSE_PROJECT_NAME:-}" == kaori-docs-staging ]] ||
         fail 'staging must use independent Compose project'
-    state_dir=/var/lib/kaori-docs-staging/deploy-state
+    state_dir=/var/lib/kaori-docs/deploy-state
+    receipt_name=release-staging.env
+    previous_name=previous-release-staging.env
 else
     [[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
         fail 'production must retain canonical Docs Compose project'
     state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
+    [[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
+        fail 'production must use the existing canonical Docs state directory'
+    receipt_name=release.env
+    previous_name=previous-release.env
 fi
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'docs release state directory must be prepared and writable by deployment identity'
@@ -60,7 +69,7 @@ configured_version="$(docker image inspect --format '{{index .Config.Labels "org
 export KAORI_DOCS_IMAGE="$image"
 docker compose "${compose_args[@]}" config --quiet || fail 'Compose validation failed'
 
-candidate="$(mktemp "$state_dir/.release-candidate.XXXXXXXX")"
+candidate="$(mktemp "$state_dir/.release-${runtime_env}-candidate.XXXXXXXX")"
 cleanup() { rm -f -- "$candidate"; }
 trap cleanup EXIT
 printf 'KAORI_DOCS_IMAGE=%s\nKAORI_DOCS_SOURCE_SHA=%s\nKAORI_DOCS_VERSION=%s\nKAORI_DOCS_ARTIFACT_VERSION=%s\n' \
@@ -68,10 +77,10 @@ printf 'KAORI_DOCS_IMAGE=%s\nKAORI_DOCS_SOURCE_SHA=%s\nKAORI_DOCS_VERSION=%s\nKA
 
 # Keep the prior immutable identity separate; failed candidate must not advance state.
 previous_image=''
-if [[ -f "$state_dir/release.env" ]]; then
+if [[ -f "$state_dir/$receipt_name" && ! -L "$state_dir/$receipt_name" ]]; then
     # The release receipt is private to the approved docs deployment identity.
     # shellcheck source=/dev/null
-    source "$state_dir/release.env"
+    source "$state_dir/$receipt_name"
     if [[ "${KAORI_DOCS_IMAGE:-}" =~ @sha256:[a-f0-9]{64}$ ]]; then
         previous_image="$KAORI_DOCS_IMAGE"
     fi
@@ -92,10 +101,10 @@ if ! docker compose "${compose_args[@]}" up -d --pull never --no-build web || ! 
     fail 'candidate deployment rejected'
 fi
 
-if [[ -f "$state_dir/release.env" ]]; then
-    cp -- "$state_dir/release.env" "$state_dir/previous-release.env"
+if [[ -f "$state_dir/$receipt_name" && ! -L "$state_dir/$receipt_name" ]]; then
+    cp -- "$state_dir/$receipt_name" "$state_dir/$previous_name"
 fi
-mv -- "$candidate" "$state_dir/release.env"
+mv -- "$candidate" "$state_dir/$receipt_name"
 trap - EXIT
 printf 'PASS: docs release committed: %s / %s\n' "$release_version" "$source_sha"
 printf 'Existing shared-edge Nginx/Certbot publication requires separately approved authority; no public routing changed.\n'
