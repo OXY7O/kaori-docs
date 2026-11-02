@@ -336,7 +336,14 @@ jobs:
     name: Admission Evidence
     # Fresh FULL artifacts are eligible for later verified reuse; REUSED
     # artifacts cannot be chained to bypass the original full authority.
-    needs: [promotion-source, validation-profile, full-admission, container-admission, browser-evidence]
+    needs:
+      [
+        promotion-source,
+        validation-profile,
+        full-admission,
+        container-admission,
+        browser-evidence,
+      ]
     if: >-
       ${{ needs.promotion-source.result == 'success' &&
           needs.full-admission.result == 'success' &&
