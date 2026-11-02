@@ -58,6 +58,7 @@ jobs:
       KAORI_DOCS_AUTO_POLICY: '0'
       KAORI_DOCS_STABLE_POLICY: ${{ (github.event_name == 'workflow_run' || (inputs.stable_tag != '' && github.ref == 'refs/heads/main')) && '1' || '0' }}
       KAORI_DOCS_STABLE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.stable_tag != '' && '1' || '0' }}
+      KAORI_DOCS_STAGING_UAT: ${{ github.event_name == 'workflow_dispatch' && inputs.stable_tag == '' && '1' || '0' }}
       KAORI_DOCS_MAIN_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || (inputs.stable_tag != '' && github.sha || '') }}
       KAORI_DOCS_STABLE_TAG: ${{ inputs.stable_tag }}
       KAORI_DOCS_STABLE_RUN_ID: ${{ github.event.workflow_run.id }}
