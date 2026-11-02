@@ -6,16 +6,16 @@
 
 The development VPS runs **one** KAORI Docs deployment. A selected RC (`vX.Y.Z-rc.N`) **replaces** the currently running Docs image; a selected stable (`vX.Y.Z`) later **replaces** it in the same container. RC and stable are release identities, **not** different VMs, folders, ports, or simultaneous services. Brief replacement downtime is an explicitly accepted development tradeoff.
 
-| Runtime setting | Both RC and stable |
-| --- | --- |
-| VPS / SSH identity | Existing KAORI shared VPS / approved `kaori-deploy` |
-| Deployment root | `/opt/kaori-docs` |
-| Release checkout | `/opt/kaori-docs/releases/<accepted-source-SHA>/server` |
-| Compose project | `kaori-docs` (one `web` service) |
-| Loopback listener | `127.0.0.1:18081:8080` |
-| Committed release pointer | `/var/lib/kaori-docs/deploy-state/release.env` |
-| Previous digest pointer | `/var/lib/kaori-docs/deploy-state/previous-release.env` |
-| Public site | Existing approved `docs.kaori.cloud` registration |
+| Runtime setting           | Both RC and stable                                      |
+| ------------------------- | ------------------------------------------------------- |
+| VPS / SSH identity        | Existing KAORI shared VPS / approved `kaori-deploy`     |
+| Deployment root           | `/opt/kaori-docs`                                       |
+| Release checkout          | `/opt/kaori-docs/releases/<accepted-source-SHA>/server` |
+| Compose project           | `kaori-docs` (one `web` service)                        |
+| Loopback listener         | `127.0.0.1:18081:8080`                                  |
+| Committed release pointer | `/var/lib/kaori-docs/deploy-state/release.env`          |
+| Previous digest pointer   | `/var/lib/kaori-docs/deploy-state/previous-release.env` |
+| Public site               | Existing approved `docs.kaori.cloud` registration       |
 
 The RC can be visible on `docs.kaori.cloud` during UAT when **explicitly authorized**. It is still an RC and must not be represented as an accepted stable product release. No second staging Compose project/port/path, new proxy, DNS record, TLS certificate, or manual directory preparation is needed.
 
@@ -46,7 +46,7 @@ ls -ld /opt/kaori-docs /var/lib/kaori-docs/deploy-state
 
 After a successful deployment, inspect **https://docs.kaori.cloud/** directly: desktop/mobile, six breakpoints, real light/dark themes, keyboard/focus, links, and whether the chosen RC/stable is the exact digest in the committed receipt. Confirm `https://kaori.cloud` and `https://app.kaori.cloud` remain healthy. Record workflow run, exact tag, SHA, digest, receipt, container health and browser evidence. **An RC deployed publicly remains UAT pending** until the maintainer explicitly accepts it.
 
-A separately approved rollback uses the *same* project and previously committed image pointer:
+A separately approved rollback uses the _same_ project and previously committed image pointer:
 
 ```bash
 KAORI_DOCS_RELEASE_LOCAL_ONLY=1 \
