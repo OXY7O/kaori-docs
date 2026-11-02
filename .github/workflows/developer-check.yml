@@ -124,6 +124,12 @@ jobs:
       - name: Install locked dependencies
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm ci --no-audit --no-fund
+      - name: Inspect Prettier YAML delta for issue 14 (temporary, not acceptance)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npx prettier --write .github/workflows/deploy-staging-host.yml deploy/server/compose.docs.yml deploy/server/compose.release.yml
+          git diff -- .github/workflows/deploy-staging-host.yml deploy/server/compose.docs.yml deploy/server/compose.release.yml
       - name: Validate issue-owned shell syntax
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
