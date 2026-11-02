@@ -8,6 +8,13 @@ source "$previous"
 [[ "${KAORI_DOCS_IMAGE:-}" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: previous image is not immutable' >&2; exit 1; }
 [[ "${KAORI_DOCS_SOURCE_SHA:-}" =~ ^[a-f0-9]{40}$ ]] || { echo 'BLOCK: previous source SHA invalid' >&2; exit 1; }
 [[ "${KAORI_DOCS_VERSION:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]] || { echo 'BLOCK: previous release version invalid' >&2; exit 1; }
+if [[ "${KAORI_DOCS_ARTIFACT_VERSION:-${KAORI_DOCS_VERSION}}" != "${KAORI_DOCS_VERSION}" ]]; then
+  [[ "${KAORI_DOCS_ARTIFACT_VERSION:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ &&
+     "${KAORI_DOCS_ARTIFACT_VERSION%-rc.*}" == "${KAORI_DOCS_VERSION}" &&
+     "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
+    { echo 'BLOCK: prior stable receipt requires approved public RC-identity recovery' >&2; exit 1; }
+  export KAORI_DOCS_STABLE_RELEASE_CONFIRMED=1
+fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || { echo 'BLOCK: invalid public rollback option' >&2; exit 1; }
 if [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
