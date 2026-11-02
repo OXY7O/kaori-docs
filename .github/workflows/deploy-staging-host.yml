@@ -1,6 +1,13 @@
 name: Release Deployment
 run-name: 'Release Deployment · ${{ inputs.candidate_tag }}'
 on:
+  # Temporary one-time issue #28 staging-only private deployment activation;
+  # remove after accepted signed RC private deployment evidence.
+  push:
+    branches:
+      - kaori/staging
+    paths:
+      - .github/workflows/deploy-staging-host.yml
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -21,6 +28,7 @@ concurrency:
 jobs:
   deploy:
     name: Deploy Release Candidate
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[KAORI_DOCS_DEPLOY_ISSUE_28]')) }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
     timeout-minutes: 45
     env:
@@ -47,6 +55,53 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Resolve one-time issue #28 private deployment approval
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/deploy-staging-host.yml@refs/heads/kaori/staging' ]] || {
+            echo 'BLOCK: deployment workflow identity changed' >&2
+            exit 1
+          }
+          [[ "$(git cat-file -p "$ACCEPTED_SHA" | grep -c '^parent ')" == 2 ]] || {
+            echo 'BLOCK: private deploy activation requires exact two-parent staging merge' >&2
+            exit 1
+          }
+          git diff --name-only "$ACCEPTED_SHA^1" "$ACCEPTED_SHA" -- \
+            .github/workflows/deploy-staging-host.yml |
+            grep -Fxq '.github/workflows/deploy-staging-host.yml' || {
+              echo 'BLOCK: accepted merge must change canonical deployment workflow' >&2
+              exit 1
+            }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          comments="$(curl -fsS "${headers[@]}" "$api/issues/14/comments?per_page=100")"
+          approved="$(jq -c --arg sha "$ACCEPTED_SHA" '
+            [.[] | . as $c
+              | (.body // "" | split("\n")
+                | map(select(startswith("KAORI_DOCS_DEPLOY_APPROVED:" + $sha + ":")))
+                | unique) as $markers
+              | select($markers | length == 1)
+              | {url:$c.html_url, marker:$markers[0]}]
+          ' <<< "$comments")"
+          [[ "$(jq length <<< "$approved")" == 1 ]] || {
+            echo 'BLOCK: requires exactly one issue #14 private deploy approval for exact staging SHA' >&2
+            exit 1
+          }
+          marker="$(jq -r '.[0].marker' <<< "$approved")"
+          # The canonical deploy-release.sh independently checks exact digest,
+          # signed RC, author permission, full admission and pinned SSH trust.
+          [[ "$marker" =~ ^KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:(v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*):sha256:[a-f0-9]{64}$ ]] || {
+            echo 'BLOCK: deployment approval marker/tag/digest format invalid' >&2
+            exit 1
+          }
+          tag="${BASH_REMATCH[1]}"
+          approval_ref="$(jq -r '.[0].url' <<< "$approved")"
+          [[ "$approval_ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-[0-9]+$ ]] || exit 1
+          printf 'RC_TAG=%s\nAPPROVAL_REF=%s\n' "$tag" "$approval_ref" >> "$GITHUB_ENV"
+          echo 'PASS: one-time gated deployment inputs resolved; exact RC and host trust remain independent mandatory checks'
       - name: Verify prerelease, pinned host and explicit approval reference
         shell: bash
         run: bash scripts/release/deploy-release.sh preflight
