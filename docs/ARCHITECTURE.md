@@ -16,7 +16,7 @@ Authority order: the current approved KAORI Application product/design/release s
 
 | Path                                            | Role                                                         | Public build               |
 | ----------------------------------------------- | ------------------------------------------------------------ | -------------------------- |
-| `src/pages/`                                    | Public-safe Docs Home review candidate, approved static pages | Yes                        |
+| `src/pages/`                                    | Approved static pages; initial preparation fixture           | Yes                        |
 | `static/`                                       | Reviewed public assets; logo and restrictive robots policy   | Yes                        |
 | `content/`                                      | Native Docusaurus article/version content after #15 approval | **Disabled** for bootstrap |
 | `docs/`                                         | Internal engineering, authoring and governance material      | **No**                     |
