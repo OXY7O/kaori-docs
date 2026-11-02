@@ -70,15 +70,20 @@ The initial repository contains only `main`, so issue #11 first creates `kaori/s
 - Keep issue/PR assignee, canonical labels and native relationships accurate. GitHub Project status, sprint, type, priority and points require operator reconciliation where connector tooling cannot mutate them.
 - Docs is a static, non-authenticated publication; production credentials, external providers, application internals and shared-edge mutation are out of scope for content work.
 
-## Full Admission evidence cache — issue #45
+## Full Admission evidence reuse and Fast Smoke — issue #45
 
-The existing npm, Docker BuildKit, Trivy and hashed-static-asset caches
-improve runtime performance but **do not reuse passed tests**. The first
-implementation stage emits immutable source/tree/validation-authority
-evidence only **after** all four comprehensive admission gates pass. It
-includes a separately defined fresh browser/keyboard Fast Smoke contract.
-**No comprehensive gate is currently skipped**, and a future independently
-validated same-tree/fingerprint reuse with fresh smoke must be admitted
-before switching to the KAORI Application reuse model.
+Dependency npm, Docker BuildKit, Trivy and hashed-asset caches accelerate
+work but are not test evidence. The canonical Docs quality workflow now
+resolves immutable source-tree and validation-authority evidence from a
+previous trusted completed staging Full Admission. If the exact tree,
+fingerprint, workflow/job provenance, artifact digest and transition
+lineage match, **REUSED** requires new static/browser and runtime Fast
+Smoke. Otherwise **FALLBACK** runs comprehensive formatting, TypeScript,
+npm security, production build, Docker/Trivy and full Browser Quality
+Evidence. A failed smoke does not inherit prior PASS.
+
+The initial source change to this policy itself requires fresh Full
+Admission and immutable evidence. No cache mode grants UAT acceptance
+or skips signature, release, public-edge/receipt or human gates.
 
 See [Admission Evidence and Fast Smoke](CI_ADMISSION_EVIDENCE.md).
