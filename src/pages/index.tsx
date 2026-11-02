@@ -48,9 +48,7 @@ export default function DocumentationHome(): React.JSX.Element {
           <div className="container">
             <div className="kaori-docs-home__hero-content">
               <p className="kaori-docs-home__eyebrow">KAORI DOCUMENTATION</p>
-              <Heading as="h1" id="docs-home-heading">
-                KAORI Docs
-              </Heading>
+              <Heading as="h1" id="docs-home-heading">KAORI Docs</Heading>
               <p className="kaori-docs-home__lead">
                 A clearer path through infrastructure operations.
               </p>
@@ -97,9 +95,7 @@ export default function DocumentationHome(): React.JSX.Element {
           >
             <div className="kaori-docs-home__section-heading">
               <p className="kaori-docs-home__eyebrow">FIRST STEPS</p>
-              <Heading as="h2" id="getting-started-heading">
-                Getting Started
-              </Heading>
+              <Heading as="h2" id="getting-started-heading">Getting Started</Heading>
               <p>
                 Start with the operating model, then follow the evidence to the
                 capability and provider responsible for each piece of context.
