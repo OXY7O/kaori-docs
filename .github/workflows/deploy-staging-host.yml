@@ -58,6 +58,7 @@ jobs:
       KAORI_DOCS_AUTO_POLICY: '0'
       KAORI_DOCS_STABLE_POLICY: ${{ (github.event_name == 'workflow_run' || (inputs.stable_tag != '' && github.ref == 'refs/heads/main')) && '1' || '0' }}
       KAORI_DOCS_STABLE_MANUAL: ${{ github.event_name == 'workflow_dispatch' && inputs.stable_tag != '' && '1' || '0' }}
+      KAORI_DOCS_STAGING_UAT: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/kaori/staging' && '1' || '0' }}
       KAORI_DOCS_MAIN_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || (inputs.stable_tag != '' && github.sha || '') }}
       KAORI_DOCS_STABLE_TAG: ${{ inputs.stable_tag }}
       KAORI_DOCS_STABLE_RUN_ID: ${{ github.event.workflow_run.id }}
@@ -76,6 +77,32 @@ jobs:
       DOCS_SSH_PASSPHRASE: ${{ secrets.KAORI_DOCS_HOST_SSH_PASSPHRASE }}
       DOCS_KNOWN_HOSTS: ${{ secrets.KAORI_DOCS_HOST_KNOWN_HOSTS }}
     steps:
+      - name: Enforce RC staging versus main stable manual dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        env:
+          MANUAL_STABLE_TAG: ${{ inputs.stable_tag }}
+          MANUAL_RC_TAG: ${{ inputs.candidate_tag }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$GITHUB_REF" == refs/heads/kaori/staging ]]; then
+            [[ -z "$MANUAL_STABLE_TAG" && "$MANUAL_RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ &&
+               "$KAORI_DOCS_STAGING_UAT" == 1 && "$KAORI_DOCS_ATTACH_EXISTING_EDGE" == 0 ]] || {
+              echo 'BLOCK: staging must deploy only an RC to private loopback 18082; no public edge' >&2
+              exit 1
+            }
+          elif [[ "$GITHUB_REF" == refs/heads/main ]]; then
+            [[ "$MANUAL_STABLE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ &&
+               -z "$MANUAL_RC_TAG" &&
+               "$KAORI_DOCS_STABLE_POLICY" == 1 && "$KAORI_DOCS_STABLE_MANUAL" == 1 &&
+               "$KAORI_DOCS_ATTACH_EXISTING_EDGE" == 1 ]] || {
+              echo 'BLOCK: manual main must select exact stable release and approved public reattachment' >&2
+              exit 1
+            }
+          else
+            echo 'BLOCK: manual release dispatch permitted only on admitted staging RC or main stable' >&2
+            exit 1
+          fi
       - name: Checkout exact approved source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

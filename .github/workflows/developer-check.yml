@@ -153,6 +153,19 @@ jobs:
           set -Eeuo pipefail
           export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
           docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
+          # #43 staging is a distinct project, internal network, receipt and
+          # loopback port; it must never silently inherit production 18081.
+          staging="$(COMPOSE_PROJECT_NAME=kaori-docs-staging docker compose \
+            -f deploy/server/compose.docs.yml \
+            -f deploy/server/compose.staging.yml config --format json)"
+          jq -e '
+            .name == "kaori-docs-staging" and
+            ([.services.web.ports[] |
+              select(.host_ip == "127.0.0.1" and (.published | tostring) == "18082" and .target == 8080)] | length) == 1
+          ' <<< "$staging" >/dev/null || {
+            echo 'BLOCK: Docs staging Compose lacks independent project/loopback 18082' >&2
+            exit 1
+          }
       - name: Negative admission tests for governed Release Deployment
         if: ${{ needs.route.outputs.runtime == 'true' }}
         shell: bash
@@ -267,6 +280,36 @@ jobs:
             exit 1
           fi
           echo 'PASS: deprecated RC-auto, missing edge and wrong stable production authority fail closed'
+          if env KAORI_DOCS_STAGING_UAT=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: RC staging attempted to attach public production edge' >&2
+            exit 1
+          fi
+          if env KAORI_DOCS_STAGING_UAT=0 KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: RC request accepted without isolated staging identity' >&2
+            exit 1
+          fi
+          if env KAORI_DOCS_RUNTIME_ENV=staging COMPOSE_PROJECT_NAME=kaori-docs \
+              KAORI_DOCS_STATE_DIR=/var/lib/kaori-docs-staging/deploy-state \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              bash deploy/server/rollback.sh; then
+            echo 'BLOCK: staging rollback accepted production Compose project' >&2
+            exit 1
+          fi
+          if env KAORI_DOCS_RUNTIME_ENV=staging COMPOSE_PROJECT_NAME=kaori-docs-staging \
+              KAORI_DOCS_STATE_DIR=/var/lib/kaori-docs-staging/deploy-state \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              bash deploy/server/rollback.sh; then
+            echo 'BLOCK: staging rollback permitted public edge mutation' >&2
+            exit 1
+          fi
+          echo 'PASS: isolated RC rollback rejects production project and edge attachment'
+          echo 'PASS: staging RC cannot be combined with public edge or stable production'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
       - name: Validate static output and public boundary
