@@ -114,7 +114,6 @@ See [Release Deployment](RELEASE_DEPLOYMENT.md).
 
 If an earlier attempt already pushed the candidate but was interrupted, use resume_existing=true with the exact previously evidenced expected_digest. The workflow pulls rather than rebuilds, refuses a changed digest, checks OCI labels and reruns scan/signature/attestation verification. A mismatched Git tag or prerelease is rejected. Never overwrite or silently republish an existing candidate.
 
-
 ## Governed RC request branch — Docs #51
 
 The Application request-branch convention is being adopted for Docs by
