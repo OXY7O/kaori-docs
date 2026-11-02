@@ -18,14 +18,14 @@ This repository contains **documentation only**. It does not authenticate users,
 
 **Engineering release adapter:** [Issue #14](https://github.com/OXY7O/kaori-docs/issues/14) defines a separately governed [private Release Deployment and rollback procedure](docs/RELEASE_DEPLOYMENT.md). This is not an active public Docs site or a completed signed image publication.
 
-**Publication state:** The Docusaurus scaffold is in progress under [#11](https://github.com/OXY7O/kaori-docs/issues/11). No release-qualified product documentation or public Docs deployment is claimed. The minimal root page is a truthful preparation state, not the approved Documentation Home (#1).
+**Publication state:** The Docusaurus foundation is in place. The root Documentation Home under [#1](https://github.com/OXY7O/kaori-docs/issues/1) is an editorial/visual review candidate, not an accepted Docs release. No release-qualified versioned product guides, published search or stable Docs deployment is claimed.
 
 ## Technology and project structure
 
 The project uses **Docusaurus 3, TypeScript 5, React, Node.js 22 and Inter**, with the existing KAORI Violet design principles. Docusaurus native theme and Infima tokens are preferred over a separate design system or custom router.
 
 - `docusaurus.config.ts`, `sidebars.ts` — Docusaurus configuration and reserved native docs navigation.
-- `src/pages/` — minimal static preparation page; approved Docs Home is owned by #1.
+- `src/pages/` — release-neutral Documentation Home and reviewed public-safe static pages; issue #1 owns Home acceptance.
 - `src/css/` — small KAORI Violet/Inter theme-token adaptation.
 - `static/branding/` — approved KAORI logo reused from the Website.
 - `content/` — reserved **public** Docusaurus article/version content; not enabled for public builds until #15 release mapping is approved.

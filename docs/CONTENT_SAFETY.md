@@ -20,3 +20,11 @@ Docs Major.Minor applicability and exact patch release notes follow #15 and #9. 
 ## Public release process
 
 An accepted Docs release requires source SHA, version/applicability evidence, public-content isolation, QA/browser accessibility, immutable static OCI digest and signed provenance, approved staging UAT and explicit human acceptance. A green static build alone does not permit public deployment.
+
+## Documentation Home content record — issue #1
+
+- **Authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), with approved Home scope in Docs #1 and Website #108.
+- **Editorial owner:** Docs #1. The introduction, eight topic labels and conceptual flow are version-neutral, with no assertion that a product capability or provider is released.
+- **Public readiness:** Work-branch review candidate only. Topic cards remain non-clickable; Get Started and Explore Capabilities are working same-page anchors.
+- **Release applicability:** No application version is asserted. Publication of versioned guides is owned by #15 and source-released App evidence; local search by #16.
+- **Acceptance evidence:** Exact-head Developer Check, merged-SHA Full Admission, six-viewport browser checks, operator UAT and Human Acceptance remain separate and must be recorded only after completion.
