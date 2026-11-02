@@ -130,6 +130,48 @@ jobs:
         run: |
           set -Eeuo pipefail
           while IFS= read -r path; do bash -n "$path"; done < <(git ls-files '*.sh')
+      - name: Verify admission evidence identity fail-closed contract
+        if: ${{ needs.route.outputs.site == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f scripts/ci/admission-evidence.sh
+          sha="$KAORI_DOCS_SOURCE_SHA"
+          evidence=tmp/ci-test-admission.json
+          mkdir -p tmp
+          rm -f "$evidence"
+          canonical="OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging"
+          base=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_REF=refs/heads/kaori/staging
+            GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
+            GITHUB_WORKFLOW_REF="$canonical" GITHUB_WORKFLOW_SHA="$sha"
+            KAORI_DOCS_SOURCE_SHA="$sha" ADMISSION_PROMOTION=success ADMISSION_FULL=success
+            ADMISSION_CONTAINER=success ADMISSION_BROWSER=success)
+          "${base[@]}" bash scripts/ci/admission-evidence.sh write "$evidence"
+          jq -e --arg source "$sha" '.source_sha == $source and
+            .reuse_authorized == false and
+            .mandatory_gate_conclusions["Browser Quality Evidence"] == "success"' "$evidence" >/dev/null
+          rm -f "$evidence"
+          if env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_REF=refs/heads/kaori/staging
+            GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
+            GITHUB_WORKFLOW_REF="$canonical" GITHUB_WORKFLOW_SHA="$sha"
+            KAORI_DOCS_SOURCE_SHA="$sha" ADMISSION_PROMOTION=success ADMISSION_FULL=success
+            ADMISSION_CONTAINER=success ADMISSION_BROWSER=skipped
+            bash scripts/ci/admission-evidence.sh write "$evidence"; then
+            echo 'BLOCK: skipped browser gate was accepted as reusable evidence' >&2
+            exit 1
+          fi
+          if env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_REF=refs/heads/kaori/staging
+            GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
+            GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/fake.yml@refs/heads/main
+            GITHUB_WORKFLOW_SHA="$sha" KAORI_DOCS_SOURCE_SHA="$sha"
+            ADMISSION_PROMOTION=success ADMISSION_FULL=success
+            ADMISSION_CONTAINER=success ADMISSION_BROWSER=success
+            bash scripts/ci/admission-evidence.sh write "$evidence"; then
+            echo 'BLOCK: noncanonical workflow was accepted as admission authority' >&2
+            exit 1
+          fi
+          test ! -e "$evidence"
+          echo 'PASS: exact source/tree fingerprint emitted, skipped gate and fake workflow rejected'
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
