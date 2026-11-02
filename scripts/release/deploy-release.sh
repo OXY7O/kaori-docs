@@ -3,24 +3,36 @@ set -Eeuo pipefail
 mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
-auto_policy="${KAORI_DOCS_AUTO_POLICY:-0}"
-[[ "$auto_policy" =~ ^[01]$ ]] || fail 'invalid automated release policy mode'
-if [[ "$auto_policy" == 1 ]]; then
-  # The orchestrator only runs after the canonical publisher completes. It does
-  # not inherit arbitrary release event data, PR code, or public DNS ownership.
+# Production is a stable main release, never an RC publisher completion.
+# Old #33 RC-to-public auto mode is permanently fail-closed.
+[[ "${KAORI_DOCS_AUTO_POLICY:-0}" == 0 ]] ||
+  fail 'RC-publisher-to-public automatic deployment retired; use accepted main stable'
+stable_policy="${KAORI_DOCS_STABLE_POLICY:-0}"
+[[ "$stable_policy" =~ ^[01]$ ]] || fail 'invalid stable release policy mode'
+auto_policy="$stable_policy"
+if [[ "$stable_policy" == 1 ]]; then
   [[ "$GITHUB_EVENT_NAME" == workflow_run && "$GITHUB_REF" == refs/heads/main ]] ||
-    fail 'automatic deployment requires the default-branch publisher completion event'
+    fail 'stable auto deployment requires canonical completed default-branch publication'
   [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
-    fail 'automatic release cannot bypass existing-public-edge reconciliation'
-  [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/33#issuecomment-([0-9]+)$ ]] ||
-    fail 'standing deployment policy approval must belong to issue #33'
+    fail 'stable production must reconcile the already registered Docs-only public edge'
+  [[ "${KAORI_DOCS_MAIN_SHA:-}" =~ ^[a-f0-9]{40}$ &&
+     "${KAORI_DOCS_STABLE_TAG:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ &&
+     "${KAORI_DOCS_STABLE_RUN_ID:-}" =~ ^[0-9]+$ ]] ||
+    fail 'stable publication main SHA/tag/run identity missing'
+  [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/40#issuecomment-([0-9]+)$ ]] ||
+    fail 'stable production policy approval must belong to issue #40'
 else
-  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual deployment must use kaori/staging'
+  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC/UAT deployment must use kaori/staging'
   [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-([0-9]+)$ ]] ||
-    fail 'exact issue #14 approval comment URL required'
+    fail 'exact issue #14 RC/UAT deployment approval comment required'
 fi
 approval_id="${BASH_REMATCH[1]}"
-[[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staged source SHA mismatch'
+if [[ "$stable_policy" == 1 ]]; then
+  [[ "$(git rev-parse HEAD)" == "$KAORI_DOCS_MAIN_SHA" ]] ||
+    fail 'stable deployment code is not the exact accepted main checkout'
+else
+  [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'staging RC checkout mismatch'
+fi
 [[ "$RC_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'invalid prerelease tag'
 [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || fail 'public edge option must be 0 or 1'
 [[ "${DOCS_PUBLIC_DOMAIN:-}" == docs.kaori.cloud ]] || fail 'Docs domain variable must be docs.kaori.cloud'
@@ -36,8 +48,15 @@ port="${DOCS_SSH_PORT:-22}"
 command -v ssh-keygen >/dev/null && command -v ssh >/dev/null && command -v scp >/dev/null || fail 'SSH runner dependencies missing'
 api="https://api.github.com/repos/$GITHUB_REPOSITORY"
 headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
-current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
-[[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging changed since dispatch'
+if [[ "$stable_policy" == 1 ]]; then
+  current_main="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/main" | jq -r '.object.sha')"
+  [[ "$current_main" == "$KAORI_DOCS_MAIN_SHA" ]] || fail 'main changed after stable release'
+  git merge-base --is-ancestor "$ACCEPTED_SHA" "$KAORI_DOCS_MAIN_SHA" ||
+    fail 'stable accepted RC source is not in main ancestry'
+else
+  current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+  [[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging changed since RC/UAT dispatch'
+fi
 release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$RC_TAG")"
 [[ "$(jq -r '.prerelease' <<<"$release")" == true ]] || fail 'candidate is not an intentional prerelease'
 [[ "$(jq -r '.target_commitish' <<<"$release")" == "$ACCEPTED_SHA" ]] || fail 'RC release targets different source SHA'
@@ -49,29 +68,58 @@ image_ref="$REGISTRY_IMAGE@$digest"
 [[ "$body" == *"Deployment authority: $image_ref"* ]] || fail 'RC registry identity does not match Docs configuration'
 [[ "$body" == *'Trivy security and signed SBOM/provenance: PASS'* ]] || fail 'RC publication security evidence missing'
 approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$approval_id")" || fail 'approval inaccessible'
-if [[ "$auto_policy" == 1 ]]; then
-  [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/33" ]] ||
-    fail 'standing auto-deploy policy approval does not belong to issue #33'
-  grep -Fxq 'KAORI_DOCS_AUTO_DEPLOY_POLICY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:existing-public-only' <<< "$(jq -r '.body // ""' <<< "$approval")" ||
-    fail 'standing Docs-only existing-public deployment policy is not approved'
-  [[ "${KAORI_DOCS_PUBLISHER_RUN_ID:-}" =~ ^[0-9]+$ ]] ||
-    fail 'publisher workflow run id required in automatic mode'
-  publisher="$(curl -fsS "${headers[@]}" "$api/actions/runs/$KAORI_DOCS_PUBLISHER_RUN_ID")" ||
-    fail 'canonical publisher evidence unavailable'
-  jq -e --arg sha "$ACCEPTED_SHA" '
-    ((.name // "") | startswith("Release Candidate")) and
-    .path == ".github/workflows/publish-staging-image.yml" and
+if [[ "$stable_policy" == 1 ]]; then
+  [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/40" ]] ||
+    fail 'standing production policy approval does not belong to issue #40'
+  grep -Fxq 'KAORI_DOCS_STABLE_AUTO_DEPLOY_APPROVED:docs.kaori.cloud:docker.io/lethisaputri/kaori-docs:main-stable-only' <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+    fail 'Docs-only main-stable public auto-deploy policy is not approved'
+  stable="$(curl -fsS "${headers[@]}" "$api/releases/tags/$KAORI_DOCS_STABLE_TAG")" ||
+    fail 'accepted main stable release not found'
+  [[ "$(jq -r '.draft' <<< "$stable")" == false && "$(jq -r '.prerelease' <<< "$stable")" == false &&
+     "$(jq -r '.target_commitish' <<< "$stable")" == "$KAORI_DOCS_MAIN_SHA" ]] ||
+    fail 'stable release target main SHA or release state mismatch'
+  stable_tag_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/tags/$KAORI_DOCS_STABLE_TAG" | jq -r '.object.sha')"
+  [[ "$stable_tag_sha" == "$KAORI_DOCS_MAIN_SHA" ]] || fail 'stable Git tag not pinned to accepted main'
+  stable_body="$(jq -r '.body // ""' <<< "$stable")"
+  for line in     "Accepted RC: $RC_TAG"     "Accepted RC source SHA: $ACCEPTED_SHA"     "Stable main source SHA: $KAORI_DOCS_MAIN_SHA"     "Immutable digest: $digest"     "Deployment authority: $image_ref"     "Stable publication workflow run: $KAORI_DOCS_STABLE_RUN_ID"; do
+    grep -Fxq "$line" <<< "$stable_body" ||
+      fail "stable release failed exact identity check: $line"
+  done
+  human_ref="$(grep -E '^Human acceptance authority: https://github.com/OXY7O/kaori-docs/issues/39#issuecomment-[0-9]+$' <<< "$stable_body" | sed 's/^Human acceptance authority: //')" ||
+    fail 'stable release lacks exact issue #39 human acceptance'
+  [[ "$human_ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/39#issuecomment-([0-9]+)$ ]] ||
+    fail 'invalid stable acceptance source'
+  human_id="${BASH_REMATCH[1]}"
+  human_approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$human_id")" ||
+    fail 'stable human acceptance comment missing'
+  [[ "$(jq -r '.issue_url' <<< "$human_approval")" == "$api/issues/39" ]] ||
+    fail 'stable acceptance authority issue mismatch'
+  grep -Fxq "KAORI_DOCS_STABLE_APPROVED:$KAORI_DOCS_MAIN_SHA:$RC_TAG:$KAORI_DOCS_STABLE_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$human_approval")" ||
+    fail 'stable release human acceptance marker mismatch'
+  publisher="$(curl -fsS "${headers[@]}" "$api/actions/runs/$KAORI_DOCS_STABLE_RUN_ID")" ||
+    fail 'exact stable publisher run missing'
+  jq -e --arg main "$KAORI_DOCS_MAIN_SHA" '
+    ((.name // "") | startswith("Full Admission")) and
+    .path == ".github/workflows/quality.yml" and
     .event == "workflow_dispatch" and
-    .head_branch == "kaori/staging" and
-    .head_sha == $sha and
+    .head_branch == "main" and .head_sha == $main and
     .status == "completed" and .conclusion == "success" and
     .head_repository.full_name == "OXY7O/kaori-docs"
-  ' <<< "$publisher" >/dev/null || fail 'successful canonical publisher identity/source mismatch'
+  ' <<< "$publisher" >/dev/null || fail 'accepted stable publisher run was not successful on main'
+  jobs="$(curl -fsS "${headers[@]}" "$api/actions/runs/$KAORI_DOCS_STABLE_RUN_ID/jobs?per_page=100")" ||
+    fail 'stable publisher job evidence missing'
+  jq -e '[.jobs[] | select(.name == "Publish Accepted Stable Release" and .conclusion == "success")] | length == 1' <<< "$jobs" >/dev/null ||
+    fail 'stable publication job was not successful'
+  human_user="$(jq -r '.user.login // ""' <<< "$human_approval")"
+  [[ "$human_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid stable acceptance author'
+  human_permission="$(curl -fsS "${headers[@]}" "$api/collaborators/$human_user/permission" | jq -r '.permission')" ||
+    fail 'cannot verify stable human acceptance author'
+  case "$human_permission" in admin|maintain|write) ;; *) fail 'stable acceptor lacks write permission' ;; esac
 else
   [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/14" ]] ||
-    fail 'deployment approval does not belong to issue #14'
+    fail 'RC/UAT approval issue mismatch'
   grep -Fxq "KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
-    fail 'deployment approval marker SHA/tag/digest mismatch'
+    fail 'RC/UAT approval marker SHA/tag/digest mismatch'
 fi
 approval_user="$(jq -r '.user.login // ""' <<< "$approval")"
 [[ "$approval_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid approval author'
@@ -83,8 +131,8 @@ matched="$(jq -c --arg sha "$ACCEPTED_SHA" '[.workflow_runs[] | select(.head_sha
 echo "Accepted RC $RC_TAG: source $ACCEPTED_SHA; digest $digest"
 if [[ "$mode" == preflight ]]; then
   echo 'PASS: source, immutable prerelease evidence and required credential names are present'
-  if [[ "$auto_policy" == 1 ]]; then
-    echo 'PASS: verified standing Docs auto-deploy policy, publisher and exact Full Admission; no registry or host mutation during preflight'
+  if [[ "$stable_policy" == 1 ]]; then
+    echo 'PASS: verified stable main publisher and signed RC digest with approved Docs-only production policy; no host mutation in preflight'
   else
     echo 'PASS: issue #14 deployment approval marker and exact Full Admission verified; no registry access or host mutation performed'
   fi
@@ -152,7 +200,8 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\n' "$DOCS_DEPLOY_ROOT" "$remote_release"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
-  printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$RC_TAG"
+  printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$([[ "$stable_policy" == 1 ]] && printf '%s' "$KAORI_DOCS_STABLE_TAG" || printf '%s' "$RC_TAG")"
+  printf 'artifact_version=%q\nstable_policy=%q\n' "$RC_TAG" "$stable_policy"
   printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
   printf 'auto_policy=%q\n' "$auto_policy"
   cat <<'REMOTE_DEPLOY'
@@ -195,6 +244,10 @@ else
 fi
 # The release keeps its private loopback; public reattachment is separate.
 export KAORI_DOCS_RELEASE_LOCAL_ONLY=1
+if [[ "$stable_policy" == 1 ]]; then
+  export KAORI_DOCS_STABLE_RELEASE_CONFIRMED=1
+  export KAORI_DOCS_ARTIFACT_VERSION="$artifact_version"
+fi
 if ! bash "$remote_release/server/deploy.sh" "$image_ref" "$source_sha" "$release_tag"; then
   # If the runtime adapter recovered the previous committed digest, reconnect
   # only that Docs frontend; do not mask the original failed deployment.
@@ -212,7 +265,9 @@ fi
 docker logout "$registry_host" >/dev/null 2>&1 || true
 REMOTE_DEPLOY
 } | ssh "${ssh_opts[@]}" "$target" 'bash -se'
-if [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
+if [[ "$stable_policy" == 1 ]]; then
+  printf 'PASS: approved Docs stable %s deployed from main %s with same signed RC digest %s, and existing public edge reconciled.\n' "$KAORI_DOCS_STABLE_TAG" "$KAORI_DOCS_MAIN_SHA" "$digest"
+elif [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
   printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\n' "$digest"
 else
   printf 'PASS: accepted Docs release candidate %s installed privately at digest %s; no public edge/DNS/TLS changes. Browser UAT and human acceptance still PENDING.\n' "$RC_TAG" "$digest"
