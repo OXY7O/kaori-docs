@@ -28,3 +28,13 @@ An accepted Docs release requires source SHA, version/applicability evidence, pu
 - **Public readiness:** Work-branch review candidate only. Topic cards remain non-clickable; Get Started and Explore Capabilities are working same-page anchors.
 - **Release applicability:** No application version is asserted. Publication of versioned guides is owned by #15 and source-released App evidence; local search by #16.
 - **Acceptance evidence:** Exact-head Developer Check, merged-SHA Full Admission, six-viewport browser checks, operator UAT and Human Acceptance remain separate and must be recorded only after completion.
+
+## Core Concepts editorial draft record — issue #3
+
+- **Authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md) and Docs issue #3; the article presentation remains owned by issue #2.
+- **Owner:** Docs #3; **blocked by issue #2** for article shell and by #15 for verified native version routes.
+- **Draft paths:** `content/core-concepts/capabilities-providers-instances.md`, `external-source-authority.md`, `committed-evidence.md`, `cross-domain-correlation.md`, and `governed-operational-workflows.md` in the same directory.
+- **Status:** Five editorial drafts only, each marked `draft: true`. The Docusaurus docs plugin remains disabled. No versioned route, sidebar, release applicability, provider integration support, or public publication is asserted.
+- **Release applicability:** Not assigned. Docs artifact `v0.3.0-rc.1` is **not** evidence of KAORI Application `v0.3.0` stable functionality.
+- **Content boundary:** Generic conceptual examples and source-attributed text flows only; no live data, screenshots, secrets, provider setup instructions, invented health, dependencies, availability, or deployment topology.
+- **Publication gates:** Accepted issue #2 article shell and issue #15 version mapping, exact accepted Application behavior, link and public-bundle checks, six-viewport/dual-theme browser evidence, maintainer editorial review, stage UAT, and explicit Human Acceptance.
