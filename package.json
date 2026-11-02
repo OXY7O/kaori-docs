@@ -32,5 +32,9 @@
     "typescript": "5.9.3",
     "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.56.1"
+  },
+  "overrides": {
+    "tinypool": "2.1.2",
+    "serialize-javascript": "7.1.3"
   }
 }
