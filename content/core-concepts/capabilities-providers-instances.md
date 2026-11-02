@@ -56,4 +56,4 @@ When reading an integration-backed page, first identify the capability and the c
 
 A provider remains authoritative for the data and execution it owns. KAORI is responsible for connecting that information through normalization, provenance, cross-domain context, and governance—not for copying the provider's entire product.
 
-**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially *Capability-first, not product-first* and *Integration through explicit adapters*. This article requires release applicability and editorial approval before public publication.
+**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Capability-first, not product-first_ and _Integration through explicit adapters_. This article requires release applicability and editorial approval before public publication.
