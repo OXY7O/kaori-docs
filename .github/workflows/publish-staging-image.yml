@@ -1,6 +1,14 @@
 name: Release Candidate
-run-name: 'Release Candidate · ${{ inputs.candidate_tag }}'
+run-name: 'Release Candidate · ${{ inputs.candidate_tag || github.sha }}'
 on:
+  # One-time issue #24 activation; remove after approved RC is published.
+  # Path-scoped staging push is insufficient alone: the issue marker, exact
+  # license, maintainer approval and signed artifact gates all still apply.
+  push:
+    branches:
+      - kaori/staging
+    paths:
+      - .github/workflows/publish-staging-image.yml
   workflow_dispatch:
     inputs:
       candidate_tag:
@@ -34,6 +42,7 @@ concurrency:
 jobs:
   publish:
     name: Publish Release Candidate
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[KAORI_DOCS_RC_ISSUE_24]')) }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 120
     env:
@@ -55,6 +64,49 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Resolve one-time issue #24 staging approval without publishing on ordinary push
+        if: ${{ github.event_name == 'push' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@refs/heads/kaori/staging' ]] || {
+            echo 'BLOCK: release workflow signing identity changed' >&2
+            exit 1
+          }
+          git diff-tree --no-commit-id --name-only -r "$ACCEPTED_SHA" |
+            grep -Fxq '.github/workflows/publish-staging-image.yml' || {
+              echo 'BLOCK: bootstrap requires exact canonical workflow change' >&2
+              exit 1
+            }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          # Approval must refer to this merge SHA. Missing/ambiguous approvals
+          # fail safely; operator can post the comment then rerun this job.
+          comments="$(curl -fsS "${headers[@]}" "$api/issues/13/comments?per_page=100")"
+          approved="$(jq -c --arg sha "$ACCEPTED_SHA" '
+            [.[] | . as $c
+              | (.body // "" | split("\n")
+                | map(select(startswith("KAORI_DOCS_RC_APPROVED:" + $sha + ":")))
+                | unique) as $markers
+              | select($markers | length == 1)
+              | {url:$c.html_url, marker:$markers[0]}]
+          ' <<< "$comments")"
+          [[ "$(jq length <<< "$approved")" == 1 ]] || {
+            echo 'BLOCK: requires exactly one issue #13 approval for exact admitted staging SHA' >&2
+            exit 1
+          }
+          tag="$(jq -r '.[0].marker' <<< "$approved")"
+          tag="${tag##*:}"
+          [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || {
+            echo 'BLOCK: approved RC tag is not a prerelease' >&2
+            exit 1
+          }
+          approval_ref="$(jq -r '.[0].url' <<< "$approved")"
+          [[ "$approval_ref" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/13#issuecomment-[0-9]+$ ]] || exit 1
+          printf 'RC_TAG=%s\nAPPROVAL_REF=%s\nAPP_LICENSE=LicenseRef-KAORI-Internal-Use\nRESUME_EXISTING=false\n'             "$tag" "$approval_ref" >> "$GITHUB_ENV"
+          echo 'PASS: one-time source-scoped RC inputs resolved; publisher preflight must independently verify approval authority'
+
       - name: Verify approval, exact admitted SHA, registry, licence and trust
         shell: bash
         run: bash scripts/release/publish-candidate.sh preflight
