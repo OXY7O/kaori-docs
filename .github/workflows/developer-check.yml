@@ -145,12 +145,19 @@ jobs:
             GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
             GITHUB_WORKFLOW_REF="$canonical" GITHUB_WORKFLOW_SHA="$sha"
             KAORI_DOCS_SOURCE_SHA="$sha" ADMISSION_PROMOTION=success ADMISSION_FULL=success
-            ADMISSION_CONTAINER=success ADMISSION_BROWSER=success)
+            ADMISSION_CONTAINER=success ADMISSION_BROWSER=success
+            ADMISSION_PROFILE=reused ADMISSION_REUSED_FROM=10)
           "${base[@]}" bash scripts/ci/admission-evidence.sh write "$evidence"
           jq -e --arg source "$sha" '.source_sha == $source and
             .reuse_authorized == false and
             .mandatory_gate_conclusions["Browser Quality Evidence"] == "success"' "$evidence" >/dev/null
           rm -f "$evidence"
+          "${base[@]}" ADMISSION_PROFILE=full ADMISSION_REUSED_FROM='' \
+            bash scripts/ci/admission-evidence.sh write "$evidence"
+          jq -e '.schema_version == 2 and .profile == "full" and
+            .reuse_authorized == true and .reused_from_full_run == null' "$evidence" >/dev/null
+          rm -f "$evidence"
+          python3 scripts/ci/admission-reuse.py test
           if "${base[@]}" ADMISSION_BROWSER=skipped \
             bash scripts/ci/admission-evidence.sh write "$evidence"; then
             echo 'BLOCK: skipped browser gate was accepted as reusable evidence' >&2
