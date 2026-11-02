@@ -151,21 +151,13 @@ jobs:
             .reuse_authorized == false and
             .mandatory_gate_conclusions["Browser Quality Evidence"] == "success"' "$evidence" >/dev/null
           rm -f "$evidence"
-          if env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_REF=refs/heads/kaori/staging
-            GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
-            GITHUB_WORKFLOW_REF="$canonical" GITHUB_WORKFLOW_SHA="$sha"
-            KAORI_DOCS_SOURCE_SHA="$sha" ADMISSION_PROMOTION=success ADMISSION_FULL=success
-            ADMISSION_CONTAINER=success ADMISSION_BROWSER=skipped
+          if "${base[@]}" ADMISSION_BROWSER=skipped \
             bash scripts/ci/admission-evidence.sh write "$evidence"; then
             echo 'BLOCK: skipped browser gate was accepted as reusable evidence' >&2
             exit 1
           fi
-          if env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_REF=refs/heads/kaori/staging
-            GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
-            GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/fake.yml@refs/heads/main
-            GITHUB_WORKFLOW_SHA="$sha" KAORI_DOCS_SOURCE_SHA="$sha"
-            ADMISSION_PROMOTION=success ADMISSION_FULL=success
-            ADMISSION_CONTAINER=success ADMISSION_BROWSER=success
+          if "${base[@]}" \
+            GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/fake.yml@refs/heads/main \
             bash scripts/ci/admission-evidence.sh write "$evidence"; then
             echo 'BLOCK: noncanonical workflow was accepted as admission authority' >&2
             exit 1
