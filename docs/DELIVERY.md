@@ -12,6 +12,18 @@ Follow the [KAORI Engineering Delivery Workflow](https://github.com/OXY7O/KAORI/
 8. Collect staging/server UAT, accessibility/light-dark/mobile/six-viewport evidence and explicit human acceptance.
 9. Promote via a `kaori/staging` → `main` PR; publish only after all relevant release and public-edge gates, with separately approved DNS/TLS/Host/SNI changes.
 
+**Future recurring Docs releases (#33):** once the canonical release workflows
+are admitted/promoted to default `main`, first-public Docs DNS/TLS under
+[KAORI#4196](https://github.com/OXY7O/KAORI/issues/4196) is verified, and
+the explicit Docs-only standing policy + repository enable variable are approved,
+a successful independently signed RC publisher may trigger the existing release
+deployment adapter through `workflow_run`. This is **post-approval automatic
+deployment**, not auto-acceptance on every push. The standalone shared-edge
+remains authoritative for DNS/TLS and post-deploy reconciliation; runtime
+receipt and edge readiness are separate outcomes. No deployment events from
+`GITHUB_TOKEN`-created `release.published` are assumed. See
+[release deployment runbook](RELEASE_DEPLOYMENT.md).
+
 The initial repository contains only `main`, so issue #11 first creates `kaori/staging` from its existing README commit and then an issue-owned bootstrap work branch. The staging branch creation alone is **not** an approved staging merge. Each later issue remains a bounded workstream.
 
 ## Quality and operational boundaries

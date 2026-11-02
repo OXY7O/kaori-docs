@@ -192,6 +192,24 @@ jobs:
             echo 'BLOCK: invalid edge reconciliation operation accepted' >&2
             exit 1
           fi
+          # #33 standing policy is not allowed from normal release/manual ref.
+          if env GITHUB_EVENT_NAME=workflow_dispatch GITHUB_REF=refs/heads/kaori/staging \
+              KAORI_DOCS_AUTO_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.2 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/33#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: workflow_dispatch must not impersonate completed publisher' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              KAORI_DOCS_AUTO_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.2 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/33#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: auto mode must require approved existing-public edge' >&2
+            exit 1
+          fi
+          echo 'PASS: manual/event impersonation and unapproved public auto release fail closed'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
 
       - name: Validate static output and public boundary
