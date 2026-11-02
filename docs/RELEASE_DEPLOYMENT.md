@@ -53,6 +53,40 @@ The initial bootstrap checks for exactly one issue #14 comment with the exact me
 
 The same final staging merge must change the canonical RC workflow too, with the independently reviewed `[KAORI_DOCS_RC_ISSUE_24]` marker, to publish a **new** signed candidate for that SHA. Never deploy a candidate from an earlier commit. After private deployment evidence is accepted, remove both temporary triggers through reviewed issue-linked cleanup PRs and retain canonical manual workflows.
 
+## Stable main identity — issue #39, production deployment pending #40
+
+The **staging environment uses RC** (`vX.Y.Z-rc.N`) from an admitted
+`kaori/staging` SHA. Staging/UAT may deploy the signed candidate only under
+the existing guarded source/digest approval and isolated Docs runtime.
+**Main uses stable** (`vX.Y.Z`) after Human Acceptance and a reviewed promotion
+PR. Main stable publication must preserve the **exact same accepted RC OCI
+digest** and must **not rebuild** Docusaurus/Nginx/OCI application bits.
+
+Use the existing canonical `Full Admission` workflow on `main` with manual
+`workflow_dispatch` inputs:
+
+- `stable_version` — strict `vX.Y.Z`.
+- `accepted_candidate_tag` — exact `vX.Y.Z-rc.N` prerelease previously
+  signed and human accepted.
+- `stable_approval_reference` — issue #39 maintainer comment URL containing
+  `KAORI_DOCS_STABLE_APPROVED:<exact-main-SHA>:<exact-RC-tag>:<stable-tag>:<sha256-digest>`.
+
+The stable publication job runs only after **same-run main Full Admission,
+Container Admission and Browser Quality Evidence PASS**. It checks main source
+identity, matching RC tag/SHA/digest and immutable build inputs, approver write
+permission, uniqueness/no overwrite, then independently verifies Cosign image
+signature and SPDX/SLSA attestations before publishing stable GitHub Release
+metadata on main. It does not change any VPS container, public edge, DNS, TLS,
+registry image digest, nor create a mutable alias.
+
+**The previously proposed #33 successful-RC → public automatic deploy is
+not production authority.** Leave its enable variable OFF and do not issue
+its standing approval marker. Issue #40 will replace that auto trigger with
+a **separate accepted-stable-main → production deployment** workflow. A single
+existing public Docs VPS is not a true isolated staging/production environment;
+do not claim two independent environments or deploy an unaccepted RC to public
+production merely because it has passed Full Admission.
+
 ## Signed-release automatic deployment — issue #33
 
 The canonical `Release Deployment` workflow can **optionally** run after a
