@@ -124,12 +124,6 @@ jobs:
       - name: Install locked dependencies
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm ci --no-audit --no-fund
-      - name: Inspect Prettier YAML delta for issue 14 (temporary, not acceptance)
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npx prettier --write .github/workflows/deploy-staging-host.yml deploy/server/compose.docs.yml deploy/server/compose.release.yml
-          git diff -- .github/workflows/deploy-staging-host.yml deploy/server/compose.docs.yml deploy/server/compose.release.yml
       - name: Validate issue-owned shell syntax
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
@@ -152,6 +146,13 @@ jobs:
         if: ${{ needs.route.outputs.runtime == 'true' }}
         shell: bash
         run: bash scripts/container_smoke.sh "$KAORI_DOCS_SOURCE_SHA"
+      - name: Verify isolated Docs Compose private UAT overlay
+        if: ${{ needs.route.outputs.runtime == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
+          docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
       - name: Validate static output and public boundary
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
