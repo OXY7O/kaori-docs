@@ -42,7 +42,7 @@ if [[ "$mode" == preflight ]]; then
   # not persist write-capable credentials into Git configuration.
   tag_status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")"
   case "$tag_status" in
-    404) [[ "${RESUME_EXISTING:-false}" != true ]] || fail 'resume requires registered tag' ;;
+    404) ;; # Partial candidate may have a verified registry digest but no Git tag yet.
     200) [[ "${RESUME_EXISTING:-false}" == true ]] || fail 'candidate tag already reserved' ;;
     *) fail "GitHub tag authority check failed (HTTP $tag_status)" ;;
   esac
