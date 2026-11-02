@@ -138,12 +138,50 @@ jobs:
       - name: Install locked dependencies
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm ci --no-audit --no-fund
-      - name: Audit dependency authority changes
-        if: ${{ needs.route.outputs.dependencies == 'true' }}
-        run: npm audit --audit-level=high
+      - name: Prepare review-only Prettier candidate for issue bootstrap
+        if: ${{ needs.route.outputs.site == 'true' }}
+        id: format_candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm run format
+          if ! git diff --quiet -- . ':!package-lock.json'; then
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+            echo 'BLOCK: Prettier changed committed source. Review and commit the formatted files, then rerun.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Upload review-only formatted source
+        if: ${{ needs.route.outputs.site == 'true' && steps.format_candidate.outputs.changed == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: docs-prettier-review-${{ github.event.pull_request.head.sha }}
+          path: |
+            .devcontainer/devcontainer.json
+            .github/workflows/developer-check.yml
+            .github/workflows/quality.yml
+            compose.dev.yml
+            docs/ARCHITECTURE.md
+            docs/CI_CD.md
+            src/css/custom.css
+            src/pages/index.tsx
+            tests/browser/docs-foundation.spec.ts
+          retention-days: 7
+          if-no-files-found: error
+          include-hidden-files: true
+      - name: Require committed formatting
+        if: ${{ needs.route.outputs.site == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          git diff --quiet -- . ':!package-lock.json' || {
+            echo 'BLOCK: formatting differs from committed source.' >&2
+            exit 1
+          }
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
+      - name: Audit dependency authority changes
+        if: ${{ needs.route.outputs.dependencies == 'true' }}
+        run: npm audit --audit-level=high
       - name: Check TypeScript
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check
