@@ -6,15 +6,15 @@
 
 One existing KAORI VPS hosts **one active Docs image**: either an approved RC or an accepted stable. Selecting the next signed digest **replaces** the current Docs container. The maintainer has explicitly accepted a brief service interruption during this development-phase replacement. The release engine does not create concurrent staging/production Docs instances.
 
-| Setting | Single existing deployment slot |
-| --- | --- |
-| Release root | `/opt/kaori-docs/releases/<source-SHA>/server` |
-| Compose | `kaori-docs` / `web` |
-| Loopback | `127.0.0.1:18081:8080` |
-| Public edge | Previously approved `docs.kaori.cloud` → `kaori-docs-web:8080` |
+| Setting                     | Single existing deployment slot                                         |
+| --------------------------- | ----------------------------------------------------------------------- |
+| Release root                | `/opt/kaori-docs/releases/<source-SHA>/server`                          |
+| Compose                     | `kaori-docs` / `web`                                                    |
+| Loopback                    | `127.0.0.1:18081:8080`                                                  |
+| Public edge                 | Previously approved `docs.kaori.cloud` → `kaori-docs-web:8080`          |
 | Current / previous receipts | `/var/lib/kaori-docs/deploy-state/release.env` / `previous-release.env` |
-| Selected image | `docker.io/<approved-account>/kaori-docs@sha256:<64-hex>` |
-| Existing deploy identity | `kaori-deploy` |
+| Selected image              | `docker.io/<approved-account>/kaori-docs@sha256:<64-hex>`               |
+| Existing deploy identity    | `kaori-deploy`                                                          |
 
 No second Docs Compose project, port 18082, staging directory, OS account, proxy, TLS certificate or DNS registration. Deployment may momentarily interrupt the public Docs site, **never** intentionally the KAORI Application or Website.
 
@@ -62,7 +62,7 @@ ls -ld /opt/kaori-docs /var/lib/kaori-docs/deploy-state
 
 ## Single previous-release rollback
 
-For a separately approved rollback, the existing adapter reads `previous-release.env` and returns the *same project* to its previous digest. The public edge is reconciled only for the existing Docs hostname, using the same shared-edge verification:
+For a separately approved rollback, the existing adapter reads `previous-release.env` and returns the _same project_ to its previous digest. The public edge is reconciled only for the existing Docs hostname, using the same shared-edge verification:
 
 ```bash
 KAORI_DOCS_RELEASE_LOCAL_ONLY=1 \
