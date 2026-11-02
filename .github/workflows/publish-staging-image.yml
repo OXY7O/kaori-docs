@@ -75,9 +75,17 @@ jobs:
             echo 'BLOCK: release workflow signing identity changed' >&2
             exit 1
           }
-          git diff-tree --no-commit-id --name-only -r "$ACCEPTED_SHA" |
+          # A GitHub merge commit has two parents. Plain diff-tree -r does not
+          # report its changed paths: compare the accepted merge against the
+          # first (previous staging) parent explicitly, fail closed otherwise.
+          [[ "$(git cat-file -p "$ACCEPTED_SHA" | grep -c '^parent ')" == 2 ]] || {
+            echo 'BLOCK: bootstrap must be a two-parent staging merge commit' >&2
+            exit 1
+          }
+          git diff --name-only "$ACCEPTED_SHA^1" "$ACCEPTED_SHA" -- \
+            .github/workflows/publish-staging-image.yml |
             grep -Fxq '.github/workflows/publish-staging-image.yml' || {
-              echo 'BLOCK: bootstrap requires exact canonical workflow change' >&2
+              echo 'BLOCK: bootstrap requires exact canonical workflow change in staging merge' >&2
               exit 1
             }
           api="https://api.github.com/repos/$GITHUB_REPOSITORY"
