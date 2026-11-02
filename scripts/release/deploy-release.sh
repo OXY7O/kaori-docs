@@ -158,7 +158,7 @@ docker logout "$registry_host" >/dev/null 2>&1 || true
 REMOTE_DEPLOY
 } | ssh "${ssh_opts[@]}" "$target" 'bash -se'
 if [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
-  printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\\n' "$digest"
+  printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\n' "$digest"
 else
   printf 'PASS: accepted Docs release candidate %s installed privately at digest %s; no public edge/DNS/TLS changes. Browser UAT and human acceptance still PENDING.\n' "$RC_TAG" "$digest"
 fi
