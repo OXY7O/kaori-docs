@@ -1,8 +1,14 @@
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-// The first bootstrap intentionally exposes no draft or unverified application-version docs.
-// #15 will enable the native docs plugin after release mapping and public-corpus admission.
+// The public build must never enable unverified application-version documentation.
+// Issue #2 permits native article review only in an explicitly opted-in local dev session.
+// Issue #15 separately owns release-qualified version routing and publication.
+const editorialPreview =
+  process.env.KAORI_DOCS_EDITORIAL_PREVIEW === '1' &&
+  process.env.npm_lifecycle_event === 'dev' &&
+  process.env.NODE_ENV !== 'production' &&
+  process.env.CI !== 'true';
 const config: Config = {
   title: 'KAORI Documentation',
   tagline: 'Knowledge, Automation, Operations, Resilience & Intelligence',
@@ -16,7 +22,14 @@ const config: Config = {
     [
       'classic',
       {
-        docs: false,
+        docs: editorialPreview
+          ? {
+              path: 'content',
+              routeBasePath: 'editorial-preview',
+              sidebarPath: './sidebars.ts',
+              breadcrumbs: true,
+            }
+          : false,
         blog: false,
         theme: {customCss: './src/css/custom.css'},
       } satisfies Preset.Options,
