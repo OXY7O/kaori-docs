@@ -28,6 +28,7 @@ The released application manifest/tag, accepted app SHA and immutable evidence, 
 
 ## Publication and validation gates
 
+- **Versioning contract (#15):** See [Version Routing](VERSION_ROUTING.md). The empty internal publication map keeps `Introduction` and all `current` drafts out of public output; the local-only `/v0.3/` routing experiment is not an accepted application release or publishable guide.
 - **Current status:** unpublished review content. `draft: true` is retained and the `docs` plugin remains disabled in the current public build; only explicit local development can show an `editorial-preview` article. No product version selector, public article or search route is enabled by this draft.
 - **Verification:** perform locked-dependency formatting, TypeScript/build, public-scope assertions and relevant Developer Check on the **new exact head**. Previous successful checks on earlier commits are historical evidence only.
 - **Activation blockers:** accept native release mapping #15 and actual KAORI application stable release evidence; review the article against that exact release; remove the draft boundary only in a subsequent reviewed publication change; verify route, six viewports, two themes, keyboard/200% zoom, TOC/sidebar/a11y, index isolation, Full Admission, UAT, and Human Acceptance.
