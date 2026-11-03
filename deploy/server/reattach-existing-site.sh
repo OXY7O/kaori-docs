@@ -95,6 +95,10 @@ done
 
 # Verify every registered site, cert SAN/HSTS and unknown Host/SNI using the
 # canonical edge owner. Normal release reconciliation does not renew certificates.
-bash "$edge_root/runtime/verify.sh" --wait-seconds 120 ||
+# The Docs release adapter exports COMPOSE_PROJECT_NAME=kaori-docs while
+# managing its own web service. The independently owned shared edge uses its
+# own project name from /opt/shared-edge/runtime/compose.yml. Do not inherit
+# the Docs project override when running the canonical, unmodified verifier.
+env -u COMPOSE_PROJECT_NAME bash "$edge_root/runtime/verify.sh" --wait-seconds 120 ||
     fail 'shared-edge regression verification failed; Docs release receipt remains committed'
 printf 'PASS: committed Docs digest reattached; docs.kaori.cloud and all existing shared-edge sites verified\n'
