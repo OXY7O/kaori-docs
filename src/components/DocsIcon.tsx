@@ -11,6 +11,7 @@ export type DocsIconName =
   | 'file-text'
   | 'info'
   | 'layers'
+  | 'mail'
   | 'network'
   | 'server'
   | 'shield-check'
@@ -64,6 +65,12 @@ const paths: Record<DocsIconName, React.ReactNode> = {
     </>
   ),
   layers: <path d="m12 2 10 6-10 6L2 8l10-6ZM2 12l10 6 10-6M2 16l10 6 10-6" />,
+  mail: (
+    <>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 6L2 7" />
+    </>
+  ),
   network: (
     <>
       <rect x="9" y="2" width="6" height="6" rx="1" />
