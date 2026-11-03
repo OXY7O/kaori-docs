@@ -59,7 +59,7 @@ export default function Footer(): React.JSX.Element | null {
           <p className="kaori-docs-footer__tagline">
             Infrastructure operations, connected by evidence.
           </p>
-          <p className="kaori-docs-footer__acronym" aria-label="KAORI stands for Knowledge, Automation, Operations, Resilience and Intelligence">
+          <p className="kaori-docs-footer__acronym">
             <strong>Knowledge</strong>
             <span>Automation</span>
             <strong>Operations</strong>
