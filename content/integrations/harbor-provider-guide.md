@@ -37,13 +37,13 @@ The source detail template includes **Configuration**, **Validation & Capabiliti
 
 ## Evidence interpretation
 
-| Observation | What it can support | What it does not prove |
-| --- | --- | --- |
-| Successful Test Connection | Submitted endpoint identity and reachability at test time | Compatibility, inventory completeness, or provider readiness |
-| Full Validation readiness | Provider-owned compatibility and required API capability evidence | Every project/artifact collected or optional consumer binding ready |
-| Runtime health observation | Lightweight provider health at observation time | Fresh committed Registry inventory |
-| Inventory evidence | Scoped committed source observations, if collected | Entire Harbor truth or current vulnerability-free state |
-| Optional metrics/webhook coverage | Downstream adoption when independently evidenced | Mandatory core Registry readiness |
+| Observation                       | What it can support                                               | What it does not prove                                              |
+| --------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Successful Test Connection        | Submitted endpoint identity and reachability at test time         | Compatibility, inventory completeness, or provider readiness        |
+| Full Validation readiness         | Provider-owned compatibility and required API capability evidence | Every project/artifact collected or optional consumer binding ready |
+| Runtime health observation        | Lightweight provider health at observation time                   | Fresh committed Registry inventory                                  |
+| Inventory evidence                | Scoped committed source observations, if collected                | Entire Harbor truth or current vulnerability-free state             |
+| Optional metrics/webhook coverage | Downstream adoption when independently evidenced                  | Mandatory core Registry readiness                                   |
 
 The application separates provider core readiness from optional Metrics Source and webhook reconciliation coverage. A webhook event is a fast path; scheduled reconciliation remains the correctness path. Neither delivery nor a queued job is evidence that all artifacts have been synchronized.
 
