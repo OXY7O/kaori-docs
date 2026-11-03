@@ -45,7 +45,7 @@ A release-qualified operational guide should explain prerequisites, supported sc
 
 The fact that a provider exposes an API is not, by itself, a reason to expose that operation in KAORI.
 
-**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Centralized Operational Activities_, _Administration, Governance, and Audit_, and _Visibility before mutation_. Feature-level behavior must be linked to the accepted application implementation and release before publishing.
+**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/7272c81e495ef8e4d590355f1d1e6c4dd785eb91/docs/product/README.md), especially _Centralized Operational Activities_, _Administration, Governance, and Audit_, and _Visibility before mutation_. Feature-level behavior must be linked to the accepted application implementation and release before publishing.
 
 ## Implementation evidence from KAORI staging
 
