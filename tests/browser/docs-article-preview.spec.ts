@@ -7,8 +7,9 @@ test('Introduction uses native, accessible Docusaurus article layout', async ({
   page,
 }, testInfo) => {
   test.skip(
-    process.env.KAORI_DOCS_EDITORIAL_PREVIEW !== '1',
-    'Unpublished article preview is local-only',
+    process.env.KAORI_DOCS_EDITORIAL_PREVIEW !== '1' ||
+      process.env.KAORI_DOCS_VERSION_ROUTE_PREVIEW === '1',
+    'Standard editorial preview excludes the native route smoke mode',
   );
 
   const response = await page.goto('/editorial-preview/getting-started/introduction');
