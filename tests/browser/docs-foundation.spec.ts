@@ -23,9 +23,23 @@ test('documentation home is accurate and accessible at six viewports and two the
   await expect(page.locator('.kaori-docs-home__category')).toHaveCount(8);
   await expect(page.locator('.kaori-docs-home__step')).toHaveCount(3);
   await expect(page.locator('.kaori-docs-home__category-status')).toHaveCount(8);
+  // Exact public copy must fit each catalog card on a single line without
+  // hiding text or relying on desktop-only screenshots.
+  const lineCounts = await page.locator('.kaori-docs-home__category p').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return range.getClientRects().length;
+    }),
+  );
+  expect(lineCounts).toEqual(Array(8).fill(1));
   await expect(
-    page.getByRole('heading', {level: 2, name: 'Documentation publication status'}),
+    page.getByRole('heading', {level: 2, name: 'Documentation status'}),
   ).toBeVisible();
+  await expect(
+    page.getByRole('heading', {level: 2, name: 'Connected operational context'}),
+  ).toBeVisible();
+  await expect(page.locator('.kaori-docs-home__context h2 .hash-link')).toBeHidden();
   await expect(page.locator('a[href="#getting-started"]')).toBeVisible();
   await expect(page.locator('a[href="#explore-capabilities"]')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(light|dark)$/);
@@ -164,6 +178,11 @@ test('navigation, content availability, and external destinations stay scoped', 
   ).toHaveCount(1);
   await expect(page.locator('.kaori-docs-home__preview > div')).toHaveCount(3);
   await expect(page.locator('.kaori-docs-home__flow > div')).toHaveCount(3);
+  await expect(page.locator('.kaori-docs-home__source')).toContainText(
+    'KAORI Platform Direction',
+  );
+  await expect(page.locator('.kaori-docs-home__source a')).toHaveCount(0);
+  await expect(page.locator('a[href*="/KAORI/blob/main/docs/product/"]')).toHaveCount(0);
   await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);
   await expect(page.locator('a[href^="/v"]')).toHaveCount(0);
 });
