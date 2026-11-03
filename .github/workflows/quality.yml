@@ -184,7 +184,7 @@ jobs:
           # #57: the reviewed concise publication notice replaces the old
           # long bootstrap sentence. Keep the same fail-closed public-corpus
           # gate while checking current, truthful unversioned-page semantics.
-          grep -Fq 'Documentation publication status' build/index.html
+          grep -Fq 'Documentation status' build/index.html
           grep -Fq 'Versioned guides, release notes, and search appear after review.' build/index.html
           grep -Fq 'In preparation' build/index.html
           echo 'PASS: bootstrap public scope, truthful unpublished documentation state.' >> "$GITHUB_STEP_SUMMARY"
