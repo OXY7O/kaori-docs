@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 // The first bootstrap intentionally exposes no draft or unverified application-version docs.
 // #15 will enable the native docs plugin after release mapping and public-corpus admission.
 const config: Config = {
-  title: 'KAORI Docs',
+  title: 'KAORI Documentation',
   tagline: 'Knowledge, Automation, Operations, Resilience & Intelligence',
   url: 'https://docs.kaori.cloud',
   baseUrl: '/',
@@ -30,7 +30,7 @@ const config: Config = {
       disableSwitch: false,
     },
     navbar: {
-      title: 'KAORI Docs',
+      title: 'KAORI Documentation',
       logo: {alt: 'KAORI logo', src: 'branding/kaori-logo.svg'},
       items: [
         {to: '/', label: 'Overview', position: 'left'},
@@ -48,7 +48,7 @@ const config: Config = {
     footer: {
       style: 'light',
       logo: {
-        alt: 'KAORI Docs',
+        alt: 'KAORI Documentation',
         src: 'branding/kaori-logo.svg',
         width: 32,
         height: 32,
@@ -79,7 +79,7 @@ const config: Config = {
         },
       ],
       copyright:
-        '© 2026 KAORI Docs · Documentation for connected operations · Release-qualified content only · An OXY7 ORBITAL project.',
+        '© 2026 KAORI. All rights reserved. · Release-qualified content only.',
     },
   } satisfies Preset.ThemeConfig,
 };
