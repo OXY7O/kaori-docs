@@ -361,4 +361,7 @@ jobs:
           test ! -e build/package.json
           test ! -e build/content
           test ! -e build/v0.0
+          test ! -e build/v0.3
+          test ! -e build/editorial-preview
+          test ! -e build/getting-started
           printf 'Static output boundary verified at %s\n' "$KAORI_DOCS_SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"

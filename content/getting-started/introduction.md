@@ -3,6 +3,7 @@ id: introduction
 title: Introduction to KAORI
 sidebar_label: Introduction
 sidebar_position: 1
+slug: /getting-started/introduction
 description: Learn how KAORI connects authoritative infrastructure sources, committed evidence, and governed operational context.
 draft: true
 ---

@@ -125,6 +125,12 @@ jobs:
           for path in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github .devcontainer package.json package-lock.json content; do
             test ! -e "build/$path" || { echo "Public scope leaked: $path" >&2; exit 1; }
           done
+          for forbidden in build/v0.3 build/editorial-preview build/getting-started; do
+            test ! -e "$forbidden" || {
+              echo "Unpublished Docs route leaked: $forbidden" >&2
+              exit 1
+            }
+          done
           if [[ -d build/v0.0 ]]; then
             echo 'Unverified application version route is forbidden.' >&2
             exit 1

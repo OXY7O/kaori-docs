@@ -12,6 +12,8 @@ This internal editorial register is **not** part of the Docusaurus public output
 - **Article structure:** introduction → audience → capability/provider/instance → conceptual source-to-evidence flow → committed evidence → visibility versus authorization → links to actually published pages.
 - **Native article presentation:** Docusaurus own sidebar, breadcrumb, on-page TOC, accessible anchors, and previous/next navigation. The draft frontmatter carries a title, sidebar label, ordering, description, and `draft: true`; it does not create a custom router or a visible version assertion.
 - **Conceptual diagram:** text-first accessible flow; no real infrastructure state or claim of enabled providers.
+- **Developer preview:** explicitly run `KAORI_DOCS_EDITORIAL_PREVIEW=1 npm run dev` and inspect `/editorial-preview/getting-started/introduction`; normal builds/CI do not enable the plugin. The slug `/getting-started/introduction` is stable within either preview or a future accepted native `/vX.Y/` line, but no public version route exists yet.
+- **Article QA:** `KAORI_DOCS_EDITORIAL_PREVIEW=1 npm run test:browser` exercises the native sidebar/TOC, headings, keyboard, accessibility, responsive themes and screenshot. Execution/evidence remains pending until reported by a real environment.
 
 ## Proposed version placement — pending maintainer review and issue #15
 
@@ -26,7 +28,7 @@ The released application manifest/tag, accepted app SHA and immutable evidence, 
 
 ## Publication and validation gates
 
-- **Current status:** unpublished review content. `draft: true` is retained and the `docs` plugin remains disabled in the current public build. No article, version selector, or search route is enabled by this draft.
+- **Current status:** unpublished review content. `draft: true` is retained and the `docs` plugin remains disabled in the current public build; only explicit local development can show an `editorial-preview` article. No product version selector, public article or search route is enabled by this draft.
 - **Verification:** perform locked-dependency formatting, TypeScript/build, public-scope assertions and relevant Developer Check on the **new exact head**. Previous successful checks on earlier commits are historical evidence only.
 - **Activation blockers:** accept native release mapping #15 and actual KAORI application stable release evidence; review the article against that exact release; remove the draft boundary only in a subsequent reviewed publication change; verify route, six viewports, two themes, keyboard/200% zoom, TOC/sidebar/a11y, index isolation, Full Admission, UAT, and Human Acceptance.
 - **Operations:** Do not merge directly to `main`, deploy, revise DNS/edge, or claim stable Docs publication based on source review alone.
