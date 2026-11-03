@@ -63,7 +63,9 @@ test('documentation home is accurate and accessible at six viewports and two the
     'https://app.kaori.cloud',
   );
   const footer = page.locator('footer');
-  await expect(page.locator('.navbar__brand')).toContainText('KAORI Documentation');
+  await expect(page.locator('.navbar__brand:visible').first()).toContainText(
+    'KAORI Documentation',
+  );
   await expect(footer.locator('.kaori-docs-footer__brand')).toContainText(
     'KAORI Documentation',
   );
