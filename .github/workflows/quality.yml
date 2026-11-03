@@ -177,6 +177,8 @@ jobs:
           for path in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github .devcontainer package.json package-lock.json content; do
             test ! -e "build/$path" || { echo "Public scope leaked: $path" >&2; exit 1; }
           done
+          test ! -e build/versions.json
+          test ! -e build/docs/PUBLISHED_VERSIONS.json
           for forbidden in build/v0.3 build/editorial-preview build/getting-started; do
             test ! -e "$forbidden" || {
               echo "Unpublished Docs route leaked: $forbidden" >&2
