@@ -78,8 +78,7 @@ const config: Config = {
           items: [{label: 'Contact owner', href: 'mailto:lethisaputri@gmail.com'}],
         },
       ],
-      copyright:
-        '© 2026 KAORI. All rights reserved. · Release-qualified content only.',
+      copyright: '© 2026 KAORI. All rights reserved. · Release-qualified content only.',
     },
   } satisfies Preset.ThemeConfig,
 };
