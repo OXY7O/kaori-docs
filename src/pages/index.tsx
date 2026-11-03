@@ -61,7 +61,8 @@ const firstSteps: {
   {
     number: '01',
     title: 'Understand the platform',
-    description: 'KAORI connects infrastructure context without replacing source systems.',
+    description:
+      'KAORI connects infrastructure context without replacing source systems.',
     icon: 'layers',
   },
   {
@@ -98,8 +99,14 @@ export default function DocumentationHome(): React.JSX.Element {
               <p className="kaori-docs-home__summary">
                 Explore the platform by capability, workflow, and committed evidence.
               </p>
-              <div className="kaori-docs-home__actions" aria-label="Explore documentation">
-                <a className="button button--primary kaori-docs-home__primary" href="#getting-started">
+              <div
+                className="kaori-docs-home__actions"
+                aria-label="Explore documentation"
+              >
+                <a
+                  className="button button--primary kaori-docs-home__primary"
+                  href="#getting-started"
+                >
                   Get Started <DocsIcon name="arrow-right" size={17} />
                 </a>
                 <a
@@ -109,7 +116,10 @@ export default function DocumentationHome(): React.JSX.Element {
                   <DocsIcon name="layers" size={18} /> Explore Catalog
                 </a>
               </div>
-              <ul className="kaori-docs-home__principles" aria-label="Documentation principles">
+              <ul
+                className="kaori-docs-home__principles"
+                aria-label="Documentation principles"
+              >
                 <li>
                   <DocsIcon name="layers" size={15} /> Capability-first
                 </li>
@@ -131,10 +141,11 @@ export default function DocumentationHome(): React.JSX.Element {
                   Documentation publication status
                 </Heading>
               </div>
-              <p>
-                Versioned guides, release notes, and search appear after review.
-              </p>
-              <div className="kaori-docs-home__preview" aria-label="Documentation topics not yet published">
+              <p>Versioned guides, release notes, and search appear after review.</p>
+              <div
+                className="kaori-docs-home__preview"
+                aria-label="Documentation topics not yet published"
+              >
                 <div>
                   <DocsIcon name="file-text" size={18} />
                   <span>Product guides &amp; how-to</span>
@@ -194,7 +205,9 @@ export default function DocumentationHome(): React.JSX.Element {
               <Heading as="h2" id="explore-capabilities-heading">
                 Explore Capabilities
               </Heading>
-              <p>Eight documentation topics. Articles become available after verification.</p>
+              <p>
+                Eight documentation topics. Articles become available after verification.
+              </p>
             </div>
             <div className="kaori-docs-home__catalog">
               {documentationSections.map((section) => (
@@ -223,11 +236,12 @@ export default function DocumentationHome(): React.JSX.Element {
                 A consistent source of <span>operational context</span>
               </Heading>
               <p>
-                Organize by capability, provider, and instance. External systems
-                remain authoritative for their data and execution.
+                Organize by capability, provider, and instance. External systems remain
+                authoritative for their data and execution.
               </p>
               <p>
-                This diagram explains the KAORI model, not a specific deployed environment.
+                This diagram explains the KAORI model, not a specific deployed
+                environment.
               </p>
               <p className="kaori-docs-home__source">
                 <DocsIcon name="layers" size={17} />
@@ -247,12 +261,20 @@ export default function DocumentationHome(): React.JSX.Element {
                 <DocsIcon name="server" size={22} />
                 <span>External authoritative systems</span>
               </div>
-              <DocsIcon name="arrow-right" size={19} className="kaori-docs-home__flow-arrow" />
+              <DocsIcon
+                name="arrow-right"
+                size={19}
+                className="kaori-docs-home__flow-arrow"
+              />
               <div className="kaori-docs-home__flow-focus">
                 <DocsIcon name="layers" size={23} />
                 <span>KAORI normalization &amp; committed evidence</span>
               </div>
-              <DocsIcon name="arrow-right" size={19} className="kaori-docs-home__flow-arrow" />
+              <DocsIcon
+                name="arrow-right"
+                size={19}
+                className="kaori-docs-home__flow-arrow"
+              />
               <div>
                 <DocsIcon name="network" size={22} />
                 <span>Cross-domain operational context</span>
