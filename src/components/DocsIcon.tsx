@@ -98,11 +98,7 @@ const paths: Record<DocsIconName, React.ReactNode> = {
   ),
 };
 
-export default function DocsIcon({
-  name,
-  size = 20,
-  className,
-}: Props): React.JSX.Element {
+export default function DocsIcon({name, size = 20, className}: Props): React.JSX.Element {
   return (
     <svg
       aria-hidden="true"
