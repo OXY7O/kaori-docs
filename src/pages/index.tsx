@@ -141,6 +141,9 @@ export default function DocumentationHome(): React.JSX.Element {
                   Documentation publication status
                 </Heading>
               </div>
+              <p>
+                No public product documentation version is available here yet.
+              </p>
               <p>Versioned guides, release notes, and search appear after review.</p>
               <div
                 className="kaori-docs-home__preview"
