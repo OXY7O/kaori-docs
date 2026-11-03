@@ -14,14 +14,14 @@ KAORI organizes integrations as **domain → capability → provider → configu
 
 The source taxonomy groups provider definitions into the following domains. The table is a **source-reviewed catalog snapshot**, not a published support matrix.
 
-| Domain | Capability represented in source | Provider examples in source definitions |
-| --- | --- | --- |
-| Orchestration | Container Orchestrator | Kubernetes (catalog: available); Rancher and Sangfor Kubernetes Engine (catalog: planned) |
-| Observability | Metrics Source and Alert Source | Prometheus, Thanos Query, Alertmanager (catalog: available) |
-| Storage | Object, File, and Block Storage | MinIO (catalog: available); Garage, AWS S3, Azure Blob Storage, NetApp and HPE definitions (catalog: planned) |
-| Registry | Registry | Harbor (catalog: available); ECR, Google Artifact Registry, ACR, GHCR and OCI Distribution (catalog: planned) |
-| Secrets Management | Secrets & PKI | HashiCorp Vault (catalog: available); OpenBao (catalog: planned) |
-| Source Control | Source Control | GitHub (catalog: available); GitLab and Bitbucket (catalog: planned) |
+| Domain             | Capability represented in source | Provider examples in source definitions                                                                       |
+| ------------------ | -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Orchestration      | Container Orchestrator           | Kubernetes (catalog: available); Rancher and Sangfor Kubernetes Engine (catalog: planned)                     |
+| Observability      | Metrics Source and Alert Source  | Prometheus, Thanos Query, Alertmanager (catalog: available)                                                   |
+| Storage            | Object, File, and Block Storage  | MinIO (catalog: available); Garage, AWS S3, Azure Blob Storage, NetApp and HPE definitions (catalog: planned) |
+| Registry           | Registry                         | Harbor (catalog: available); ECR, Google Artifact Registry, ACR, GHCR and OCI Distribution (catalog: planned) |
+| Secrets Management | Secrets & PKI                    | HashiCorp Vault (catalog: available); OpenBao (catalog: planned)                                              |
+| Source Control     | Source Control                   | GitHub (catalog: available); GitLab and Bitbucket (catalog: planned)                                          |
 
 **Meaning of catalog lifecycle:** `available` and `planned` above are the exact provider-matrix metadata categories at the inspected source SHA. They do **not** mean a provider has passed staging UAT, is connected in an environment, or is supported in a signed stable release. The planned providers must not be offered as setup instructions or selectable released options.
 
