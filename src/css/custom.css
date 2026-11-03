@@ -319,10 +319,12 @@ html[data-theme='dark'] {
   color: var(--kaori-docs-accent);
 }
 
-.kaori-docs-home__notice h2 {
+.kaori-docs-home .kaori-docs-home__notice h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
   font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .kaori-docs-home__notice > p {
@@ -454,6 +456,10 @@ html[data-theme='dark'] {
   line-height: 1.55;
 }
 
+.kaori-docs-home__category p {
+  white-space: nowrap;
+}
+
 .kaori-docs-home__catalog {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -502,8 +508,20 @@ html[data-theme='dark'] {
 }
 
 .kaori-docs-home__context h2 {
-  max-width: 30rem;
+  max-width: none;
   margin-bottom: 0.75rem;
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+}
+
+@media (min-width: 997px) {
+  .kaori-docs-home__context h2 {
+    white-space: nowrap;
+  }
+}
+
+/* Section navigation targets the parent section, so no decorative # is needed. */
+.kaori-docs-home__context h2 .hash-link {
+  display: none;
 }
 
 .kaori-docs-home__context .kaori-docs-home__source {
@@ -519,12 +537,9 @@ html[data-theme='dark'] {
   color: var(--kaori-docs-accent);
 }
 
-.kaori-docs-home__source a {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.12rem;
-  text-decoration: underline;
-  text-underline-offset: 0.16em;
+.kaori-docs-home__source strong {
+  color: var(--ifm-font-color-base);
+  font-weight: 650;
 }
 
 .kaori-docs-home__flow {

@@ -67,10 +67,6 @@ const config: Config = {
           items: [
             {label: 'Open Application', href: 'https://app.kaori.cloud'},
             {label: 'KAORI Website', href: 'https://kaori.cloud'},
-            {
-              label: 'Product authority',
-              href: 'https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md',
-            },
           ],
         },
         {
