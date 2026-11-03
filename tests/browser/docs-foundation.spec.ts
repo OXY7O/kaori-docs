@@ -7,8 +7,10 @@ test('documentation home is accurate and accessible at six viewports and two the
   await page.goto('/');
   // Docusaurus hydrates its native color-mode state after rendering the static shell.
   await expect(page.locator('html')).toHaveAttribute('data-has-hydrated', 'true');
-  await expect(page).toHaveTitle(/KAORI Docs/);
-  await expect(page.getByRole('heading', {level: 1, name: 'KAORI Docs'})).toHaveCount(1);
+  await expect(page).toHaveTitle(/KAORI Documentation/);
+  await expect(
+    page.getByRole('heading', {level: 1, name: 'KAORI Documentation'}),
+  ).toHaveCount(1);
   await expect(
     page.getByText('Versioned guides, release notes, and search appear after review.'),
   ).toBeVisible();
@@ -61,6 +63,16 @@ test('documentation home is accurate and accessible at six viewports and two the
     'https://app.kaori.cloud',
   );
   const footer = page.locator('footer');
+  await expect(page.locator('.navbar__brand')).toContainText('KAORI Documentation');
+  await expect(footer.locator('.kaori-docs-footer__brand')).toContainText(
+    'KAORI Documentation',
+  );
+  await expect(footer.getByText('Knowledge', {exact: true})).toBeVisible();
+  await expect(footer.getByText('Automation', {exact: true})).toBeVisible();
+  await expect(footer.getByText('Operations', {exact: true})).toBeVisible();
+  await expect(footer.getByText('Resilience', {exact: true})).toBeVisible();
+  await expect(footer.getByText('Intelligence', {exact: true})).toBeVisible();
+  await expect(footer.getByText('OXY7 ORBITAL', {exact: true})).toBeVisible();
   await expect(footer.getByText('Explore', {exact: true})).toBeVisible();
   await expect(footer.getByText('Product', {exact: true})).toBeVisible();
   await expect(footer.getByText('Contact', {exact: true})).toBeVisible();
@@ -76,6 +88,18 @@ test('documentation home is accurate and accessible at six viewports and two the
     await expect(
       page.getByRole('link', {name: /Open Application/}).first(),
     ).toBeVisible();
+  } else {
+    const external = page.locator('.navbar__items--right a[href="https://kaori.cloud"]');
+    await expect(external).toBeVisible();
+    expect(
+      await external.evaluate((node) => getComputedStyle(node, '::after').content),
+    ).not.toBe('none');
+    const navApp = page.locator('.navbar__items--right .kaori-docs-nav-app');
+    const appBox = await navApp.boundingBox();
+    const toggleBox = await toggle.boundingBox();
+    expect(
+      appBox && toggleBox && toggleBox.x - (appBox.x + appBox.width),
+    ).toBeGreaterThanOrEqual(10);
   }
 
   const overflow = await page.evaluate(
@@ -130,6 +154,12 @@ test('navigation, content availability, and external destinations stay scoped', 
     'href',
     '/#how-to-use',
   );
+  await expect(
+    footer.locator('.kaori-docs-footer__link[href^="https://"] svg'),
+  ).toHaveCount(3);
+  await expect(
+    footer.getByRole('link', {name: 'Contact owner'}).locator('svg'),
+  ).toHaveCount(1);
   await expect(page.locator('.kaori-docs-home__preview > div')).toHaveCount(3);
   await expect(page.locator('.kaori-docs-home__flow > div')).toHaveCount(3);
   await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);

@@ -73,9 +73,13 @@ html[data-theme='dark'] {
 }
 
 .navbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.025em;
+  white-space: nowrap;
 }
 
 .navbar__logo {
@@ -85,6 +89,48 @@ html[data-theme='dark'] {
 .navbar__link {
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+/* Match KAORI Website's lightweight Lucide arrow instead of the boxed
+   Docusaurus external-link glyph. Keep link semantics and native nav intact. */
+.navbar__link[href^='https://'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.navbar__link[href^='https://'] svg[class*='iconExternalLink'] {
+  display: none;
+}
+
+.navbar__link[href^='https://']::after {
+  display: inline-block;
+  width: 0.84rem;
+  height: 0.84rem;
+  flex: none;
+  background: currentColor;
+  content: '';
+  -webkit-mask: url('/branding/icon-arrow-up-right.svg') center / contain no-repeat;
+  mask: url('/branding/icon-arrow-up-right.svg') center / contain no-repeat;
+}
+
+.navbar__items--right {
+  gap: 0.75rem;
+}
+
+/* Docusaurus' native mode control is the rightmost navbar action. */
+.navbar__items--right > :last-child {
+  margin-inline-start: 0.9rem;
+}
+
+.navbar__items--right button[aria-label*='Switch between dark and light mode'] {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 8px;
+}
+
+.navbar__items--right button[aria-label*='Switch between dark and light mode']:hover {
+  background: var(--kaori-docs-muted-surface);
 }
 
 .navbar__item.kaori-docs-nav-app {
@@ -160,7 +206,7 @@ html[data-theme='dark'] {
 
 .kaori-docs-home h1 {
   margin: 0 0 0.6rem;
-  font-size: clamp(2.5rem, 4.5vw, 3.8rem);
+  font-size: clamp(2.2rem, 4vw, 3.25rem);
   font-weight: 800;
   letter-spacing: -0.055em;
   line-height: 1.1;
@@ -523,47 +569,147 @@ html[data-theme='dark'] {
   transform: rotate(90deg);
 }
 
-/* Native Docusaurus footer remains the sole footer component. */
-.footer {
+/* Swizzled Docusaurus footer: same configured links, KAORI Website grammar. */
+.kaori-docs-footer {
   border-top: 1px solid var(--kaori-docs-outline);
+  background: var(--ifm-footer-background-color);
   color: var(--ifm-font-color-base);
-  padding: 2rem 0 1.2rem;
+  padding: 3rem 0 0;
 }
 
-.footer .row {
-  row-gap: 1.25rem;
+.kaori-docs-footer__main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding-bottom: 2.75rem;
 }
 
-.footer__logo {
-  height: 32px;
+.kaori-docs-footer__identity {
+  min-width: 0;
 }
 
-.footer__title {
+.kaori-docs-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
   color: var(--ifm-font-color-base);
+  font-size: 1.04rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+}
+
+.kaori-docs-footer__brand:hover {
+  color: var(--kaori-docs-accent);
+  text-decoration: none;
+}
+
+.kaori-docs-footer__brand img {
+  display: block;
+  flex: none;
+}
+
+.kaori-docs-footer__tagline {
+  margin: 1rem 0 0.7rem;
+  color: var(--kaori-docs-secondary);
   font-size: 0.85rem;
-  font-weight: 750;
+  line-height: 1.6;
 }
 
-.footer__link-item {
+.kaori-docs-footer__acronym {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  max-width: 24rem;
+  margin: 0 0 0.8rem;
+  color: var(--kaori-docs-secondary);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.kaori-docs-footer__acronym strong {
+  color: var(--ifm-font-color-base);
+  font-weight: 700;
+}
+
+.kaori-docs-footer__attribution {
+  margin: 0;
+  color: var(--kaori-docs-muted);
+  font-size: 0.75rem;
+}
+
+.kaori-docs-footer__navigation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2.25rem);
+}
+
+.kaori-docs-footer__group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.kaori-docs-footer__group h2 {
+  margin: 0 0 0.25rem;
+  color: var(--ifm-font-color-base);
+  font-size: 0.89rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.kaori-docs-footer__owner {
+  color: var(--kaori-docs-secondary);
+  font-size: 0.8rem;
+}
+
+.kaori-docs-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   color: var(--kaori-docs-secondary);
   font-size: 0.82rem;
-  line-height: 1.7;
+  line-height: 1.5;
+  text-decoration: none;
 }
 
-.footer__link-item:hover {
+.kaori-docs-footer__link svg {
+  flex: none;
   color: var(--kaori-docs-accent);
 }
 
-.footer__copyright {
-  margin-top: 1.3rem;
+.kaori-docs-footer__link:hover,
+.kaori-docs-footer__link:focus-visible {
+  color: var(--kaori-docs-accent);
+  text-decoration: none;
+}
+
+.kaori-docs-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
   border-top: 1px solid var(--kaori-docs-outline);
-  padding-top: 1rem;
+  padding-top: 1.05rem;
+  padding-bottom: 1.35rem;
   color: var(--kaori-docs-muted);
-  font-size: 0.75rem;
-  text-align: left;
+  font-size: 0.72rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 996px) {
+  .kaori-docs-footer__main {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .kaori-docs-footer__navigation {
+    max-width: 48rem;
+  }
+
   .kaori-docs-home__hero-grid,
   .kaori-docs-home__context {
     grid-template-columns: 1fr;
@@ -583,6 +729,19 @@ html[data-theme='dark'] {
 }
 
 @media (max-width: 600px) {
+  .kaori-docs-footer {
+    padding-top: 2rem;
+  }
+
+  .kaori-docs-footer__navigation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.65rem 1rem;
+  }
+
+  .kaori-docs-footer__main {
+    padding-bottom: 2rem;
+  }
+
   .kaori-docs-home__hero-grid {
     padding-top: 2rem;
     padding-bottom: 2rem;

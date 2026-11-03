@@ -89,9 +89,9 @@ export default function DocumentationHome(): React.JSX.Element {
         <section className="kaori-docs-home__hero" aria-labelledby="docs-home-heading">
           <div className="container kaori-docs-home__hero-grid">
             <div className="kaori-docs-home__hero-content">
-              <p className="kaori-docs-home__eyebrow">KAORI DOCUMENTATION</p>
+              <p className="kaori-docs-home__eyebrow">DOCUMENTATION HOME</p>
               <Heading as="h1" id="docs-home-heading">
-                KAORI <span>Docs</span>
+                KAORI <span>Documentation</span>
               </Heading>
               <p className="kaori-docs-home__lead">
                 Documentation for connected infrastructure operations.
@@ -127,7 +127,7 @@ export default function DocumentationHome(): React.JSX.Element {
                   <DocsIcon name="shield-check" size={15} /> Verified content only
                 </li>
                 <li>
-                  <DocsIcon name="clock" size={15} /> Docs in preparation
+                  <DocsIcon name="clock" size={15} /> Guides in preparation
                 </li>
               </ul>
             </div>
@@ -231,7 +231,7 @@ export default function DocumentationHome(): React.JSX.Element {
             aria-labelledby="docs-boundary-heading"
           >
             <div className="kaori-docs-home__context-copy">
-              <p className="kaori-docs-home__eyebrow">HOW TO READ KAORI DOCS</p>
+              <p className="kaori-docs-home__eyebrow">HOW TO USE DOCUMENTATION</p>
               <Heading as="h2" id="docs-boundary-heading">
                 A consistent source of <span>operational context</span>
               </Heading>
