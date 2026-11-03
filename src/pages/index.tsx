@@ -200,12 +200,11 @@ export default function DocumentationHome(): React.JSX.Element {
 
           <section
             className="kaori-docs-home__section"
-            id="explore-capabilities"
-            aria-labelledby="explore-capabilities-heading"
+            aria-labelledby="explore-capabilities"
           >
             <div className="kaori-docs-home__section-heading">
               <p className="kaori-docs-home__eyebrow">DOCUMENTATION CATALOG</p>
-              <Heading as="h2" id="explore-capabilities-heading">
+              <Heading as="h2" id="explore-capabilities">
                 Explore Capabilities
               </Heading>
               <p>
@@ -230,12 +229,11 @@ export default function DocumentationHome(): React.JSX.Element {
 
           <section
             className="kaori-docs-home__section kaori-docs-home__context"
-            id="how-to-use"
-            aria-labelledby="docs-boundary-heading"
+            aria-labelledby="how-to-use"
           >
             <div className="kaori-docs-home__context-copy">
               <p className="kaori-docs-home__eyebrow">HOW TO READ KAORI DOCS</p>
-              <Heading as="h2" id="docs-boundary-heading">
+              <Heading as="h2" id="how-to-use">
                 A consistent source of <span>operational context</span>
               </Heading>
               <p>
