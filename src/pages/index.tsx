@@ -12,42 +12,42 @@ interface DocumentationTopic {
 const documentationSections: DocumentationTopic[] = [
   {
     title: 'Getting Started',
-    description: 'Meet KAORI and learn the operating model.',
+    description: 'Learn the KAORI model.',
     icon: 'book-open',
   },
   {
     title: 'Core Concepts',
-    description: 'Understand capabilities, providers, and evidence.',
+    description: 'Capabilities and evidence.',
     icon: 'layers',
   },
   {
     title: 'Product Guides',
-    description: 'Navigate verified capability workflows.',
+    description: 'Verified product workflows.',
     icon: 'box',
   },
   {
     title: 'Integrations',
-    description: 'Discover provider contracts and prerequisites.',
+    description: 'Provider integration basics.',
     icon: 'network',
   },
   {
     title: 'Tutorials & How-to',
-    description: 'Follow scoped operational walkthroughs.',
+    description: 'Operational walkthroughs.',
     icon: 'terminal',
   },
   {
     title: 'Administration & Security',
-    description: 'Explore access, permissions, and governance.',
+    description: 'Access and governance.',
     icon: 'shield-check',
   },
   {
     title: 'Troubleshooting & Reference',
-    description: 'Interpret findings and recovery guidance.',
+    description: 'Findings and recovery.',
     icon: 'wrench',
   },
   {
     title: 'Releases & Compatibility',
-    description: 'Check approved releases and applicability.',
+    description: 'Releases and compatibility.',
     icon: 'database',
   },
 ];
@@ -138,7 +138,7 @@ export default function DocumentationHome(): React.JSX.Element {
               <div className="kaori-docs-home__notice-heading">
                 <DocsIcon name="info" size={23} />
                 <Heading as="h2" id="docs-publication-status">
-                  Documentation publication status
+                  Documentation status
                 </Heading>
               </div>
               <p>Versioned guides, release notes, and search appear after review.</p>
@@ -233,7 +233,7 @@ export default function DocumentationHome(): React.JSX.Element {
             <div className="kaori-docs-home__context-copy">
               <p className="kaori-docs-home__eyebrow">HOW TO USE DOCUMENTATION</p>
               <Heading as="h2" id="docs-boundary-heading">
-                A consistent source of <span>operational context</span>
+                Connected <span>operational context</span>
               </Heading>
               <p>
                 Organize by capability, provider, and instance. External systems remain
@@ -245,11 +245,7 @@ export default function DocumentationHome(): React.JSX.Element {
               </p>
               <p className="kaori-docs-home__source">
                 <DocsIcon name="layers" size={17} />
-                Product authority:{' '}
-                <a href="https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md">
-                  KAORI Platform Direction
-                  <DocsIcon name="arrow-up-right" size={14} />
-                </a>
+                Product authority: <strong>KAORI Platform Direction</strong>
               </p>
             </div>
             <div
