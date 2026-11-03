@@ -1,96 +1,167 @@
 import React from 'react';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
+import DocsIcon, {type DocsIconName} from '../components/DocsIcon';
 
-const documentationSections = [
+interface DocumentationTopic {
+  title: string;
+  description: string;
+  icon: DocsIconName;
+}
+
+const documentationSections: DocumentationTopic[] = [
   {
     title: 'Getting Started',
-    description:
-      'An introduction to KAORI, its audience, and how to read the documentation.',
+    description: 'Meet KAORI and learn the operating model.',
+    icon: 'book-open',
   },
   {
     title: 'Core Concepts',
-    description:
-      'Capabilities, providers, instances, committed evidence, and cross-domain context.',
+    description: 'Understand capabilities, providers, and evidence.',
+    icon: 'layers',
   },
   {
     title: 'Product Guides',
-    description:
-      'Capability-first guidance for inventory and other verified product workflows.',
+    description: 'Navigate verified capability workflows.',
+    icon: 'box',
   },
   {
     title: 'Integrations',
-    description:
-      'Domain-specific provider contracts, prerequisites, and verified setup guidance.',
+    description: 'Discover provider contracts and prerequisites.',
+    icon: 'network',
   },
   {
     title: 'Tutorials & How-to',
-    description:
-      'Practical, scoped operational walkthroughs with clear expected results.',
+    description: 'Follow scoped operational walkthroughs.',
+    icon: 'terminal',
   },
   {
     title: 'Administration & Security',
-    description: 'Access, permissions, governance, and safe operational boundaries.',
+    description: 'Explore access, permissions, and governance.',
+    icon: 'shield-check',
   },
   {
     title: 'Troubleshooting & Reference',
-    description:
-      'Interpreting evidence, incomplete states, and documented recovery patterns.',
+    description: 'Interpret findings and recovery guidance.',
+    icon: 'wrench',
   },
   {
     title: 'Releases & Compatibility',
-    description: 'Approved application release notes and documentation applicability.',
+    description: 'Check approved releases and applicability.',
+    icon: 'database',
   },
-] as const;
+];
+
+const firstSteps: {
+  number: string;
+  title: string;
+  description: string;
+  icon: DocsIconName;
+}[] = [
+  {
+    number: '01',
+    title: 'Understand the platform',
+    description:
+      'KAORI connects infrastructure context without replacing source systems.',
+    icon: 'layers',
+  },
+  {
+    number: '02',
+    title: 'Follow source authority',
+    description: 'External systems execute. KAORI connects the evidence.',
+    icon: 'shield-check',
+  },
+  {
+    number: '03',
+    title: 'Check scope and freshness',
+    description: 'Review evidence scope before making a decision.',
+    icon: 'clock',
+  },
+];
 
 export default function DocumentationHome(): React.JSX.Element {
   return (
     <Layout
       title="Documentation Home"
-      description="Explore KAORI infrastructure operations concepts, documentation topics, and publication status."
+      description="Explore KAORI infrastructure operations, documentation topics, and publication readiness."
     >
-      <main className="kaori-docs-home">
+      <main className="kaori-docs-home" id="overview">
         <section className="kaori-docs-home__hero" aria-labelledby="docs-home-heading">
-          <div className="container">
+          <div className="container kaori-docs-home__hero-grid">
             <div className="kaori-docs-home__hero-content">
               <p className="kaori-docs-home__eyebrow">KAORI DOCUMENTATION</p>
               <Heading as="h1" id="docs-home-heading">
-                KAORI Docs
+                KAORI <span>Docs</span>
               </Heading>
               <p className="kaori-docs-home__lead">
-                A clearer path through infrastructure operations.
+                Documentation for connected infrastructure operations.
               </p>
               <p className="kaori-docs-home__summary">
-                KAORI brings infrastructure visibility, operational workflows, analytics,
-                reporting, and governance into a consistent operational context. This
-                documentation space will explain the platform by capability first, then by
-                integration and provider.
+                Explore the platform by capability, workflow, and committed evidence.
               </p>
-              <div className="kaori-docs-home__actions" aria-label="Explore this page">
-                <a className="button button--primary" href="#getting-started">
-                  Get Started
+              <div
+                className="kaori-docs-home__actions"
+                aria-label="Explore documentation"
+              >
+                <a
+                  className="button button--primary kaori-docs-home__primary"
+                  href="#getting-started"
+                >
+                  Get Started <DocsIcon name="arrow-right" size={17} />
                 </a>
                 <a
-                  className="button button--outline button--secondary"
+                  className="button button--outline button--secondary kaori-docs-home__secondary"
                   href="#explore-capabilities"
                 >
-                  Explore Capabilities
+                  <DocsIcon name="layers" size={18} /> Explore Catalog
                 </a>
               </div>
+              <ul
+                className="kaori-docs-home__principles"
+                aria-label="Documentation principles"
+              >
+                <li>
+                  <DocsIcon name="layers" size={15} /> Capability-first
+                </li>
+                <li>
+                  <DocsIcon name="shield-check" size={15} /> Verified content only
+                </li>
+                <li>
+                  <DocsIcon name="clock" size={15} /> Docs in preparation
+                </li>
+              </ul>
             </div>
             <aside
               className="kaori-docs-home__notice"
               aria-labelledby="docs-publication-status"
             >
-              <Heading as="h2" id="docs-publication-status">
-                Documentation publication status
-              </Heading>
-              <p>No public product documentation version is available here yet.</p>
-              <p>
-                Versioned guides, release notes, and search will be enabled only after
-                their content and applicable application release have been reviewed and
-                verified.
-              </p>
+              <div className="kaori-docs-home__notice-heading">
+                <DocsIcon name="info" size={23} />
+                <Heading as="h2" id="docs-publication-status">
+                  Documentation publication status
+                </Heading>
+              </div>
+              <p>Versioned guides, release notes, and search appear after review.</p>
+              <div
+                className="kaori-docs-home__preview"
+                aria-label="Documentation topics not yet published"
+              >
+                <div>
+                  <DocsIcon name="file-text" size={18} />
+                  <span>Product guides &amp; how-to</span>
+                  <small>In preparation</small>
+                </div>
+                <div>
+                  <DocsIcon name="box" size={18} />
+                  <span>Core concepts</span>
+                  <small>In preparation</small>
+                </div>
+                <div>
+                  <DocsIcon name="book-open" size={18} />
+                  <span>Getting started</span>
+                  <small>In preparation</small>
+                </div>
+              </div>
             </aside>
           </div>
         </section>
@@ -106,42 +177,21 @@ export default function DocumentationHome(): React.JSX.Element {
               <Heading as="h2" id="getting-started-heading">
                 Getting Started
               </Heading>
-              <p>
-                Start with the operating model, then follow the evidence to the capability
-                and provider responsible for each piece of context.
-              </p>
+              <p>Learn the model, follow source authority, and verify context.</p>
             </div>
             <div className="kaori-docs-home__steps">
-              <article className="kaori-docs-home__step">
-                <span className="kaori-docs-home__step-number" aria-hidden="true">
-                  01
-                </span>
-                <Heading as="h3">Understand the platform</Heading>
-                <p>
-                  KAORI is an infrastructure operations layer. It is not a replacement for
-                  every integrated management or monitoring system.
-                </p>
-              </article>
-              <article className="kaori-docs-home__step">
-                <span className="kaori-docs-home__step-number" aria-hidden="true">
-                  02
-                </span>
-                <Heading as="h3">Follow source authority</Heading>
-                <p>
-                  External systems own their source data and execution. KAORI normalizes
-                  and connects the evidence needed for operational decisions.
-                </p>
-              </article>
-              <article className="kaori-docs-home__step">
-                <span className="kaori-docs-home__step-number" aria-hidden="true">
-                  03
-                </span>
-                <Heading as="h3">Check scope and freshness</Heading>
-                <p>
-                  Read the source, collection scope, and evidence freshness before
-                  interpreting a view or taking an operational action.
-                </p>
-              </article>
+              {firstSteps.map((step) => (
+                <article className="kaori-docs-home__step" key={step.number}>
+                  <span className="kaori-docs-home__step-icon">
+                    <DocsIcon name={step.icon} size={25} />
+                  </span>
+                  <div className="kaori-docs-home__step-content">
+                    <span className="kaori-docs-home__step-number">{step.number}</span>
+                    <Heading as="h3">{step.title}</Heading>
+                    <p>{step.description}</p>
+                  </div>
+                </article>
+              ))}
             </div>
           </section>
 
@@ -156,18 +206,19 @@ export default function DocumentationHome(): React.JSX.Element {
                 Explore Capabilities
               </Heading>
               <p>
-                These are the approved documentation topics, not a claim that every
-                underlying product capability is released. Articles will become navigable
-                when verified and published.
+                Eight documentation topics. Articles become available after verification.
               </p>
             </div>
             <div className="kaori-docs-home__catalog">
               {documentationSections.map((section) => (
                 <article className="kaori-docs-home__category" key={section.title}>
+                  <div className="kaori-docs-home__category-icon">
+                    <DocsIcon name={section.icon} size={23} />
+                  </div>
                   <Heading as="h3">{section.title}</Heading>
                   <p>{section.description}</p>
                   <span className="kaori-docs-home__category-status">
-                    Documentation in preparation
+                    <DocsIcon name="file-text" size={13} /> In preparation
                   </span>
                 </article>
               ))}
@@ -176,39 +227,58 @@ export default function DocumentationHome(): React.JSX.Element {
 
           <section
             className="kaori-docs-home__section kaori-docs-home__context"
+            id="how-to-use"
             aria-labelledby="docs-boundary-heading"
           >
-            <div>
+            <div className="kaori-docs-home__context-copy">
               <p className="kaori-docs-home__eyebrow">HOW TO READ KAORI DOCS</p>
               <Heading as="h2" id="docs-boundary-heading">
-                A consistent source of operational context
+                A consistent source of <span>operational context</span>
               </Heading>
               <p>
-                Organize by capability and domain, then by provider and instance. External
-                systems remain authoritative for their own data and execution; KAORI
-                connects normalized, committed evidence across operational domains.
+                Organize by capability, provider, and instance. External systems remain
+                authoritative for their data and execution.
               </p>
               <p>
-                This is a conceptual explanation of KAORI's product direction, not a
-                description of a particular deployed environment.
+                This diagram explains the KAORI model, not a specific deployed
+                environment.
               </p>
               <p className="kaori-docs-home__source">
+                <DocsIcon name="layers" size={17} />
                 Product authority:{' '}
                 <a href="https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md">
                   KAORI Platform Direction
+                  <DocsIcon name="arrow-up-right" size={14} />
                 </a>
               </p>
             </div>
             <div
               className="kaori-docs-home__flow"
               role="group"
-              aria-label="Conceptual flow: external systems provide source evidence; KAORI normalizes and commits evidence; operational context connects domains."
+              aria-label="Conceptual model: authoritative external systems, KAORI normalization and committed evidence, and cross-domain operational context."
             >
-              <div>External authoritative systems</div>
-              <span aria-hidden="true">↓</span>
-              <div>KAORI normalization &amp; committed evidence</div>
-              <span aria-hidden="true">↓</span>
-              <div>Cross-domain operational context</div>
+              <div>
+                <DocsIcon name="server" size={22} />
+                <span>External authoritative systems</span>
+              </div>
+              <DocsIcon
+                name="arrow-right"
+                size={19}
+                className="kaori-docs-home__flow-arrow"
+              />
+              <div className="kaori-docs-home__flow-focus">
+                <DocsIcon name="layers" size={23} />
+                <span>KAORI normalization &amp; committed evidence</span>
+              </div>
+              <DocsIcon
+                name="arrow-right"
+                size={19}
+                className="kaori-docs-home__flow-arrow"
+              />
+              <div>
+                <DocsIcon name="network" size={22} />
+                <span>Cross-domain operational context</span>
+              </div>
             </div>
           </section>
         </div>

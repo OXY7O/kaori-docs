@@ -10,7 +10,7 @@ test('documentation home is accurate and accessible at six viewports and two the
   await expect(page).toHaveTitle(/KAORI Docs/);
   await expect(page.getByRole('heading', {level: 1, name: 'KAORI Docs'})).toHaveCount(1);
   await expect(
-    page.getByText('No public product documentation version is available here yet.'),
+    page.getByText('Versioned guides, release notes, and search appear after review.'),
   ).toBeVisible();
   await expect(
     page.getByRole('heading', {level: 2, name: 'Getting Started'}),
@@ -19,6 +19,11 @@ test('documentation home is accurate and accessible at six viewports and two the
     page.getByRole('heading', {level: 2, name: 'Explore Capabilities'}),
   ).toBeVisible();
   await expect(page.locator('.kaori-docs-home__category')).toHaveCount(8);
+  await expect(page.locator('.kaori-docs-home__step')).toHaveCount(3);
+  await expect(page.locator('.kaori-docs-home__category-status')).toHaveCount(8);
+  await expect(
+    page.getByRole('heading', {level: 2, name: 'Documentation publication status'}),
+  ).toBeVisible();
   await expect(page.locator('a[href="#getting-started"]')).toBeVisible();
   await expect(page.locator('a[href="#explore-capabilities"]')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(light|dark)$/);
@@ -55,8 +60,22 @@ test('documentation home is accurate and accessible at six viewports and two the
     'href',
     'https://app.kaori.cloud',
   );
+  const footer = page.locator('footer');
+  await expect(footer.getByText('Explore', {exact: true})).toBeVisible();
+  await expect(footer.getByText('Product', {exact: true})).toBeVisible();
+  await expect(footer.getByText('Contact', {exact: true})).toBeVisible();
+  await expect(footer.getByRole('link', {name: 'Contact owner'})).toHaveAttribute(
+    'href',
+    'mailto:lethisaputri@gmail.com',
+  );
+  await expect(footer.getByRole('link', {name: 'Catalog'})).toHaveAttribute(
+    'href',
+    '/#explore-capabilities',
+  );
   if (compactNavigation) {
-    await expect(page.getByRole('link', {name: /Open Application/})).toBeVisible();
+    await expect(
+      page.getByRole('link', {name: /Open Application/}).first(),
+    ).toBeVisible();
   }
 
   const overflow = await page.evaluate(
@@ -83,7 +102,7 @@ test('same-page discovery and unpublished features stay honest', async ({page}) 
   });
   expect(focused, 'Keyboard focus must be visible on an interactive control').toBe(true);
 
-  await page.getByRole('link', {name: 'Explore Capabilities', exact: true}).click();
+  await page.getByRole('link', {name: 'Explore Catalog', exact: true}).click();
   await expect(page).toHaveURL(/#explore-capabilities$/);
   await expect(
     page.getByRole('heading', {level: 3, name: 'Core Concepts'}),
@@ -92,4 +111,27 @@ test('same-page discovery and unpublished features stay honest', async ({page}) 
   await expect(page.getByRole('link', {name: /version/i})).toHaveCount(0);
   await expect(page.getByRole('heading', {level: 1})).toHaveCount(1);
   await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);
+});
+
+test('navigation, content availability, and external destinations stay scoped', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const footer = page.locator('footer');
+  await expect(footer.getByRole('link', {name: 'Open Application'})).toHaveAttribute(
+    'href',
+    'https://app.kaori.cloud',
+  );
+  await expect(footer.getByRole('link', {name: 'KAORI Website'})).toHaveAttribute(
+    'href',
+    'https://kaori.cloud',
+  );
+  await expect(footer.getByRole('link', {name: 'How to Use'})).toHaveAttribute(
+    'href',
+    '/#how-to-use',
+  );
+  await expect(page.locator('.kaori-docs-home__preview > div')).toHaveCount(3);
+  await expect(page.locator('.kaori-docs-home__flow > div')).toHaveCount(3);
+  await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);
+  await expect(page.locator('a[href^="/v"]')).toHaveCount(0);
 });
