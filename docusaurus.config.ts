@@ -33,7 +33,17 @@ const config: Config = {
       title: 'KAORI Docs',
       logo: {alt: 'KAORI logo', src: 'branding/kaori-logo.svg'},
       items: [
-        {to: '/', label: 'Overview', position: 'left', activeBaseRegex: '^/
+        {to: '/', label: 'Overview', position: 'left'},
+        {href: '/#explore-capabilities', label: 'Catalog', position: 'left'},
+        {href: '/#how-to-use', label: 'How to Use', position: 'left'},
+        {href: 'https://kaori.cloud', label: 'KAORI Website', position: 'right'},
+        {
+          href: 'https://app.kaori.cloud',
+          label: 'Open Application',
+          position: 'right',
+          className: 'kaori-docs-nav-app',
+        },
+      ],
     },
     footer: {
       style: 'light',
@@ -70,26 +80,6 @@ const config: Config = {
       ],
       copyright:
         '© 2026 KAORI Docs · Documentation for connected operations · Release-qualified content only · An OXY7 ORBITAL project.',
-    },
-  } satisfies Preset.ThemeConfig,
-};
-export default config;
-},
-        {href: '/#explore-capabilities', label: 'Catalog', position: 'left'},
-        {href: '/#how-to-use', label: 'How to Use', position: 'left'},
-        {href: 'https://kaori.cloud', label: 'KAORI Website', position: 'right'},
-        {
-          href: 'https://app.kaori.cloud',
-          label: 'Open Application',
-          position: 'right',
-          className: 'kaori-docs-nav-app',
-        },
-      ],
-    },
-    footer: {
-      style: 'light',
-      links: [],
-      copyright: 'KAORI documentation · Release-qualified content only',
     },
   } satisfies Preset.ThemeConfig,
 };
