@@ -13,7 +13,7 @@ This internal editorial register is **not** part of the Docusaurus public output
 - **Native article presentation:** Docusaurus own sidebar, breadcrumb, on-page TOC, accessible anchors, and previous/next navigation. The draft frontmatter carries a title, sidebar label, ordering, description, and `draft: true`; it does not create a custom router or a visible version assertion.
 - **Conceptual diagram:** text-first accessible flow; no real infrastructure state or claim of enabled providers.
 
-## Approved version placement — pending issue #15
+## Proposed version placement — pending maintainer review and issue #15
 
 Keep **product applicability** and **Docs artifact version** distinct:
 
