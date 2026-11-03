@@ -3,18 +3,15 @@ import AxeBuilder from '@axe-core/playwright';
 
 // These tests run only against an explicitly opted-in local development server.
 // The public build must never include an editorial-preview or a draft guide.
-test('Introduction uses native, accessible Docusaurus article layout', async (
-  {page},
-  testInfo,
-) => {
+test('Introduction uses native, accessible Docusaurus article layout', async ({
+  page,
+}, testInfo) => {
   test.skip(
     process.env.KAORI_DOCS_EDITORIAL_PREVIEW !== '1',
     'Unpublished article preview is local-only',
   );
 
-  const response = await page.goto(
-    '/editorial-preview/getting-started/introduction',
-  );
+  const response = await page.goto('/editorial-preview/getting-started/introduction');
   expect(response?.ok(), 'Native editorial preview route should exist').toBe(true);
   await expect(page.locator('html')).toHaveAttribute('data-has-hydrated', 'true');
 
@@ -23,7 +20,9 @@ test('Introduction uses native, accessible Docusaurus article layout', async (
   await expect(
     article.getByRole('heading', {level: 1, name: 'Introduction to KAORI'}),
   ).toHaveCount(1);
-  await expect(article.getByText('unpublished review draft', {exact: false})).toBeVisible();
+  await expect(
+    article.getByText('unpublished review draft', {exact: false}),
+  ).toBeVisible();
   await expect(
     article.getByRole('heading', {level: 2, name: 'The capability-first model'}),
   ).toBeVisible();
@@ -34,9 +33,10 @@ test('Introduction uses native, accessible Docusaurus article layout', async (
     article.getByRole('heading', {level: 2, name: 'Visibility is not authorization'}),
   ).toBeVisible();
   await expect(article.getByRole('table')).toBeVisible();
-  await expect(
-    article.getByRole('link', {name: 'Documentation Home'}),
-  ).toHaveAttribute('href', '/');
+  await expect(article.getByRole('link', {name: 'Documentation Home'})).toHaveAttribute(
+    'href',
+    '/',
+  );
 
   if ((page.viewportSize()?.width ?? 0) >= 997) {
     const sidebar = page.locator('.theme-doc-sidebar-container');

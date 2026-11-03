@@ -8,7 +8,7 @@ This internal editorial register is **not** part of the Docusaurus public output
 - **Editorial owner:** KAORI Docs #2; Home #1 has operator visual acceptance as of 2026-11-03 but retains its separate release/UAT governance until evidence is complete.
 - **Product authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md) and approved Docs #2.
 - **Audience:** infrastructure operators, platform/reliability engineers, and operational governance readers.
-- **Release applicability:** **not assigned**. First intended line is KAORI App `v0.3` with native route `/v0.3/`, but `v0.3.0` remains a *target*, not proof of a stable accepted application release. Docs RC versions do not qualify application content.
+- **Release applicability:** **not assigned**. First intended line is KAORI App `v0.3` with native route `/v0.3/`, but `v0.3.0` remains a _target_, not proof of a stable accepted application release. Docs RC versions do not qualify application content.
 - **Article structure:** introduction → audience → capability/provider/instance → conceptual source-to-evidence flow → committed evidence → visibility versus authorization → links to actually published pages.
 - **Native article presentation:** Docusaurus own sidebar, breadcrumb, on-page TOC, accessible anchors, and previous/next navigation. The draft frontmatter carries a title, sidebar label, ordering, description, and `draft: true`; it does not create a custom router or a visible version assertion.
 - **Conceptual diagram:** text-first accessible flow; no real infrastructure state or claim of enabled providers.

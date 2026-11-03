@@ -24,11 +24,11 @@ This Introduction explains the platform's design principles, **not** a guarantee
 
 KAORI organizes its architecture from capability to provider to instance.
 
-| Level | Meaning |
-| --- | --- |
-| **Capability or domain** | The operational concern, such as inventory, integration management, or governance. |
-| **Provider** | An external tool integrated within that capability under an explicit authority and normalization contract. |
-| **Instance** | A specific configured connection with its own scope, environment, permissions, and collection state. |
+| Level                    | Meaning                                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Capability or domain** | The operational concern, such as inventory, integration management, or governance.                         |
+| **Provider**             | An external tool integrated within that capability under an explicit authority and normalization contract. |
+| **Instance**             | A specific configured connection with its own scope, environment, permissions, and collection state.       |
 
 For example, **Integrations → Registry → Harbor** describes the hierarchy, not a claim that every Harbor operation is available in a published application release.
 

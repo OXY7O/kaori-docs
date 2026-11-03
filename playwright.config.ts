@@ -12,9 +12,7 @@ const viewports = [
 // Explicit opt-in tests the native article shell against the local Docusaurus
 // dev server; normal Full Admission keeps using the production static build.
 const editorialPreview = process.env.KAORI_DOCS_EDITORIAL_PREVIEW === '1';
-const serverUrl = editorialPreview
-  ? 'http://127.0.0.1:3000'
-  : 'http://127.0.0.1:14321';
+const serverUrl = editorialPreview ? 'http://127.0.0.1:3000' : 'http://127.0.0.1:14321';
 
 const projects = viewports.flatMap((viewport) =>
   (['light', 'dark'] as const).map((theme) => ({
