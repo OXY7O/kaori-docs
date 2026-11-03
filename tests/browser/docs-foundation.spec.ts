@@ -10,6 +10,9 @@ test('documentation home is accurate and accessible at six viewports and two the
   await expect(page).toHaveTitle(/KAORI Docs/);
   await expect(page.getByRole('heading', {level: 1, name: 'KAORI Docs'})).toHaveCount(1);
   await expect(
+    page.getByText('No public product documentation version is available here yet.'),
+  ).toBeVisible();
+  await expect(
     page.getByText('Versioned guides, release notes, and search appear after review.'),
   ).toBeVisible();
   await expect(
