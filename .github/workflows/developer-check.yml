@@ -428,7 +428,7 @@ jobs:
           set -Eeuo pipefail
           test -s build/index.html
           test -s build/branding/kaori-logo.svg
-          grep -q 'KAORI Docs' build/index.html
+          grep -Fq 'KAORI Documentation' build/index.html
           test ! -e build/docs/ARCHITECTURE.md
           test ! -e build/docs/CONTENT_SAFETY.md
           test ! -e build/.github
