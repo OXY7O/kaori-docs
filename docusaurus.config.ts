@@ -1,5 +1,6 @@
 import type {Config} from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
+import {resolvePublishedApplicationDocs} from './src/versioning/publication';
 
 // The public build must never enable unverified application-version documentation.
 // Issue #2 permits native article review only in an explicitly opted-in local dev session.
@@ -9,6 +10,37 @@ const editorialPreview =
   process.env.npm_lifecycle_event === 'dev' &&
   process.env.NODE_ENV !== 'production' &&
   process.env.CI !== 'true';
+
+// Native route smoke only in opt-in development, not in any public build.
+const versionRoutePreview =
+  editorialPreview && process.env.KAORI_DOCS_VERSION_ROUTE_PREVIEW === '1';
+const publishedApplicationDocs = resolvePublishedApplicationDocs();
+const publishedLines = publishedApplicationDocs.map((entry) => entry.line);
+
+const publishedDocsOptions: Preset.Options['docs'] =
+  publishedLines.length === 0
+    ? false
+    : {
+        path: 'content',
+        routeBasePath: '/',
+        sidebarPath: './sidebars.ts',
+        breadcrumbs: true,
+        includeCurrentVersion: false,
+        lastVersion: publishedLines[0],
+        onlyIncludeVersions: publishedLines,
+        versions: Object.fromEntries(
+          publishedApplicationDocs.map((entry) => [
+            entry.line,
+            {
+              label: 'KAORI ' + entry.line + '.x',
+              path: entry.line,
+              banner: 'none',
+              badge: true,
+            },
+          ]),
+        ),
+      };
+
 const config: Config = {
   title: 'KAORI Documentation',
   tagline: 'Knowledge, Automation, Operations, Resilience & Intelligence',
@@ -22,14 +54,29 @@ const config: Config = {
     [
       'classic',
       {
-        docs: editorialPreview
+        docs: versionRoutePreview
           ? {
               path: 'content',
-              routeBasePath: 'editorial-preview',
+              routeBasePath: '/',
               sidebarPath: './sidebars.ts',
               breadcrumbs: true,
+              lastVersion: 'current',
+              versions: {
+                current: {
+                  label: 'Unreleased version-routing preview',
+                  path: 'v0.3',
+                  banner: 'unreleased',
+                },
+              },
             }
-          : false,
+          : editorialPreview
+            ? {
+                path: 'content',
+                routeBasePath: 'editorial-preview',
+                sidebarPath: './sidebars.ts',
+                breadcrumbs: true,
+              }
+            : publishedDocsOptions,
         blog: false,
         theme: {customCss: './src/css/custom.css'},
       } satisfies Preset.Options,
@@ -47,6 +94,9 @@ const config: Config = {
       logo: {alt: 'KAORI logo', src: 'branding/kaori-logo.svg'},
       items: [
         {to: '/', label: 'Overview', position: 'left'},
+        ...(publishedLines.length > 0
+          ? [{type: 'docsVersionDropdown' as const, position: 'left' as const}]
+          : []),
         {href: '/#explore-capabilities', label: 'Catalog', position: 'left'},
         {href: '/#how-to-use', label: 'How to Use', position: 'left'},
         {href: 'https://kaori.cloud', label: 'KAORI Website', position: 'right'},
