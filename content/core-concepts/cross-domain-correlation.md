@@ -59,7 +59,7 @@ Without that context, a correlation is an exploratory lead rather than a verifie
 
 A correlated view can help someone understand scope or potential impact, but it does not automatically authorize infrastructure mutation. Any supported operational action still requires permissions, explicit target selection, validation, and audit evidence.
 
-**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Infrastructure Mapping_, _Asset Inventory_, and _Operational Analytics_. Release-specific feature behavior must be reconciled to accepted application evidence before publication.
+**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/7272c81e495ef8e4d590355f1d1e6c4dd785eb91/docs/product/README.md), especially _Infrastructure Mapping_, _Asset Inventory_, and _Operational Analytics_. Release-specific feature behavior must be reconciled to accepted application evidence before publication.
 
 ## Implementation evidence from KAORI staging
 
