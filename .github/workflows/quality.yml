@@ -173,17 +173,29 @@ jobs:
           set -Eeuo pipefail
           test -s build/index.html
           test -s build/branding/kaori-logo.svg
-          grep -q 'KAORI Docs' build/index.html
+          grep -Fq 'KAORI Documentation' build/index.html
           for path in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github .devcontainer package.json package-lock.json content; do
             test ! -e "build/$path" || { echo "Public scope leaked: $path" >&2; exit 1; }
+          done
+          test ! -e build/versions.json
+          test ! -e build/docs/PUBLISHED_VERSIONS.json
+          for forbidden in build/v0.3 build/editorial-preview build/getting-started; do
+            test ! -e "$forbidden" || {
+              echo "Unpublished Docs route leaked: $forbidden" >&2
+              exit 1
+            }
           done
           if [[ -d build/v0.0 ]]; then
             echo 'Unverified application version route is forbidden.' >&2
             exit 1
           fi
-          # #15 will replace this bootstrap-only assertion with verified release mapping.
-          grep -q 'No public product documentation version is available' build/index.html
-          echo 'PASS: bootstrap public scope, no release claims.' >> "$GITHUB_STEP_SUMMARY"
+          # #57: the reviewed concise publication notice replaces the old
+          # long bootstrap sentence. Keep the same fail-closed public-corpus
+          # gate while checking current, truthful unversioned-page semantics.
+          grep -Fq 'Documentation status' build/index.html
+          grep -Fq 'Versioned guides, release notes, and search appear after review.' build/index.html
+          grep -Fq 'In preparation' build/index.html
+          echo 'PASS: bootstrap public scope, truthful unpublished documentation state.' >> "$GITHUB_STEP_SUMMARY"
 
   container-admission:
     name: Container Admission
@@ -224,10 +236,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
           export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
           docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
-          COMPOSE_PROJECT_NAME=kaori-docs-staging docker compose \
-            -f deploy/server/compose.docs.yml -f deploy/server/compose.staging.yml config --quiet
+          test ! -e deploy/server/compose.staging.yml
           bash -n scripts/release/deploy-release.sh deploy/server/deploy.sh deploy/server/rollback.sh
-          echo "PASS: fresh Docs staging/production Compose and release guard smoke from trusted full #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          echo "PASS: fresh single-slot Docs Compose and RC/stable release guards from trusted full #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
 
   browser-evidence:
     name: Browser Quality Evidence

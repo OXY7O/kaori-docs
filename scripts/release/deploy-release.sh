@@ -10,7 +10,7 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 stable_policy="${KAORI_DOCS_STABLE_POLICY:-0}"
 stable_manual="${KAORI_DOCS_STABLE_MANUAL:-0}"
 stage_rc="${KAORI_DOCS_STAGING_UAT:-0}"
-[[ "$stage_rc" =~ ^[01]$ ]] || fail 'invalid separate RC staging/UAT mode'
+[[ "$stage_rc" =~ ^[01]$ ]] || fail 'invalid RC request indicator'
 [[ "$stable_policy" =~ ^[01]$ && "$stable_manual" =~ ^[01]$ ]] ||
   fail 'invalid stable release policy mode'
 [[ "$stable_manual" == 0 || "$stable_policy" == 1 ]] ||
@@ -18,11 +18,12 @@ stage_rc="${KAORI_DOCS_STAGING_UAT:-0}"
 [[ "$stage_rc" == 0 || ( "$stable_policy" == 0 && "$stable_manual" == 0 ) ]] ||
   fail 'staging RC mode cannot be combined with stable production release'
 [[ "$stable_policy" == 1 || "$stage_rc" == 1 ]] ||
-  fail 'manual RC must use isolated staging runtime; production cannot accept an RC'
-if [[ "$stage_rc" == 1 ]]; then
-  [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 0 ]] ||
-    fail 'staging RC cannot join shared-edge/public routing'
-fi
+  fail 'RC release requires explicit RC request and signed-digest authorization'
+# This limited-size development deployment has ONE active Docs frontend.
+# RC and stable both replace its image and reconcile ONLY the pre-approved
+# Docs edge. They can never run in parallel.
+[[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
+  fail 'single-slot Docs release requires existing-edge reconciliation; no private parallel stage'
 auto_policy="$stable_policy"
 if [[ "$stable_policy" == 1 ]]; then
   if [[ "$stable_manual" == 1 ]]; then
@@ -41,7 +42,19 @@ if [[ "$stable_policy" == 1 ]]; then
   [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/40#issuecomment-([0-9]+)$ ]] ||
     fail 'stable production policy approval must belong to issue #40'
 else
-  [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || fail 'manual RC/UAT deployment must use kaori/staging'
+  # An explicit UAT branch request is just an event at the exact current
+  # admitted staging SHA, not a second deployment environment.
+  if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+    [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+      fail 'manual RC deployment must use admitted staging'
+  elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
+    [[ "$GITHUB_REF" == refs/heads/kaori/uat-request &&
+       "$GITHUB_SHA" == "$ACCEPTED_SHA" && "$stage_rc" == 1 &&
+       "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/deploy-staging-host.yml@refs/heads/kaori/uat-request' ]] ||
+      fail 'UAT request must match admitted staging SHA and the canonical workflow identity'
+  else
+    fail 'unsupported RC/UAT request event'
+  fi
   [[ "$APPROVAL_REF" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/14#issuecomment-([0-9]+)$ ]] ||
     fail 'exact issue #14 RC/UAT deployment approval comment required'
 fi
@@ -147,6 +160,10 @@ else
     fail 'RC/UAT approval issue mismatch'
   grep -Fxq "KAORI_DOCS_DEPLOY_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
     fail 'RC/UAT approval marker SHA/tag/digest mismatch'
+  # Previous issue #14 approval was for PRIVATE RC staging only. It cannot
+  # authorize replacing the publicly served Docs image.
+  grep -Fxq "KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED:$ACCEPTED_SHA:$RC_TAG:$digest" <<< "$(jq -r '.body // ""' <<< "$approval")" ||
+    fail 'RC requires new explicit public single-slot replacement authorization'
 fi
 approval_user="$(jq -r '.user.login // ""' <<< "$approval")"
 [[ "$approval_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid approval author'
@@ -174,9 +191,20 @@ chmod 700 "$trust_dir"
 cleanup_trust() { rm -rf -- "$trust_dir"; }
 trap cleanup_trust EXIT
 printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$trust_dir" docker login "$REGISTRY_HOST" --username "$REGISTRY_USER" --password-stdin >/dev/null
-identity="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@refs/heads/kaori/staging"
+# Exact pinned source workflow identities: pre-existing staging manual RC
+# and the #51 request-branch RC. Neither arbitrary refs nor release bodies
+# may expand this signer allowlist. Every attestation uses the same identity.
 cosign=(docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker -v "$trust_dir:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3)
-"${cosign[@]}" verify --certificate-identity "$identity" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" || fail 'RC signature verification failed'
+identity=''
+for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
+  candidate="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@$allowed_ref"
+  if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" 2>/dev/null; then
+    identity="$candidate"
+    break
+  fi
+done
+[[ -n "$identity" && -s "$trust_dir/signature-verification.json" ]] ||
+  fail 'RC signature does not match either approved canonical publisher identity'
 test -s "$trust_dir/signature-verification.json" || fail 'RC signature evidence empty'
 for kind in spdxjson slsaprovenance1; do
   "${cosign[@]}" verify-attestation --certificate-identity "$identity" --certificate-oidc-issuer https://token.actions.githubusercontent.com --type "$kind" "$image_ref" > "$trust_dir/attestation-$kind.json" || fail "RC $kind attestation verification failed"
@@ -213,13 +241,10 @@ setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$DOCS_SSH_USER@$DOCS_HOST"
 ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-if [[ "$stage_rc" == 1 ]]; then
-  remote_release="/opt/kaori-docs-staging/releases/$ACCEPTED_SHA"
-  remote_deploy_root=/opt/kaori-docs-staging
-else
-  remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
-  remote_deploy_root="$DOCS_DEPLOY_ROOT"
-fi
+# One approved VPS, one canonical Docs release root for both image slots.
+# The environment is selected by release admission, not by a filesystem root.
+remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
+remote_deploy_root="$DOCS_DEPLOY_ROOT"
 {
   printf 'set -Eeuo pipefail\n'
   printf 'deploy_root=%q\nremote_release=%q\n' "$remote_deploy_root" "$remote_release"
@@ -235,11 +260,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$([[ "$stable_policy" == 1 ]] && printf '%s' "$KAORI_DOCS_STABLE_TAG" || printf '%s' "$RC_TAG")"
   printf 'artifact_version=%q\nstable_policy=%q\n' "$RC_TAG" "$stable_policy"
-  if [[ "$stage_rc" == 1 ]]; then
-    printf 'runtime_env=staging\ncompose_project=kaori-docs-staging\nstate_dir=/var/lib/kaori-docs-staging/deploy-state\n'
-  else
-    printf 'runtime_env=production\ncompose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
-  fi
+  printf 'compose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
   printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
   printf 'auto_policy=%q\n' "$auto_policy"
   cat <<'REMOTE_DEPLOY'
@@ -280,10 +301,9 @@ else
     done <<< "$existing_web"
   fi
 fi
-# The production and isolated RC/UAT runtimes use different Compose projects,
-# release state and loopback listeners. Neither may touch KAORI App/Website.
+# RC and stable are mutually exclusive images in ONE Docs container.
+# Only the existing Docs registration may be reattached after replacement.
 export KAORI_DOCS_RELEASE_LOCAL_ONLY=1
-export KAORI_DOCS_RUNTIME_ENV="$runtime_env"
 export COMPOSE_PROJECT_NAME="$compose_project"
 export KAORI_DOCS_STATE_DIR="$state_dir"
 if [[ "$stable_policy" == 1 ]]; then
@@ -312,5 +332,5 @@ if [[ "$stable_policy" == 1 ]]; then
 elif [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
   printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\n' "$digest"
 else
-  printf 'PASS: accepted Docs release candidate %s installed privately at digest %s; no public edge/DNS/TLS changes. Browser UAT and human acceptance still PENDING.\n' "$RC_TAG" "$digest"
+  fail 'single-slot release did not reconcile the existing public Docs edge'
 fi

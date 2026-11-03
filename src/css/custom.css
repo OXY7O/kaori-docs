@@ -1,5 +1,6 @@
 @import '@fontsource-variable/inter/index.css';
 
+/* KAORI Website / Application visual tokens, adapted for Docusaurus Infima. */
 :root {
   --ifm-font-family-base: 'Inter Variable', Inter, system-ui, sans-serif;
   --ifm-color-primary: #7c3aed;
@@ -10,13 +11,22 @@
   --ifm-color-primary-lighter: #a78bfa;
   --ifm-color-primary-lightest: #c4b5fd;
   --ifm-background-color: #f8fafc;
-  --ifm-font-color-base: #1f2937;
+  --ifm-font-color-base: #15152b;
   --ifm-navbar-background-color: #ffffff;
-  --ifm-footer-background-color: #f1f5f9;
+  --ifm-navbar-height: 4.5rem;
+  --ifm-footer-background-color: #ffffff;
   --ifm-link-color: #6d28d9;
+  --kaori-docs-shell: #ffffff;
   --kaori-docs-card: #ffffff;
-  --kaori-docs-outline: #cbd5e1;
-  --kaori-docs-muted: #475569;
+  --kaori-docs-muted-surface: #f3f3fa;
+  --kaori-docs-outline: #e6e5ee;
+  --kaori-docs-outline-strong: #d3d0e3;
+  --kaori-docs-secondary: #4e5670;
+  --kaori-docs-muted: #697186;
+  --kaori-docs-accent: #7c3aed;
+  --kaori-docs-soft: #f2edff;
+  --kaori-docs-hero-from: #ffffff;
+  --kaori-docs-hero-to: #f6f3ff;
 }
 
 html[data-theme='dark'] {
@@ -27,210 +37,694 @@ html[data-theme='dark'] {
   --ifm-color-primary-light: #b9a2ff;
   --ifm-color-primary-lighter: #c4b5fd;
   --ifm-color-primary-lightest: #ddd6fe;
-  --ifm-background-color: #111827;
-  --ifm-font-color-base: #e5e7eb;
-  --ifm-navbar-background-color: #1f2937;
-  --ifm-footer-background-color: #1f2937;
+  --ifm-background-color: #0f0d15;
+  --ifm-font-color-base: #f5f3f7;
+  --ifm-navbar-background-color: #15121d;
+  --ifm-footer-background-color: #15121d;
   --ifm-link-color: #c4b5fd;
-  --kaori-docs-card: #1f2937;
-  --kaori-docs-outline: #475569;
-  --kaori-docs-muted: #cbd5e1;
+  --kaori-docs-shell: #15121d;
+  --kaori-docs-card: #1d1925;
+  --kaori-docs-muted-surface: #201b2a;
+  --kaori-docs-outline: #2b2535;
+  --kaori-docs-outline-strong: #373043;
+  --kaori-docs-secondary: #cbc5d2;
+  --kaori-docs-muted: #b6acbe;
+  --kaori-docs-accent: #a78bfa;
+  --kaori-docs-soft: #2f1a4f;
+  --kaori-docs-hero-from: #0b0a17;
+  --kaori-docs-hero-to: #18102e;
 }
 
 :where(a, button, [tabindex]):focus-visible {
-  outline: 3px solid var(--ifm-color-primary);
+  outline: 3px solid var(--kaori-docs-accent);
   outline-offset: 3px;
 }
 
+.navbar {
+  border-bottom: 1px solid var(--kaori-docs-outline);
+  box-shadow: none;
+}
+
+.navbar__inner,
+.kaori-docs-home .container,
+.footer .container {
+  max-width: 1260px;
+  margin-inline: auto;
+}
+
+.navbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+}
+
+.navbar__logo {
+  height: 29px;
+}
+
+.navbar__link {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Match KAORI Website's lightweight Lucide arrow instead of the boxed
+   Docusaurus external-link glyph. Keep link semantics and native nav intact. */
+/* Keep Docusaurus' native responsive navbar visibility. External links must
+   not become visible above the mobile hamburger when it collapses. */
+
+.navbar__link[href^='https://'] svg[class*='iconExternalLink'] {
+  display: none;
+}
+
+.navbar__link[href^='https://']::after {
+  display: inline-block;
+  margin-inline-start: 0.35rem;
+  vertical-align: -0.13rem;
+  width: 0.84rem;
+  height: 0.84rem;
+  flex: none;
+  background: currentColor;
+  content: '';
+  -webkit-mask: url('/branding/icon-arrow-up-right.svg') center / contain no-repeat;
+  mask: url('/branding/icon-arrow-up-right.svg') center / contain no-repeat;
+}
+
+.navbar__items--right {
+  gap: 0.75rem;
+}
+
+/* Docusaurus' native mode control is the rightmost navbar action. */
+.navbar__items--right > :last-child {
+  margin-inline-start: 0.9rem;
+}
+
+.navbar__items--right button[aria-label*='Switch between dark and light mode'] {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 8px;
+}
+
+.navbar__items--right button[aria-label*='Switch between dark and light mode']:hover {
+  background: var(--kaori-docs-muted-surface);
+}
+
+.navbar__item.kaori-docs-nav-app {
+  border: 1px solid #7c3aed;
+  border-radius: 8px;
+  background: #7c3aed;
+  color: #ffffff;
+  padding: 0.62rem 0.88rem;
+}
+
+.navbar__item.kaori-docs-nav-app:hover,
+.navbar__item.kaori-docs-nav-app:focus-visible {
+  background: #6d28d9;
+  color: #ffffff;
+}
+
+.menu__link.kaori-docs-nav-app {
+  background: var(--kaori-docs-soft);
+  color: var(--ifm-color-primary);
+}
+
 .kaori-docs-home {
-  padding-bottom: 4rem;
+  font-size: 0.91rem;
+  line-height: 1.55;
 }
 
 .kaori-docs-home__hero {
-  padding: clamp(2.75rem, 6vw, 5.5rem) 0 3rem;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--kaori-docs-outline);
+  background: linear-gradient(
+    120deg,
+    var(--kaori-docs-hero-from),
+    var(--kaori-docs-hero-to)
+  );
 }
 
-.kaori-docs-home__hero > .container {
+.kaori-docs-home__hero::after {
+  position: absolute;
+  right: -10%;
+  bottom: -6rem;
+  width: 65%;
+  height: 8rem;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgb(124 58 237 / 12%), transparent 72%);
+  content: '';
+  pointer-events: none;
+}
+
+.kaori-docs-home__hero-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(16rem, 0.8fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
   align-items: center;
-  gap: clamp(1.5rem, 4vw, 4rem);
+  gap: clamp(2rem, 5vw, 4.75rem);
+  padding-top: clamp(2.25rem, 4vw, 4rem);
+  padding-bottom: clamp(2.25rem, 4vw, 4rem);
 }
 
 .kaori-docs-home__hero-content {
-  max-width: 48rem;
+  min-width: 0;
 }
 
 .kaori-docs-home__eyebrow {
-  margin-bottom: 0.75rem;
-  color: var(--ifm-color-primary);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  margin: 0 0 0.5rem;
+  color: var(--kaori-docs-accent);
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.095em;
+  text-transform: uppercase;
 }
 
 .kaori-docs-home h1 {
-  font-size: clamp(2.2rem, 5vw, 3.6rem);
+  margin: 0 0 0.6rem;
+  font-size: clamp(2.2rem, 4vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.055em;
   line-height: 1.1;
-  letter-spacing: -0.04em;
 }
 
-.kaori-docs-home h2 {
-  font-size: clamp(1.5rem, 3vw, 2.1rem);
-  line-height: 1.25;
-}
-
-.kaori-docs-home h3 {
-  font-size: 1.06rem;
-  line-height: 1.4;
+.kaori-docs-home h1 span,
+.kaori-docs-home__context h2 span {
+  color: var(--kaori-docs-accent);
 }
 
 .kaori-docs-home__lead {
-  margin-bottom: 1rem;
-  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
-  font-weight: 600;
+  margin: 0 0 0.65rem;
+  font-size: clamp(1.03rem, 1.5vw, 1.26rem);
+  font-weight: 650;
   line-height: 1.45;
 }
 
-.kaori-docs-home__summary,
-.kaori-docs-home__section-heading > p:last-child {
-  color: var(--kaori-docs-muted);
-  line-height: 1.75;
+.kaori-docs-home__summary {
+  max-width: 35rem;
+  margin: 0;
+  color: var(--kaori-docs-secondary);
+  line-height: 1.65;
 }
 
 .kaori-docs-home__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  margin-top: 1.75rem;
+  margin-top: 1.5rem;
 }
 
 .kaori-docs-home__actions .button {
-  min-height: 2.75rem;
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border-radius: 8px;
+  padding: 0.63rem 1.05rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.kaori-docs-home__primary {
+  border-color: #7c3aed;
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+.kaori-docs-home__primary:hover {
+  background: #6d28d9;
+  color: #ffffff;
+}
+
+.kaori-docs-home__secondary {
+  border-color: var(--kaori-docs-outline-strong);
+  background: var(--kaori-docs-shell);
+  color: var(--ifm-font-color-base);
+}
+
+.kaori-docs-home__secondary:hover {
+  border-color: var(--kaori-docs-accent);
+  color: var(--ifm-font-color-base);
+}
+
+.kaori-docs-home__principles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.4rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kaori-docs-home__principles li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--kaori-docs-outline-strong);
+  border-radius: 6px;
+  background: var(--kaori-docs-card);
+  color: var(--kaori-docs-secondary);
+  padding: 0.32rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.kaori-docs-home__principles svg {
+  color: var(--kaori-docs-accent);
 }
 
 .kaori-docs-home__notice {
-  padding: 1.5rem;
-  border: 1px solid var(--kaori-docs-outline);
-  border-left: 4px solid var(--ifm-color-primary);
-  border-radius: 0.75rem;
+  min-width: 0;
+  border: 1px solid var(--kaori-docs-outline-strong);
+  border-radius: 12px;
   background: var(--kaori-docs-card);
+  padding: clamp(1.2rem, 2.5vw, 1.75rem);
 }
 
-.kaori-docs-home__notice h2 {
-  font-size: 1.06rem;
+.kaori-docs-home__notice-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.5rem;
 }
 
-.kaori-docs-home__notice p {
+.kaori-docs-home__notice-heading > svg {
+  color: var(--kaori-docs-accent);
+}
+
+.kaori-docs-home .kaori-docs-home__notice h2 {
+  margin: 0;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.kaori-docs-home__notice > p {
+  margin: 0 0 1.2rem;
+  color: var(--kaori-docs-secondary);
+  line-height: 1.6;
+}
+
+.kaori-docs-home__preview {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.kaori-docs-home__preview > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--kaori-docs-outline);
+  border-radius: 8px;
+  background: var(--kaori-docs-muted-surface);
+  padding: 0.65rem 0.75rem;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.kaori-docs-home__preview > div svg {
+  flex: none;
+  color: var(--kaori-docs-accent);
+}
+
+.kaori-docs-home__preview > div span {
+  min-width: 0;
+}
+
+.kaori-docs-home__preview small {
+  margin-left: auto;
   color: var(--kaori-docs-muted);
-  line-height: 1.65;
-}
-
-.kaori-docs-home__notice p:last-child {
-  margin-bottom: 0;
+  font-size: 0.67rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .kaori-docs-home__section {
-  padding: 2.5rem 0;
-  scroll-margin-top: calc(var(--ifm-navbar-height) + 1.5rem);
+  padding: 2rem 0;
+  border-bottom: 1px solid var(--kaori-docs-outline);
+  scroll-margin-top: calc(var(--ifm-navbar-height) + 1rem);
 }
 
 .kaori-docs-home__section-heading {
-  max-width: 49rem;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.2rem;
+}
+
+.kaori-docs-home h2 {
+  margin: 0 0 0.4rem;
+  font-size: clamp(1.5rem, 2.5vw, 1.9rem);
+  font-weight: 750;
+  letter-spacing: -0.04em;
+  line-height: 1.24;
+}
+
+.kaori-docs-home__section-heading > p:last-child {
+  max-width: 58rem;
+  margin: 0;
+  color: var(--kaori-docs-secondary);
+  line-height: 1.6;
+}
+
+.kaori-docs-home__steps,
+.kaori-docs-home__catalog {
+  display: grid;
+  gap: 0.85rem;
 }
 
 .kaori-docs-home__steps {
-  display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
 }
 
 .kaori-docs-home__step,
 .kaori-docs-home__category {
   min-width: 0;
-  padding: 1.5rem;
-  border: 1px solid var(--kaori-docs-outline);
-  border-radius: 0.75rem;
+  border: 1px solid var(--kaori-docs-outline-strong);
+  border-radius: 12px;
   background: var(--kaori-docs-card);
+}
+
+.kaori-docs-home__step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+.kaori-docs-home__step-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--kaori-docs-soft);
+  color: var(--kaori-docs-accent);
+}
+
+.kaori-docs-home__step-content {
+  min-width: 0;
+}
+
+.kaori-docs-home__step-number {
+  display: block;
+  margin: 0 0 0.25rem;
+  color: var(--kaori-docs-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.kaori-docs-home h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.97rem;
+  font-weight: 700;
+  line-height: 1.35;
 }
 
 .kaori-docs-home__step p,
 .kaori-docs-home__category p {
-  margin-bottom: 0;
-  color: var(--kaori-docs-muted);
-  line-height: 1.7;
+  margin: 0;
+  color: var(--kaori-docs-secondary);
+  font-size: 0.81rem;
+  line-height: 1.55;
 }
 
-.kaori-docs-home__step-number {
-  display: inline-block;
-  margin-bottom: 1rem;
-  color: var(--ifm-color-primary);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+.kaori-docs-home__category p {
+  white-space: nowrap;
 }
 
 .kaori-docs-home__catalog {
-  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 1rem;
 }
 
 .kaori-docs-home__category {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  padding: 1.15rem;
+}
+
+.kaori-docs-home__category-icon {
+  display: grid;
+  width: 33px;
+  height: 33px;
+  place-items: center;
+  margin-bottom: 0.55rem;
+  color: var(--kaori-docs-accent);
 }
 
 .kaori-docs-home__category-status {
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin-top: auto;
-  padding-top: 1.5rem;
+  padding-top: 1rem;
   color: var(--kaori-docs-muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
 .kaori-docs-home__context {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.8fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   align-items: center;
-  gap: clamp(1.5rem, 4vw, 4rem);
-  border-top: 1px solid var(--kaori-docs-outline);
+  gap: clamp(1.75rem, 5vw, 4rem);
+  border-bottom: 0;
+  padding-block: 2.3rem;
 }
 
-.kaori-docs-home__context p {
-  line-height: 1.75;
+.kaori-docs-home__context p:not(.kaori-docs-home__eyebrow) {
+  max-width: 35rem;
+  margin: 0 0 0.65rem;
+  color: var(--kaori-docs-secondary);
+  line-height: 1.65;
 }
 
-.kaori-docs-home__source a {
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
+.kaori-docs-home__context h2 {
+  max-width: none;
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.3rem, 2vw, 1.65rem);
+}
+
+@media (min-width: 997px) {
+  .kaori-docs-home__context h2 {
+    white-space: nowrap;
+  }
+}
+
+/* Section navigation targets the parent section, so no decorative # is needed. */
+.kaori-docs-home__context h2 .hash-link {
+  display: none;
+}
+
+.kaori-docs-home__context .kaori-docs-home__source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.2rem;
+  font-size: 0.81rem;
+}
+
+.kaori-docs-home__source > svg {
+  color: var(--kaori-docs-accent);
+}
+
+.kaori-docs-home__source strong {
+  color: var(--ifm-font-color-base);
+  font-weight: 650;
 }
 
 .kaori-docs-home__flow {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.5rem;
-  text-align: center;
+  gap: 0.55rem;
+  border: 1px solid var(--kaori-docs-outline-strong);
+  border-radius: 12px;
+  background: var(--kaori-docs-card);
+  padding: clamp(1rem, 3vw, 1.7rem);
 }
 
 .kaori-docs-home__flow > div {
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--kaori-docs-outline);
-  border-radius: 0.65rem;
-  background: var(--kaori-docs-card);
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  border: 1px solid var(--kaori-docs-outline-strong);
+  border-radius: 8px;
+  background: var(--kaori-docs-muted-surface);
+  padding: 0.8rem 1.1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
-.kaori-docs-home__flow > span {
-  color: var(--ifm-color-primary);
-  font-size: 1.4rem;
+.kaori-docs-home__flow > div svg {
+  flex: none;
+  color: var(--kaori-docs-accent);
+}
+
+.kaori-docs-home__flow .kaori-docs-home__flow-focus {
+  border-color: var(--kaori-docs-accent);
+  background: var(--kaori-docs-soft);
+}
+
+.kaori-docs-home__flow-arrow {
+  align-self: center;
+  color: var(--kaori-docs-accent);
+  transform: rotate(90deg);
+}
+
+/* Swizzled Docusaurus footer: same configured links, KAORI Website grammar. */
+.kaori-docs-footer {
+  border-top: 1px solid var(--kaori-docs-outline);
+  background: var(--ifm-footer-background-color);
+  color: var(--ifm-font-color-base);
+  padding: 3rem 0 0;
+}
+
+.kaori-docs-footer__main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.6fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding-bottom: 2.75rem;
+}
+
+.kaori-docs-footer__identity {
+  min-width: 0;
+}
+
+.kaori-docs-footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ifm-font-color-base);
+  font-size: 1.04rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+}
+
+.kaori-docs-footer__brand:hover {
+  color: var(--kaori-docs-accent);
+  text-decoration: none;
+}
+
+.kaori-docs-footer__brand img {
+  display: block;
+  flex: none;
+}
+
+.kaori-docs-footer__tagline {
+  margin: 1rem 0 0.7rem;
+  color: var(--kaori-docs-secondary);
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.kaori-docs-footer__acronym {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.5rem;
+  max-width: 24rem;
+  margin: 0 0 0.8rem;
+  color: var(--kaori-docs-secondary);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.kaori-docs-footer__acronym strong {
+  color: var(--ifm-font-color-base);
+  font-weight: 700;
+}
+
+.kaori-docs-footer__attribution {
+  margin: 0;
+  color: var(--kaori-docs-muted);
+  font-size: 0.75rem;
+}
+
+.kaori-docs-footer__navigation {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(1rem, 3vw, 2.25rem);
+}
+
+.kaori-docs-footer__group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.kaori-docs-footer__group h2 {
+  margin: 0 0 0.25rem;
+  color: var(--ifm-font-color-base);
+  font-size: 0.89rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.kaori-docs-footer__owner {
+  color: var(--kaori-docs-secondary);
+  font-size: 0.8rem;
+}
+
+.kaori-docs-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--kaori-docs-secondary);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.kaori-docs-footer__link svg {
+  flex: none;
+  color: var(--kaori-docs-accent);
+}
+
+.kaori-docs-footer__link:hover,
+.kaori-docs-footer__link:focus-visible {
+  color: var(--kaori-docs-accent);
+  text-decoration: none;
+}
+
+.kaori-docs-footer__bottom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 2rem;
+  border-top: 1px solid var(--kaori-docs-outline);
+  padding-top: 1.05rem;
+  padding-bottom: 1.35rem;
+  color: var(--kaori-docs-muted);
+  font-size: 0.72rem;
+  line-height: 1.5;
 }
 
 @media (max-width: 996px) {
-  .kaori-docs-home__hero > .container,
+  .kaori-docs-footer__main {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .kaori-docs-footer__navigation {
+    max-width: 48rem;
+  }
+
+  .kaori-docs-home__hero-grid,
   .kaori-docs-home__context {
     grid-template-columns: 1fr;
   }
@@ -242,20 +736,50 @@ html[data-theme='dark'] {
   .kaori-docs-home__catalog {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .kaori-docs-home__hero-grid {
+    gap: 1.5rem;
+  }
 }
 
 @media (max-width: 600px) {
+  .kaori-docs-footer {
+    padding-top: 2rem;
+  }
+
+  .kaori-docs-footer__navigation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.65rem 1rem;
+  }
+
+  .kaori-docs-footer__main {
+    padding-bottom: 2rem;
+  }
+
+  .kaori-docs-home__hero-grid {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
   .kaori-docs-home__steps,
   .kaori-docs-home__catalog {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .kaori-docs-home__section {
-    padding: 1.75rem 0;
+    padding: 1.7rem 0;
   }
 
   .kaori-docs-home__actions .button {
     width: 100%;
+  }
+
+  .kaori-docs-home__preview > div {
+    flex-wrap: wrap;
+  }
+
+  .kaori-docs-home__preview small {
+    margin-left: 0;
   }
 }
 

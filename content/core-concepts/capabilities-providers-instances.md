@@ -3,6 +3,7 @@ id: capabilities-providers-instances
 title: Capabilities, Providers, and Instances
 description: Learn the KAORI capability-first information architecture without confusing providers with product capabilities.
 draft: true
+sidebar_position: 1
 ---
 
 > **Editorial status:** Review draft. This article is not mapped to an accepted KAORI Application release and is not publicly served.
@@ -57,3 +58,16 @@ When reading an integration-backed page, first identify the capability and the c
 A provider remains authoritative for the data and execution it owns. KAORI is responsible for connecting that information through normalization, provenance, cross-domain context, and governance—not for copying the provider's entire product.
 
 **Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Capability-first, not product-first_ and _Integration through explicit adapters_. This article requires release applicability and editorial approval before public publication.
+
+## Implementation evidence from KAORI staging
+
+The current source-reviewed **Integrations Overview** implements an independently counted Provider Catalog, persisted-runtime overview, and domain-coverage workspace. Kubernetes API targets, Prometheus/Thanos metrics instances and Alertmanager instances are counted by their own provider contracts. A Prometheus or Alertmanager instance does **not** have to be bound to a Kubernetes cluster to appear in the provider catalog.
+
+For an operator, this means:
+
+- Select the **capability** first (for example Observability), then the corresponding provider workspace.
+- Inspect a **configured instance** before interpreting its runtime readiness and collection scope.
+- Treat a planned provider card as a roadmap entry, not an available configuration flow.
+- Treat a missing provider instance or unknown runtime observation as an explicit absence of evidence, never a healthy connection.
+
+**Source-reviewed staging implementation:** `app/integrations/README.md` and `docs/modules/integrations/UI_REFERENCE.md` at `OXY7O/KAORI` staging commit `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`. This draft has **not** passed application release publication/UAT; routes and availability must be revalidated against the accepted release before publication.

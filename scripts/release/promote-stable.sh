@@ -86,10 +86,20 @@ umask 077
 trust_dir="$(mktemp -d)"
 trap 'rm -rf -- "$trust_dir"' EXIT
 printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$trust_dir" docker login "$REGISTRY_HOST"   --username "$REGISTRY_USER" --password-stdin >/dev/null
-identity="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@refs/heads/kaori/staging"
+# Stable release must accept only the two exact canonical Docs RC signer
+# identities (manual staging and the #51 exact-SHA request). The selected
+# identity is also required for BOTH signed attestations.
 cosign=(docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker -v "$trust_dir:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3)
-"${cosign[@]}" verify --certificate-identity "$identity"   --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/rc-signature.json" ||
-  fail 'accepted RC image signature failed'
+identity=''
+for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
+  candidate="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@$allowed_ref"
+  if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/rc-signature.json" 2>/dev/null; then
+    identity="$candidate"
+    break
+  fi
+done
+[[ -n "$identity" && -s "$trust_dir/rc-signature.json" ]] ||
+  fail 'accepted RC image signature lacks approved canonical publisher identity'
 for attestation in spdxjson slsaprovenance1; do
   "${cosign[@]}" verify-attestation --type "$attestation"     --certificate-identity "$identity"     --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/$attestation.json" ||
     fail "accepted RC $attestation attestation failed"

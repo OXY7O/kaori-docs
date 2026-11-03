@@ -3,21 +3,16 @@ set -Eeuo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_DOCS_COMPOSE_FILE:-$script_dir/compose.docs.yml}"
-runtime_env="${KAORI_DOCS_RUNTIME_ENV:-production}"
-[[ "$runtime_env" == staging || "$runtime_env" == production ]] || { echo 'BLOCK: unrecognized Docs runtime environment' >&2; exit 1; }
-if [[ "$runtime_env" == staging ]]; then
-    [[ "${COMPOSE_PROJECT_NAME:-}" == kaori-docs-staging ]] || { echo 'BLOCK: staging project is not isolated' >&2; exit 1; }
-    loopback=127.0.0.1:18082
-else
-    [[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] || { echo 'BLOCK: production Compose project mismatch' >&2; exit 1; }
-    loopback=127.0.0.1:18081
-fi
+# One active Docs runtime for signed RC or stable; never a stage-only port.
+[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
+    { echo 'BLOCK: Docs must use canonical single Compose project' >&2; exit 1; }
+loopback=127.0.0.1:18081
 expected_image="${KAORI_DOCS_IMAGE:?Set KAORI_DOCS_IMAGE to the accepted digest-qualified image}"
 [[ "$expected_image" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: digest-qualified image required' >&2; exit 1; }
 command -v docker >/dev/null || { echo 'BLOCK: Docker is not available' >&2; exit 1; }
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_DOCS_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
-    if [[ "$runtime_env" == staging ]]; then override="$script_dir/compose.staging.yml"; else override="$script_dir/compose.release.yml"; fi
+    override="$script_dir/compose.release.yml"
     [[ -f "$override" && ! -L "$override" ]] || { echo 'BLOCK: missing trusted loopback override' >&2; exit 1; }
     compose_args+=(-f "$override")
 fi

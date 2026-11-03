@@ -3,6 +3,7 @@ id: cross-domain-correlation
 title: Cross-Domain Correlation
 description: Understand how separately sourced evidence may support shared operational context without inventing relationships.
 draft: true
+sidebar_position: 4
 ---
 
 > **Editorial status:** Conceptual review draft only; no current feature availability or specific correlation accuracy is asserted.
@@ -59,3 +60,11 @@ Without that context, a correlation is an exploratory lead rather than a verifie
 A correlated view can help someone understand scope or potential impact, but it does not automatically authorize infrastructure mutation. Any supported operational action still requires permissions, explicit target selection, validation, and audit evidence.
 
 **Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Infrastructure Mapping_, _Asset Inventory_, and _Operational Analytics_. Release-specific feature behavior must be reconciled to accepted application evidence before publication.
+
+## Implementation evidence from KAORI staging
+
+KAORI's **Security Posture → Findings** code aggregates authorized, committed Registry vulnerability evidence and Kubernetes runtime bindings. A source CVE observation can be compared with an observed workload binding, but the implementation differentiates **strong immutable digest** matches from weaker mutable-image-reference matches. Runtime-binding counts are not automatically application-owner counts.
+
+The read model explicitly cannot infer coverage for unsupported workloads, hosts, networks, or unmapped ownership. Users with the aggregate `security_posture.view` permission do not automatically receive source Registry records without the separate `artifact_registry.view` permission.
+
+**Source-reviewed staging implementation:** `app/security_posture/README.md` and `app/artifact_registry/routes.py` at `OXY7O/KAORI` staging commit `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`. This is a scoped, source-backed correlation example, not a guarantee of globally complete security findings.

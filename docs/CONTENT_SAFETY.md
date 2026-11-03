@@ -29,12 +29,33 @@ An accepted Docs release requires source SHA, version/applicability evidence, pu
 - **Release applicability:** No application version is asserted. Publication of versioned guides is owned by #15 and source-released App evidence; local search by #16.
 - **Acceptance evidence:** Exact-head Developer Check, merged-SHA Full Admission, six-viewport browser checks, operator UAT and Human Acceptance remain separate and must be recorded only after completion.
 
-## Core Concepts editorial draft record — issue #3
+## Documentation Home visual parity — issue #57
 
-- **Authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md) and Docs issue #3; the article presentation remains owned by issue #2.
-- **Owner:** Docs #3; **blocked by issue #2** for article shell and by #15 for verified native version routes.
-- **Draft paths:** `content/core-concepts/capabilities-providers-instances.md`, `external-source-authority.md`, `committed-evidence.md`, `cross-domain-correlation.md`, and `governed-operational-workflows.md` in the same directory.
-- **Status:** Five editorial drafts only, each marked `draft: true`. The Docusaurus docs plugin remains disabled. No versioned route, sidebar, release applicability, provider integration support, or public publication is asserted.
-- **Release applicability:** Not assigned. Docs artifact `v0.3.0-rc.1` is **not** evidence of KAORI Application `v0.3.0` stable functionality.
-- **Content boundary:** Generic conceptual examples and source-attributed text flows only; no live data, screenshots, secrets, provider setup instructions, invented health, dependencies, availability, or deployment topology.
-- **Publication gates:** Accepted issue #2 article shell and issue #15 version mapping, exact accepted Application behavior, link and public-bundle checks, six-viewport/dual-theme browser evidence, maintainer editorial review, stage UAT, and explicit Human Acceptance.
+- **Authority:** Docs #1 (Home foundation) and bounded #57 (editorial layout), approved KAORI Application Design System and KAORI Website `HOMEPAGE_REVIEW.md`, `global.css`, `Icon.astro` and native website/footer presentation.
+- **Content:** Short, conceptual English summaries; no public product documentation release is asserted. The eight existing topic categories are intentionally informational and non-clickable until release-qualified guides, version routes and search are separately accepted under #2–#9, #15 and #16.
+- **Navigation:** Native Docusaurus navbar and footer own the public header/theme/mobile and footer structure. Overview, Catalog and How to Use point to real root/section anchors; external Website and Application destinations remain accurate. Contact owner uses the already approved KAORI Website public contact address.
+- **Design:** Inter and the neutral-first KAORI Website Violet token family; reusable Lucide-outline icon vocabulary shared by Docs Home topics, process steps and conceptual context diagram. Light/dark parity and screen-reader text remain mandatory; no operational health is represented by violet styling.
+- **Attribution and availability:** The diagram describes authority → normalization and committed evidence → cross-domain context, never live provider data. `In preparation` is a neutral publication label, not a claim that guides are published or that a specific KAORI Application release is available.
+- **Validation:** Existing six-viewport/two-theme Playwright/axe, keyboard/focus, no-overflow and CTA/anchor/footers; new exact-merge SHA Full Admission, signed candidate and live public-edge verification are independently required. Human Visual UAT, rollback drill, main and stable promotion remain separately controlled.
+
+## Documentation Home UAT refinement — issue #57, navbar and footer
+
+- **Observed feedback:** The deployed RC.4 navbar/footer still used the abbreviation `KAORI Docs`, native boxed external-link icons, and a cramped theme toggle. The native footer placed the logo below link columns and did not show the official KAORI acronym.
+- **Authority:** Approved KAORI Website `SiteFooter.astro`, `SiteHeader.astro` and `Icon.astro`; global KAORI Violet/Inter and neutral-first light/dark design system. The official acronym is **Knowledge, Automation, Operations, Resilience & Intelligence**.
+- **Scoped presentation:** The site title, brand and page identity use **KAORI Documentation**. Existing Docusaurus navbar/mobile/theme operation is retained. Its external destinations display the same Lucide `arrow-up-right` stroke vocabulary without the bundled box glyph; the icon is decorative and does not change link semantics.
+- **Footer:** A Docusaurus Footer theme wrapper renders the single existing footer navigation configuration, plus official logo, shortened brand explanation, KAORI acronym, approved Website contact identity and OXY7 ORBITAL attribution. Existing public links and version/public-corpus safety constraints remain unchanged.
+- **Acceptance:** Use existing browser/axe tests to check desktop/mobile, light/dark, spacing, heading identity, links/icons, footer, navigation and no overflow. CI success is **not** proof of human visual acceptance or rollback validation. A new exact-SHA admission and signed, approved RC are required before a single-slot public swap.
+
+## Documentation Home UAT refinement — issue #57, concise copy and internal reference
+
+- **Observed feedback:** The public RC.5 screenshots showed a wrapped publication notice heading, wrapped catalog descriptions in the four-column desktop layout, and an overly long contextual heading with a visible hash permalink.
+- **Editorial treatment:** Use short truthful English labels and single-line desktop category summaries; keep the same eight approved publication topics, concept model, status labels, CTA anchors and no unverified product claim. At narrow viewports, responsive readability and accessibility take precedence over forced one-line display.
+- **Product authority:** The conceptual explanation still derives from the canonical KAORI Platform Direction document in the application repository, but neither the public Home nor footer links to GitHub. Display the source name as non-interactive text on Home and omit its footer destination until a separately reviewed, release-qualified **real internal Docs page** exists. Do not invent a route, publicly expose engineering docs or switch on the disabled docs plugin.
+- **Validation and deployment:** Existing browser six-viewport/two-theme Playwright and axe checks additionally require one visual line per catalog summary, visible contextual heading, and no GitHub authority link. Developer Check, new merged-SHA Full Admission, signed unique RC and exact-digest single-slot public swap remain mandatory. Human visual acceptance and rollback evidence must be recorded separately.
+
+## Core Concepts staging implementation evidence — issue #3
+
+- Five source-reviewed conceptual articles now add specific KAORI Application staging implementation examples, using exact source `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`.
+- Code references: `app/integrations/README.md`, `app/kubernetes/inventory/README.md`, `app/security_posture/README.md`, `app/artifact_registry/routes.py`, `app/access/README.md`, `docs/modules/integrations/UI_REFERENCE.md`, and `docs/rbac/README.md`.
+- Scope: provider-native counts, committed inventory generation, evidence freshness, scoped Registry/Kubernetes correlation, and server-side authorization. Source tree presence is *not* a release or live-provider health assertion.
+- Publication: all five pages retain `draft: true`; native version map `docs/PUBLISHED_VERSIONS.json` is empty, so no article, external support claim or version selector is emitted by public RC builds. The final application release, editorial acceptance, browser QA and link review remain outstanding.

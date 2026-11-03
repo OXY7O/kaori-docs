@@ -3,6 +3,7 @@ id: committed-evidence
 title: Committed Evidence
 description: Interpret source provenance, observation time, freshness, scope and unavailable operational state.
 draft: true
+sidebar_position: 3
 ---
 
 > **Editorial status:** Review draft. This describes the architectural principle, not live production telemetry or a specific application release.
@@ -61,3 +62,11 @@ An infrastructure asset may have a previously committed inventory record while i
 Before acting, verify the source scope, observation freshness, authorization, and current operational boundary.
 
 **Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Asset Inventory_, _Operational Analytics_, _Reporting and Historical Context_, and _Honest operational state_. Specific implementation details require separate accepted application evidence.
+
+## Implementation evidence from KAORI staging
+
+The Kubernetes inventory implementation uses a **committed generation** marker: `ClusterInventory.collected_at`. Lists, filters, summaries, details and topology are constrained to the same current committed generation rather than mixing partially refreshed records. Its ordinary inventory page reads the database; it does not silently invoke a Kubernetes API request when the user filters a table.
+
+The Artifact Registry Security read model similarly distinguishes its last usable successful scan from newer failed attempts. Retaining last-good data after a failure is useful, but does **not** make it fresh or complete.
+
+**Source-reviewed staging implementation:** `app/kubernetes/inventory/README.md` and `app/security_posture/README.md` at `OXY7O/KAORI` staging commit `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`. Avoid interpreting an empty result as an infrastructure-wide green state.

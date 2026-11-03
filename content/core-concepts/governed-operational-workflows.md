@@ -3,6 +3,7 @@ id: governed-operational-workflows
 title: Governed Operational Workflows
 description: Separate visibility, authorization, orchestration, external execution, and auditable outcomes.
 draft: true
+sidebar_position: 5
 ---
 
 > **Editorial status:** Review draft. The workflow described here is conceptual and is not an instruction to change live infrastructure.
@@ -45,3 +46,11 @@ A release-qualified operational guide should explain prerequisites, supported sc
 The fact that a provider exposes an API is not, by itself, a reason to expose that operation in KAORI.
 
 **Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Centralized Operational Activities_, _Administration, Governance, and Audit_, and _Visibility before mutation_. Feature-level behavior must be linked to the accepted application implementation and release before publishing.
+
+## Implementation evidence from KAORI staging
+
+The **Artifact Registry** uses separate permissions for read-only inspection (`artifact_registry.view`) and manual evidence synchronization (`artifact_registry.sync`). Its Security Sync action dispatches an explicitly registered background job and can return **Queued**, **Already Active**, **Could Not Start**, or worker-unavailable feedback. An accepted dispatch is not proof that a registry scan ran or that all findings were collected. The synchronization path is read-only toward providers and preserves operational activity evidence.
+
+In the **Access** domain, `roles.view` and `roles.manage` distinguish registry inspection from custom-role mutation; protected default roles cannot be directly edited or deleted. The server enforces permissions instead of relying on UI visibility.
+
+**Source-reviewed staging implementation:** `app/artifact_registry/routes.py`, `app/access/README.md`, and `docs/rbac/README.md` at `OXY7O/KAORI` staging commit `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`. These examples are staging implementation evidence and do not replace release-specific authorization and UAT.

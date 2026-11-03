@@ -7,6 +7,12 @@ COPY docusaurus.config.ts sidebars.ts tsconfig.json .prettierrc.json ./
 COPY src ./src
 COPY static ./static
 COPY content ./content
+# Only the reviewed publication map enters this build stage from internal docs/.
+# Native snapshot directories are empty until accepted application release.
+COPY versions.json ./
+COPY versioned_docs ./versioned_docs
+COPY versioned_sidebars ./versioned_sidebars
+COPY docs/PUBLISHED_VERSIONS.json ./docs/PUBLISHED_VERSIONS.json
 RUN npm run check && npm run build && test -s build/index.html
 
 FROM nginxinc/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:4ac59c85c8c46d9e91eaabd2122cda4923ba380cf11f4138e389f069bcdc77a3 AS production
