@@ -57,7 +57,7 @@ promote Docs to `main` solely to enable manual workflow execution.
 
 ## Manual release authority
 
-The canonical Release Candidate workflow is .github/workflows/publish-staging-image.yml. It is manual-only except for the explicitly guarded one-time #24 staging bootstrap described above, and must run against kaori/staging at an exact SHA with a completed-success Full Admission run. Complete the repository-specific Variables/Secrets and registry robot-scope checks in #10 before dispatch. The image repository must end with /kaori-docs.
+The canonical Release Candidate workflow is `.github/workflows/publish-staging-image.yml`. It accepts an explicit `kaori/rc-request` push at the exact currently admitted staging SHA (issue #51) and separately retains governed manual `workflow_dispatch` from `kaori/staging`. The former one-time #24 staging activation is historical and must not be repeated. Both require an exact successful Full Admission, unique source-SHA/tag issue #13 authorization, signed immutable digest, license, and attestations. Complete the repository-specific Variables/Secrets and registry robot-scope checks in #10 before dispatch. The image repository must end with /kaori-docs.
 
 Provide a permanent GitHub comment URL as approval_reference. That comment must belong to issue #13 and include a complete approval marker line of the form:
 
@@ -87,7 +87,7 @@ image/SBOM/SLSA verification, and unique SemVer. See
 
 The historic #33 proposed RC publisher-completion auto-to-public path must
 remain DISABLED: final production deployment is owned by the separate stable
-release/production workstream #40. An RC is staging/UAT evidence, **not**
+release/production workstream #40. An RC is staging/UAT evidence rather than accepted stable identity, **not**
 proof of stable main acceptance.
 
 ## Production handoff from stable main only (issue #40)

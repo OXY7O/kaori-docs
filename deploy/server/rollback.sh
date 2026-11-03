@@ -1,21 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-runtime_env="${KAORI_DOCS_RUNTIME_ENV:-production}"
-[[ "$runtime_env" == production || "$runtime_env" == staging ]] ||
-  { echo 'BLOCK: unknown Docs rollback environment' >&2; exit 1; }
-if [[ "$runtime_env" == staging ]]; then
-  [[ "${COMPOSE_PROJECT_NAME:-}" == kaori-docs-staging &&
-     "${KAORI_DOCS_STATE_DIR:-}" == /var/lib/kaori-docs-staging/deploy-state &&
-     "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 0 ]] ||
-    { echo 'BLOCK: staging rollback must use only its private project and receipt' >&2; exit 1; }
-  compose_project=kaori-docs-staging
-  state_dir=/var/lib/kaori-docs-staging/deploy-state
-else
-  [[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
-    { echo 'BLOCK: production rollback project mismatch' >&2; exit 1; }
-  compose_project=kaori-docs
-  state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
-fi
+# Both release types replace one existing Docs project/image and share the
+# SAME committed current and previous release pointers.
+[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
+  { echo 'BLOCK: rollback must target only canonical Docs project' >&2; exit 1; }
+state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
+[[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
+  { echo 'BLOCK: rollback must use canonical Docs receipt' >&2; exit 1; }
+compose_project=kaori-docs
 previous="$state_dir/previous-release.env"
 [[ -f "$previous" && ! -L "$previous" && -r "$previous" ]] || { echo 'BLOCK: reviewed previous release state unavailable' >&2; exit 1; }
 # shellcheck source=/dev/null

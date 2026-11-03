@@ -10,7 +10,7 @@ const editorialPreview =
   process.env.NODE_ENV !== 'production' &&
   process.env.CI !== 'true';
 const config: Config = {
-  title: 'KAORI Docs',
+  title: 'KAORI Documentation',
   tagline: 'Knowledge, Automation, Operations, Resilience & Intelligence',
   url: 'https://docs.kaori.cloud',
   baseUrl: '/',
@@ -43,17 +43,51 @@ const config: Config = {
       disableSwitch: false,
     },
     navbar: {
-      title: 'KAORI Docs',
+      title: 'KAORI Documentation',
       logo: {alt: 'KAORI logo', src: 'branding/kaori-logo.svg'},
       items: [
+        {to: '/', label: 'Overview', position: 'left'},
+        {href: '/#explore-capabilities', label: 'Catalog', position: 'left'},
+        {href: '/#how-to-use', label: 'How to Use', position: 'left'},
         {href: 'https://kaori.cloud', label: 'KAORI Website', position: 'right'},
-        {href: 'https://app.kaori.cloud', label: 'Open Application', position: 'right'},
+        {
+          href: 'https://app.kaori.cloud',
+          label: 'Open Application',
+          position: 'right',
+          className: 'kaori-docs-nav-app',
+        },
       ],
     },
     footer: {
       style: 'light',
-      links: [],
-      copyright: 'KAORI documentation · Release-qualified content only',
+      logo: {
+        alt: 'KAORI Documentation',
+        src: 'branding/kaori-logo.svg',
+        width: 32,
+        height: 32,
+      },
+      links: [
+        {
+          title: 'Explore',
+          items: [
+            {label: 'Overview', to: '/'},
+            {label: 'Catalog', href: '/#explore-capabilities'},
+            {label: 'How to Use', href: '/#how-to-use'},
+          ],
+        },
+        {
+          title: 'Product',
+          items: [
+            {label: 'Open Application', href: 'https://app.kaori.cloud'},
+            {label: 'KAORI Website', href: 'https://kaori.cloud'},
+          ],
+        },
+        {
+          title: 'Contact',
+          items: [{label: 'Contact owner', href: 'mailto:lethisaputri@gmail.com'}],
+        },
+      ],
+      copyright: '© 2026 KAORI. All rights reserved. · Release-qualified content only.',
     },
   } satisfies Preset.ThemeConfig,
 };

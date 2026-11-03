@@ -53,32 +53,44 @@ Docs-only cutover/rollback, all-site edge verification and Human Acceptance
 may the separate auto-deploy variable and standing approval be enabled.
 The runtime uses the existing isolated `kaori-docs` Compose, committed
 receipt and Docs-only shared-edge reattachment, then full all-site
-verification. Staging RC/UAT and main stable are **distinct version
-authorities**, although the currently deployed single Docs VPS is not
-a separately isolated staging environment. Deployment automation
-and its public cutover UAT are currently **not active/accepted**.
+verification. Staging RC/UAT and main stable are **distinct version authorities**,
+but share **one** active Docs deployment slot on the existing KAORI VPS.
+An approved signed RC intentionally replaces the current Docs public image
+during development; stable later replaces the same slot using the accepted
+signed digest. Short replacement downtime is an accepted development
+tradeoff. The two releases never run concurrently. Deployment/UAT require
+separate authorizations and runtime evidence; source admission is not UAT.
 
 The initial repository contains only `main`, so issue #11 first creates `kaori/staging` from its existing README commit and then an issue-owned bootstrap work branch. The staging branch creation alone is **not** an approved staging merge. Each later issue remains a bounded workstream.
+
+## Explicit release request branches — issue #51
+
+`kaori/rc-request` is an **exact admitted staging-SHA** signal to publish the approved signed Docs RC. `kaori/uat-request` is the same SHA signal to select an existing signed prerelease and one **write-authorized issue #14 approval with both per-digest RC and public swap markers**. Those refs are not additional environments: both RC and accepted main stable replace the same `kaori-docs` Compose service on the same VPS. Normal `kaori/staging` pushes do not automatically deploy RC. `workflow_dispatch` remains a governed operator fallback; no request event grants Human Acceptance.
 
 ## Quality and operational boundaries
 
 - Four canonical workflow names: **Developer Check**, **Full Admission**, **Release Candidate**, **Release Deployment**. CI is implemented separately under #12/#13/#14.
-- The #14 [signed deployment adapter](RELEASE_DEPLOYMENT.md) uses existing Website-style digest, receipt and rollback controls. Issue #43 isolates RC/UAT on project `kaori-docs-staging`, loopback `127.0.0.1:18082` and its own receipt; accepted stable production remains project `kaori-docs` at loopback `127.0.0.1:18081` behind the existing shared-edge. See [staging/UAT runtime](STAGING_UAT_RUNTIME.md). Source PR/CI alone cannot authorize host deployment.
+- The #14 [signed deployment adapter](RELEASE_DEPLOYMENT.md) uses existing Website-style digest, receipt and rollback controls. Issue #43 uses a **single** project `kaori-docs`, loopback `127.0.0.1:18081`, and one current/previous receipt for either approved RC or accepted stable. No second staging project, port or receipt. See [staging/UAT runtime](STAGING_UAT_RUNTIME.md). Source PR/CI alone cannot authorize host deployment.
 - No lockfile or npm registry access means no deterministic install/build PASS. Do not override the block with a placeholder lockfile.
 - Runner labels `platform-ci` and `kaori-ci` require confirmed repository access. Labels do not themselves authorize the private Docs repository.
 - Private GitHub plan restrictions can make branch protection/environment controls unenforceable. Document a manual compensating procedure; do not claim server-enforced protection without proof.
 - Keep issue/PR assignee, canonical labels and native relationships accurate. GitHub Project status, sprint, type, priority and points require operator reconciliation where connector tooling cannot mutate them.
 - Docs is a static, non-authenticated publication; production credentials, external providers, application internals and shared-edge mutation are out of scope for content work.
 
-## Full Admission evidence cache — issue #45
+## Full Admission evidence reuse and Fast Smoke — issue #45
 
-The existing npm, Docker BuildKit, Trivy and hashed-static-asset caches
-improve runtime performance but **do not reuse passed tests**. The first
-implementation stage emits immutable source/tree/validation-authority
-evidence only **after** all four comprehensive admission gates pass. It
-includes a separately defined fresh browser/keyboard Fast Smoke contract.
-**No comprehensive gate is currently skipped**, and a future independently
-validated same-tree/fingerprint reuse with fresh smoke must be admitted
-before switching to the KAORI Application reuse model.
+Dependency npm, Docker BuildKit, Trivy and hashed-asset caches accelerate
+work but are not test evidence. The canonical Docs quality workflow now
+resolves immutable source-tree and validation-authority evidence from a
+previous trusted completed staging Full Admission. If the exact tree,
+fingerprint, workflow/job provenance, artifact digest and transition
+lineage match, **REUSED** requires new static/browser and runtime Fast
+Smoke. Otherwise **FALLBACK** runs comprehensive formatting, TypeScript,
+npm security, production build, Docker/Trivy and full Browser Quality
+Evidence. A failed smoke does not inherit prior PASS.
+
+The initial source change to this policy itself requires fresh Full
+Admission and immutable evidence. No cache mode grants UAT acceptance
+or skips signature, release, public-edge/receipt or human gates.
 
 See [Admission Evidence and Fast Smoke](CI_ADMISSION_EVIDENCE.md).
