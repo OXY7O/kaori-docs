@@ -1,73 +1,78 @@
 ---
 id: introduction
 title: Introduction to KAORI
-description: Understand KAORI's role, source authority, committed evidence, and operational boundaries.
+sidebar_label: Introduction
+sidebar_position: 1
+description: Learn how KAORI connects authoritative infrastructure sources, committed evidence, and governed operational context.
 draft: true
 ---
 
-> **Editorial status:** This introduction is a review draft. It is not an accepted product-version guide or evidence of a stable KAORI release.
+> **Editorial status:** This article is an unpublished review draft. It has no verified application-release applicability and must not appear in public documentation, navigation, or search.
 
-## What is KAORI?
+KAORI is an extensible **infrastructure operations platform** that brings visibility, operational context, analytics, reporting, and governance together across integrated infrastructure assets. It helps teams interpret information from multiple systems without replacing the tools that own that information.
 
-KAORI is an extensible infrastructure operations platform designed to connect infrastructure visibility, operational workflows, analytics, reporting, and governance. It provides a consistent operational context across integrated infrastructure assets and data sources.
+## Who is KAORI for?
 
-KAORI is **not** a replacement for every infrastructure provider, monitoring engine, inventory source, or configuration tool. Each external system remains authoritative for the data and execution it owns. KAORI's value comes from connecting that information through explicit capability and domain contracts.
+- **Infrastructure operators:** understand assets, operational state, and the evidence behind a finding.
+- **Platform and reliability engineers:** correlate context across systems while respecting each integration's boundaries.
+- **Operational owners and reviewers:** evaluate traceable evidence, permissions, and the outcome of governed workflows.
 
-The platform is intended for infrastructure operators, platform and reliability engineers, and teams responsible for evidence-based operational governance. A documentation topic does not, by itself, mean that its corresponding capability is available in a specific application release.
+This Introduction explains the platform's design principles, **not** a guaranteed feature list for a particular release.
 
-## Start with a capability, not a vendor
+## The capability-first model
 
-KAORI's structure follows three levels:
+KAORI organizes its architecture from capability to provider to instance.
 
-1. **Capability or domain:** the operational responsibility, such as infrastructure inventory, integration management, or a governed workflow.
-2. **Provider:** an external system integrated under that domain through an explicit source-of-truth and normalization contract.
-3. **Instance:** a configured provider connection with its own scope, environment, health, permissions, and collected evidence.
+| Level | Meaning |
+| --- | --- |
+| **Capability or domain** | The operational concern, such as inventory, integration management, or governance. |
+| **Provider** | An external tool integrated within that capability under an explicit authority and normalization contract. |
+| **Instance** | A specific configured connection with its own scope, environment, permissions, and collection state. |
 
-For example, a registry is an integration capability; Harbor is a possible provider; a particular Harbor connection is an instance. Describing the hierarchy does **not** assert that a given provider workflow is supported by an accepted KAORI application release.
+For example, **Integrations → Registry → Harbor** describes the hierarchy, not a claim that every Harbor operation is available in a published application release.
 
-## From external sources to operational context
+## From source truth to shared context
 
-The diagram below is **conceptual**. It does not show a live environment or guarantee that all depicted functions are available today.
+The flow below is **conceptual**, not a live architecture diagram, environment inventory, or released-capability guarantee.
 
 ```text
-External systems
-(authoritative data and execution)
-                 |
-                 v
-KAORI source adapters
-(normalization, scope and provenance)
-                 |
-                 v
-Committed KAORI evidence
-(observed identity, collection time and status)
-                 |
-                 v
-Cross-domain operational context
-(correlation, analysis, governance and workflows)
+External authoritative systems
+         |
+         v
+KAORI adapters: scope, identity, normalization, provenance
+         |
+         v
+Committed evidence: observed state, collection time, outcome
+         |
+         v
+Cross-domain context: supported correlations and governance
 ```
 
-**Accessible reading order:** external systems provide authoritative source information; adapters normalize that information with explicit scope and provenance; KAORI preserves committed evidence; connected evidence may support cross-domain operational context and governed workflows.
+**Accessible reading order:** External providers remain authoritative for their data and execution. KAORI adapters normalize observations with explicit scope and provenance. Committed evidence records what was actually observed. Supported cross-domain relationships may then inform operational context and governed decisions.
 
-## What does committed evidence mean?
+## Why committed evidence matters
 
-A live provider response and the last committed KAORI observation are not necessarily the same thing. An operational view should make clear when a result was collected, which source it came from, and whether the scope is complete, partial, stale, unknown, or unavailable.
+Live provider state and KAORI's **last committed observation** can differ. A useful operational view distinguishes:
 
-Committed evidence allows operational context to be inspected and correlated without making every normal page load depend on a live provider request. It does not authorize KAORI to invent a missing fact, a relationship, an asset's health, or an operational recommendation.
+- **Source and identity:** which external system and assets the evidence describes.
+- **Time and freshness:** when the information was collected and whether it may be stale.
+- **Scope and completeness:** whether collection succeeded, was partial, unavailable, or remains unknown.
+- **Provenance:** what evidence supports a relationship, finding, or recommendation.
 
-A correlation should be treated as an observed relationship only when its source evidence supports that conclusion. Otherwise, it remains incomplete or a hypothesis.
+Normal operational views can use committed KAORI state without requiring a live provider call for every page load. Missing evidence is not permission to invent asset health, connectivity, readiness, or a remediation recommendation.
 
-## Read-only visibility versus operational action
+## Visibility is not authorization
 
-Seeing an asset is different from changing it. A governed operational action requires a permitted and explicit target, validation of scope and impact, server-side authorization, and an auditable result. The provider or external execution engine remains the execution authority where applicable.
+Finding an asset does not authorize changing it. The operating model separates three activities:
 
-This distinction is important when reading future product guides:
+1. **Observe:** identify the source, asset, scope, and observation time.
+2. **Interpret:** assess freshness, completeness, related evidence, and uncertainty.
+3. **Act when supported and authorized:** validate an explicit target and impact, enforce permissions, let the authoritative provider or execution engine perform the operation, and preserve an auditable outcome.
 
-- **Observe:** understand the asset, source, environment and observation time.
-- **Interpret:** evaluate completeness, provenance and related evidence.
-- **Act:** use a separately supported, authorized and auditable workflow only when that capability is actually available.
+A documentation example does not establish that an execution workflow is available in the application version a reader uses.
 
-## What comes next?
+## Continue exploring
 
-Return to the [Documentation Home](/) to explore the planned article categories. Versioned Getting Started, Core Concepts, Product Guides and Integration articles will be linked only after their content is reviewed and mapped to an accepted KAORI application release.
+Return to the [Documentation Home](/) for the documentation catalog and orientation. Links to Getting Started follow-ups, Core Concepts, and other articles become available only after their content and applicable **KAORI application Major.Minor** release have been accepted.
 
-**Source and attribution:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md) governs platform positioning and capability language. Current release authority and feature availability live in the KAORI application repository, not in this draft.
+**Editorial source:** KAORI Platform Direction. Product/release authority and source references are maintained in the internal Docs editorial register rather than presented as a publicly supported release claim.
