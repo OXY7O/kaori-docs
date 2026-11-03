@@ -135,6 +135,8 @@ test('navigation, content availability, and external destinations stay scoped', 
   );
   await expect(page.locator('.kaori-docs-home__preview > div')).toHaveCount(3);
   await expect(page.locator('.kaori-docs-home__flow > div')).toHaveCount(3);
+  await expect(page.locator('h2#explore-capabilities')).toHaveCount(1);
+  await expect(page.locator('h2#how-to-use')).toHaveCount(1);
   await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);
   await expect(page.locator('a[href^="/v"]')).toHaveCount(0);
 });
