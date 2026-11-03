@@ -89,17 +89,17 @@ test('documentation home is accurate and accessible at six viewports and two the
       page.getByRole('link', {name: /Open Application/}).first(),
     ).toBeVisible();
   } else {
-    const external = page.locator(
-      '.navbar__items--right a[href="https://kaori.cloud"]',
-    );
+    const external = page.locator('.navbar__items--right a[href="https://kaori.cloud"]');
     await expect(external).toBeVisible();
-    expect(await external.evaluate((node) => getComputedStyle(node, '::after').content))
-      .not.toBe('none');
+    expect(
+      await external.evaluate((node) => getComputedStyle(node, '::after').content),
+    ).not.toBe('none');
     const navApp = page.locator('.navbar__items--right .kaori-docs-nav-app');
     const appBox = await navApp.boundingBox();
     const toggleBox = await toggle.boundingBox();
-    expect(appBox && toggleBox && toggleBox.x - (appBox.x + appBox.width))
-      .toBeGreaterThanOrEqual(10);
+    expect(
+      appBox && toggleBox && toggleBox.x - (appBox.x + appBox.width),
+    ).toBeGreaterThanOrEqual(10);
   }
 
   const overflow = await page.evaluate(
