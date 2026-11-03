@@ -339,6 +339,10 @@ html[data-theme='dark'] {
   line-height: 1.24;
 }
 
+.kaori-docs-home h2[id] {
+  scroll-margin-top: calc(var(--ifm-navbar-height) + 1rem);
+}
+
 .kaori-docs-home__section-heading > p:last-child {
   max-width: 58rem;
   margin: 0;
