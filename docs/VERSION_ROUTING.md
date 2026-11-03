@@ -86,6 +86,14 @@ For **native Docusaurus route mechanics only**, opt in to both
 banner. This is not a frozen release snapshot, not reachable on the
 production RC, and does not imply KAORI Application stable readiness.
 
+The Docker multi-stage builder copies only `docs/PUBLISHED_VERSIONS.json`
+from the internal `docs/` tree, together with native `versions.json`,
+`versioned_docs/` and `versioned_sidebars/` snapshot assets. Their
+empty `.gitkeep` placeholders make optional future snapshots available
+to the Docker build without copying confidential authoring material.
+The final Nginx image still copies only built static files. The
+production build rejects unpublished snapshot content.
+
 The normal production `npm run build` does not use the preview
 regardless of these flags; both require the Docusaurus dev lifecycle
 and non-CI execution. No public article, search-index or version

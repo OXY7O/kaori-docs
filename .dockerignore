@@ -2,6 +2,9 @@
 .github
 .devcontainer
 docs
+!docs/
+docs/**
+!docs/PUBLISHED_VERSIONS.json
 node_modules
 build
 .docusaurus

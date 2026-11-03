@@ -80,7 +80,7 @@ export function resolvePublishedApplicationDocs(
     gate((versions as string[]).length === 0, 'unmapped versions are forbidden');
     const dir = join(root, 'versioned_docs');
     gate(
-      !existsSync(dir) || readdirSync(dir).length === 0,
+      !existsSync(dir) || readdirSync(dir).every((name) => name === '.gitkeep'),
       'unaccepted snapshots cannot enter versioned_docs',
     );
     return [];
