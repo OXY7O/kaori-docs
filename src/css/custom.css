@@ -129,11 +129,7 @@ html[data-theme='dark'] {
   width: 65%;
   height: 8rem;
   border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgb(124 58 237 / 12%),
-    transparent 72%
-  );
+  background: radial-gradient(ellipse at center, rgb(124 58 237 / 12%), transparent 72%);
   content: '';
   pointer-events: none;
 }
