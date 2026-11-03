@@ -8,7 +8,9 @@ test('documentation home is accurate and accessible at six viewports and two the
   // Docusaurus hydrates its native color-mode state after rendering the static shell.
   await expect(page.locator('html')).toHaveAttribute('data-has-hydrated', 'true');
   await expect(page).toHaveTitle(/KAORI Documentation/);
-  await expect(page.getByRole('heading', {level: 1, name: 'KAORI Documentation'})).toHaveCount(1);
+  await expect(
+    page.getByRole('heading', {level: 1, name: 'KAORI Documentation'}),
+  ).toHaveCount(1);
   await expect(
     page.getByText('Versioned guides, release notes, and search appear after review.'),
   ).toBeVisible();
@@ -152,7 +154,9 @@ test('navigation, content availability, and external destinations stay scoped', 
     'href',
     '/#how-to-use',
   );
-  await expect(footer.locator('.kaori-docs-footer__link[href^="https://"] svg')).toHaveCount(3);
+  await expect(
+    footer.locator('.kaori-docs-footer__link[href^="https://"] svg'),
+  ).toHaveCount(3);
   await expect(
     footer.getByRole('link', {name: 'Contact owner'}).locator('svg'),
   ).toHaveCount(1);
