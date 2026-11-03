@@ -173,7 +173,7 @@ jobs:
           set -Eeuo pipefail
           test -s build/index.html
           test -s build/branding/kaori-logo.svg
-          grep -q 'KAORI Docs' build/index.html
+          grep -Fq 'KAORI Documentation' build/index.html
           for path in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github .devcontainer package.json package-lock.json content; do
             test ! -e "build/$path" || { echo "Public scope leaked: $path" >&2; exit 1; }
           done
