@@ -21,7 +21,9 @@ test('documentation home is accurate and accessible at six viewports and two the
   await expect(page.locator('.kaori-docs-home__category')).toHaveCount(8);
   await expect(page.locator('.kaori-docs-home__step')).toHaveCount(3);
   await expect(page.locator('.kaori-docs-home__category-status')).toHaveCount(8);
-  await expect(page.getByRole('heading', {level: 2, name: 'Documentation publication status'})).toBeVisible();
+  await expect(
+    page.getByRole('heading', {level: 2, name: 'Documentation publication status'}),
+  ).toBeVisible();
   await expect(page.locator('a[href="#getting-started"]')).toBeVisible();
   await expect(page.locator('a[href="#explore-capabilities"]')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', /^(light|dark)$/);
@@ -71,7 +73,9 @@ test('documentation home is accurate and accessible at six viewports and two the
     '/#explore-capabilities',
   );
   if (compactNavigation) {
-    await expect(page.getByRole('link', {name: /Open Application/}).first()).toBeVisible();
+    await expect(
+      page.getByRole('link', {name: /Open Application/}).first(),
+    ).toBeVisible();
   }
 
   const overflow = await page.evaluate(
@@ -108,7 +112,6 @@ test('same-page discovery and unpublished features stay honest', async ({page}) 
   await expect(page.getByRole('heading', {level: 1})).toHaveCount(1);
   await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);
 });
-
 
 test('navigation, content availability, and external destinations stay scoped', async ({
   page,
