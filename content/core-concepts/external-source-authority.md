@@ -44,7 +44,7 @@ These questions are especially important when a dashboard combines information f
 
 A visible action should not directly imply permission to change provider state. KAORI may orchestrate a separately admitted workflow, but the relevant provider or external engine still executes within its own contract. Target scope, authorization, validation, recorded outcome, and audit evidence are mandatory boundaries for any supported mutation.
 
-**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md), especially _Platform Boundary_, _Honest operational state_, and _Visibility before mutation_. No provider support matrix is asserted by this draft.
+**Source authority:** [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/7272c81e495ef8e4d590355f1d1e6c4dd785eb91/docs/product/README.md), especially _Platform Boundary_, _Honest operational state_, and _Visibility before mutation_. No provider support matrix is asserted by this draft.
 
 ## Implementation evidence from KAORI staging
 
