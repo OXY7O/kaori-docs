@@ -93,11 +93,8 @@ html[data-theme='dark'] {
 
 /* Match KAORI Website's lightweight Lucide arrow instead of the boxed
    Docusaurus external-link glyph. Keep link semantics and native nav intact. */
-.navbar__link[href^='https://'] {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
+/* Keep Docusaurus' native responsive navbar visibility. External links must
+   not become visible above the mobile hamburger when it collapses. */
 
 .navbar__link[href^='https://'] svg[class*='iconExternalLink'] {
   display: none;
@@ -105,6 +102,8 @@ html[data-theme='dark'] {
 
 .navbar__link[href^='https://']::after {
   display: inline-block;
+  margin-inline-start: 0.35rem;
+  vertical-align: -0.13rem;
   width: 0.84rem;
   height: 0.84rem;
   flex: none;
