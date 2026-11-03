@@ -319,10 +319,11 @@ html[data-theme='dark'] {
   color: var(--kaori-docs-accent);
 }
 
-.kaori-docs-home__notice h2 {
+.kaori-docs-home .kaori-docs-home__notice h2 {
   margin: 0;
-  font-size: 1rem;
+  font-size: clamp(1rem, 1.5vw, 1.15rem);
   font-weight: 700;
+  letter-spacing: -0.02em;
   white-space: nowrap;
 }
 
