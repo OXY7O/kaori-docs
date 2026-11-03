@@ -46,16 +46,16 @@ proof of release authenticity by itself. A nonempty mapping can only
 be submitted through a separately approved issue #15 publication
 change. Each entry must bind:
 
-| Field | Authority |
-| --- | --- |
-| `line` | Application Major.Minor, for example `v0.3` |
-| `application_release_tag` | Real accepted stable `vX.Y.Z` GitHub Release, never RC or the source `VERSION` file |
-| `application_release_url` | Exact KAORI Application GitHub Release URL |
-| `application_source_sha` | Accepted immutable source SHA |
-| `application_image_digest` | Signed immutable OCI application image digest |
-| `application_manifest_sha256` | Accepted signed release-manifest hash |
-| `docs_accepted_snapshot_sha` | Exact reviewed Docs content/snapshot source |
-| `docs_approval_url` | Write-authorized issue #15 acceptance comment with the release mapping |
+| Field                         | Authority                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------- |
+| `line`                        | Application Major.Minor, for example `v0.3`                                         |
+| `application_release_tag`     | Real accepted stable `vX.Y.Z` GitHub Release, never RC or the source `VERSION` file |
+| `application_release_url`     | Exact KAORI Application GitHub Release URL                                          |
+| `application_source_sha`      | Accepted immutable source SHA                                                       |
+| `application_image_digest`    | Signed immutable OCI application image digest                                       |
+| `application_manifest_sha256` | Accepted signed release-manifest hash                                               |
+| `docs_accepted_snapshot_sha`  | Exact reviewed Docs content/snapshot source                                         |
+| `docs_approval_url`           | Write-authorized issue #15 acceptance comment with the release mapping              |
 
 The existing Docusaurus production build rejects malformed or
 inconsistent entries, absent native snapshots/sidebars, draft

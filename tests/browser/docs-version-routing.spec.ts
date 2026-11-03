@@ -14,9 +14,7 @@ test('no unverified application documentation version is public', async ({page})
   await expect(page.getByRole('heading', {name: /Page Not Found/i})).toBeVisible();
 });
 
-test('opt-in native version route preview remains clearly unreleased', async ({
-  page,
-}) => {
+test('opt-in native version route preview remains clearly unreleased', async ({page}) => {
   test.skip(
     process.env.KAORI_DOCS_VERSION_ROUTE_PREVIEW !== '1',
     'Native version preview requires explicit local development opt-in',

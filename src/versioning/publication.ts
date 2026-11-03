@@ -38,8 +38,9 @@ function containsDraft(folder: string): boolean {
     if (statSync(file).isDirectory()) {
       return containsDraft(file);
     }
-    return /\.(md|mdx)$/.test(file) &&
-      /^draft:\s*true\s*$/m.test(readFileSync(file, 'utf8'));
+    return (
+      /\.(md|mdx)$/.test(file) && /^draft:\s*true\s*$/m.test(readFileSync(file, 'utf8'))
+    );
   });
 }
 
@@ -56,8 +57,7 @@ export function resolvePublishedApplicationDocs(
   }
   gate(raw.schema_version === 1, 'unsupported mapping schema');
   gate(
-    raw.publication_state === 'awaiting-release' ||
-      raw.publication_state === 'published',
+    raw.publication_state === 'awaiting-release' || raw.publication_state === 'published',
     'invalid publication state',
   );
   gate(Array.isArray(raw.published), 'published must be an array');
@@ -105,8 +105,7 @@ export function resolvePublishedApplicationDocs(
     );
     gate(
       entry.application_release_url ===
-        'https://github.com/OXY7O/KAORI/releases/tag/' +
-          entry.application_release_tag,
+        'https://github.com/OXY7O/KAORI/releases/tag/' + entry.application_release_tag,
       'canonical application release URL required',
     );
     gate(
@@ -142,8 +141,7 @@ export function resolvePublishedApplicationDocs(
   }
 
   gate(
-    JSON.stringify(versions) ===
-      JSON.stringify(published.map((entry) => entry.line)),
+    JSON.stringify(versions) === JSON.stringify(published.map((entry) => entry.line)),
     'versions.json differs from the accepted ordered mapping',
   );
   const folders = readdirSync(join(root, 'versioned_docs'))

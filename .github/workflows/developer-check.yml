@@ -174,18 +174,6 @@ jobs:
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
-      - name: Report exact Prettier differences for release mapping changes
-        if: failure()
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          for path in docs/VERSION_ROUTING.md src/versioning/publication.ts tests/browser/docs-version-routing.spec.ts; do
-            echo "=== Prettier differences: $path ==="
-            formatted="$(mktemp)"
-            npx prettier "$path" > "$formatted"
-            diff -u "$path" "$formatted" || true
-            rm -f "$formatted"
-          done
       - name: Audit dependency authority changes
         if: ${{ needs.route.outputs.dependencies == 'true' }}
         run: npm audit --audit-level=high
