@@ -172,7 +172,7 @@ test('navigation, content availability, and external destinations stay scoped', 
   );
   await expect(
     footer.locator('.kaori-docs-footer__link[href^="https://"] svg'),
-  ).toHaveCount(3);
+  ).toHaveCount(2);
   await expect(
     footer.getByRole('link', {name: 'Contact owner'}).locator('svg'),
   ).toHaveCount(1);
@@ -183,6 +183,7 @@ test('navigation, content availability, and external destinations stay scoped', 
   );
   await expect(page.locator('.kaori-docs-home__source a')).toHaveCount(0);
   await expect(page.locator('a[href*="/KAORI/blob/main/docs/product/"]')).toHaveCount(0);
+  await expect(footer.getByRole('link', {name: 'Product authority'})).toHaveCount(0);
   await expect(page.locator('.kaori-docs-home__category a')).toHaveCount(0);
   await expect(page.locator('a[href^="/v"]')).toHaveCount(0);
 });
