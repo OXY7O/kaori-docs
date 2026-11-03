@@ -171,15 +171,6 @@ jobs:
           fi
           test ! -e "$evidence"
           echo 'PASS: exact source/tree fingerprint emitted, skipped gate and fake workflow rejected'
-      # Temporary issue #57 formatter diagnostics. Remove before review/merge.
-      - name: Capture canonical formatting output for Docs issue 57
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          npm run format
-          for f in docusaurus.config.ts src/components/DocsIcon.tsx src/css/custom.css src/pages/index.tsx tests/browser/docs-foundation.spec.ts; do
-            printf 'KAORI_FORMATTED_FILE:%s:%s\\n' "$f" "$(base64 -w0 "$f")"
-          done
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
