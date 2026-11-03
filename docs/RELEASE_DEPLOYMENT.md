@@ -48,6 +48,52 @@ The host pulls the approved digest and reconciles the same `kaori-docs` Compose 
 
 A public-edge reconciliation failure is **not** a successful deployment even when the container itself is healthy. Collect its error and the actual last-known-good/receipt state; do not report production or UAT PASS until the public site and rollback evidence are verified.
 
+### Shared-edge Compose scope isolation (Docs #32 / KAORI #4203)
+
+The Docs release adapter intentionally exports `COMPOSE_PROJECT_NAME=kaori-docs`
+for its **own** single-slot Compose service. The separately owned
+`/opt/shared-edge/runtime/compose.yml` uses project `shared-edge-example`.
+Do not carry the Docs project override into the canonical independent
+`/opt/shared-edge/runtime/verify.sh`: its `docker compose ps -q nginx`
+would otherwise look under the wrong project and falsely report that the
+Nginx container is missing. The Docs-only reconciliation adapter therefore
+invokes the **unchanged strict shared-edge verifier** with
+`env -u COMPOSE_PROJECT_NAME`. This is a scoped process environment
+boundary, not a new verifier, relaxed test, change to edge ownership or
+change to the active application Compose project.
+
+**Observed incident (2026-11-03):** [Release Deployment
+#41556596818](https://github.com/OXY7O/kaori-docs/actions/runs/41556596818)
+of signed `v0.3.0-rc.2` installed the approved immutable digest and
+committed its receipt. DNS, redirects, TLS and HTTPS readiness for Docs,
+Website and Application all passed, but the inherited Compose project
+caused the final independent Nginx discovery check to fail. Operator's
+read-only `docker compose ls --all`, Nginx/Certbot labels and correctly
+scoped `docker compose ... ps -a` independently found both running
+`shared-edge-example` containers. This is a release **final-gate FAIL**,
+not evidence that the Nginx or Certbot containers stopped.
+
+For read-only diagnostic reproduction under the existing authorized host
+identity (never print the private `edge.env`), use:
+
+```bash
+docker compose ls --all
+docker compose --env-file /opt/shared-edge/config/edge.env \
+  --project-directory /opt/shared-edge/runtime \
+  -f /opt/shared-edge/runtime/compose.yml ps -a
+env -u COMPOSE_PROJECT_NAME \
+  bash /opt/shared-edge/runtime/verify.sh --wait-seconds 120
+```
+
+After source fix admission, any newly published Docs RC requires a **new**
+immutable tag, exact staging SHA approval and digest-bound public swap
+authorization. Existing `v0.3.0-rc.2` remains historical evidence and
+must not be retagged or claimed to originate from the new source. Verify
+the actual receipt, Docs-only alias and all sites through the existing
+canonical deployer; browser/rollback evidence and Human Acceptance remain
+separate. Do not change the shared-edge project name, restart Nginx/Certbot,
+modify DNS/TLS or bypass the strict verifier as a workaround.
+
 ## Governed request branch triggers
 
 Issue [#51](https://github.com/OXY7O/kaori-docs/issues/51) adds optional `push` request signals: `kaori/rc-request` selects the exact admitted staging SHA and a uniquely approved RC publication; `kaori/uat-request` selects the uniquely signed RC for that exact SHA and the issue #14 **public swap** approval. Both use the existing canonical workflows, same Compose project `kaori-docs`, loopback 18081, and one release receipt. No alternate staging target is created.

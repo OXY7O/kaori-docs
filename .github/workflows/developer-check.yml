@@ -210,6 +210,19 @@ jobs:
             echo 'BLOCK: public RC swap per-digest marker gate missing' >&2
             exit 1
           }
+          # #32: the RC deployer exports COMPOSE_PROJECT_NAME=kaori-docs for
+          # the Docs service. Standalone edge verification MUST remove that
+          # inherited override and retain its own Compose project identity.
+          grep -Fxq 'env -u COMPOSE_PROJECT_NAME bash "$edge_root/runtime/verify.sh" --wait-seconds 120 ||' \
+            deploy/server/reattach-existing-site.sh || {
+            echo 'BLOCK: edge verifier inherited Docs Compose project override' >&2
+            exit 1
+          }
+          env COMPOSE_PROJECT_NAME=kaori-docs env -u COMPOSE_PROJECT_NAME \
+            bash -c '[[ -z ${COMPOSE_PROJECT_NAME+x} ]]' || {
+            echo 'BLOCK: standalone verifier isolation failed' >&2
+            exit 1
+          }
           echo 'PASS: one Docs runtime; RC and stable differ only by approved signed image identity'
       - name: Negative admission tests for governed Release Deployment
         if: ${{ needs.route.outputs.runtime == 'true' }}
