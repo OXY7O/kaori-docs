@@ -25,7 +25,8 @@ test('documentation home is accurate and accessible at six viewports and two the
   await expect(page.locator('.kaori-docs-home__category-status')).toHaveCount(8);
   // Exact public copy must fit each catalog card on a single line without
   // hiding text or relying on desktop-only screenshots.
-  const lineCounts = await page.locator('.kaori-docs-home__category p').evaluateAll((nodes) =>
+  const descriptions = page.locator('.kaori-docs-home__category p');
+  const lineCounts = await descriptions.evaluateAll((nodes) =>
     nodes.map((node) => {
       const range = document.createRange();
       range.selectNodeContents(node);
