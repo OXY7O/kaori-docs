@@ -55,7 +55,19 @@ An accepted Docs release requires source SHA, version/applicability evidence, pu
 
 ## Core Concepts staging implementation evidence — issue #3
 
-- Five source-reviewed conceptual articles now add specific KAORI Application staging implementation examples, using exact source `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`.
-- Code references: `app/integrations/README.md`, `app/kubernetes/inventory/README.md`, `app/security_posture/README.md`, `app/artifact_registry/routes.py`, `app/access/README.md`, `docs/modules/integrations/UI_REFERENCE.md`, and `docs/rbac/README.md`.
-- Scope: provider-native counts, committed inventory generation, evidence freshness, scoped Registry/Kubernetes correlation, and server-side authorization. Source tree presence is *not* a release or live-provider health assertion.
-- Publication: all five pages retain `draft: true`; native version map `docs/PUBLISHED_VERSIONS.json` is empty, so no article, external support claim or version selector is emitted by public RC builds. The final application release, editorial acceptance, browser QA and link review remain outstanding.
+- **Authority:** `OXY7O/KAORI` staging at
+  `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`.
+- **Articles:** Five conceptual drafts in `content/core-concepts/`.
+- **Sources:** `app/integrations/README.md`,
+  `app/kubernetes/inventory/README.md`,
+  `app/security_posture/README.md`,
+  `app/artifact_registry/routes.py`, `app/access/README.md`,
+  `docs/modules/integrations/UI_REFERENCE.md`, and
+  `docs/rbac/README.md`.
+- **Scope:** Provider counts, committed inventory, freshness,
+  scoped Registry/Kubernetes correlation, and server authorization.
+- **Boundary:** Source review does not prove release, live-provider
+  readiness, browser UAT, or human acceptance.
+- **Publication:** All five pages retain `draft: true`. The native
+  version map `docs/PUBLISHED_VERSIONS.json` is empty, so no
+  application guide or version selector enters public RC builds.
