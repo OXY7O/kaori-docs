@@ -53,13 +53,13 @@ All PASS entries refer to **exact PR heads at the time checked**, not merged-SHA
 
 ## Evidence classification used by every article
 
-| State | Meaning |
-| ----- | ------- |
-| Source-reviewed | The implementation contract and route have been read at the pinned staging commit. This is **not** executed UAT. |
-| Draft | English product article written under its own Docs issue, unpublished via `draft: true`. |
-| Browser UAT pending | Exact source, permission, navigation, light/dark, narrow/zoom, keyboard and safe screenshots still require observed tests. |
+| State                         | Meaning                                                                                                                          |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Source-reviewed               | The implementation contract and route have been read at the pinned staging commit. This is **not** executed UAT.                 |
+| Draft                         | English product article written under its own Docs issue, unpublished via `draft: true`.                                         |
+| Browser UAT pending           | Exact source, permission, navigation, light/dark, narrow/zoom, keyboard and safe screenshots still require observed tests.       |
 | Release qualification pending | Accepted App stable tag, SHA, immutable image/manifest, documented product applicability and Docs snapshot approval are missing. |
-| Published | **Not assigned** to any application-versioned guide in this register. |
+| Published                     | **Not assigned** to any application-versioned guide in this register.                                                            |
 
 ## Article acceptance handoff
 
