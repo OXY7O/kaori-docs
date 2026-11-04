@@ -1,5 +1,7 @@
 # Review drafts for KAORI public product documentation
 
+The source-reviewed staging capability coverage matrix and unresolved acceptance gaps are tracked in [STAGING_CONTENT_COVERAGE.md](STAGING_CONTENT_COVERAGE.md) under Docs #36; this register does not confer product release applicability.
+
 This internal editorial register is **not** part of the Docusaurus public output. The publication boundary is governed by [CONTENT_SAFETY.md](CONTENT_SAFETY.md), the native version-routing authority [Docs #15](https://github.com/OXY7O/kaori-docs/issues/15), and the application release authority.
 
 ## Getting Started — Introduction (issue #2)
