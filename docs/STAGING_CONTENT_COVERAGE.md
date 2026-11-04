@@ -2,7 +2,7 @@
 
 **Editorial owner:** Docs #36. **Application source pinned:** `OXY7O/KAORI@7272c81e495ef8e4d590355f1d1e6c4dd785eb91` (branch `kaori/staging`, observed 2026-11-03). **Docs scope:** source-reviewed draft planning, not public release readiness.
 
-**Release qualification:** the KAORI Application has no verified first stable `v0.3.0` release manifest at this checkpoint. Docs artifact `v0.3.0-rc.7` is independently signed, but proves only the Docs image identity. **Implemented source paths** below mean a route/contract exists in the inspected staging repository, *not* observed live UAT, accessible permission for every account, complete data coverage, or accepted product GA status. This register is internal (`docs/`) and excluded from the static website and search.
+**Release qualification:** the KAORI Application has no verified first stable `v0.3.0` release manifest at this checkpoint. Docs artifact `v0.3.0-rc.7` is independently signed, but proves only the Docs image identity. **Implemented source paths** below mean a route/contract exists in the inspected staging repository, _not_ observed live UAT, accessible permission for every account, complete data coverage, or accepted product GA status. This register is internal (`docs/`) and excluded from the static website and search.
 
 ## Source-reviewed coverage matrix
 
