@@ -52,3 +52,22 @@ An accepted Docs release requires source SHA, version/applicability evidence, pu
 - **Editorial treatment:** Use short truthful English labels and single-line desktop category summaries; keep the same eight approved publication topics, concept model, status labels, CTA anchors and no unverified product claim. At narrow viewports, responsive readability and accessibility take precedence over forced one-line display.
 - **Product authority:** The conceptual explanation still derives from the canonical KAORI Platform Direction document in the application repository, but neither the public Home nor footer links to GitHub. Display the source name as non-interactive text on Home and omit its footer destination until a separately reviewed, release-qualified **real internal Docs page** exists. Do not invent a route, publicly expose engineering docs or switch on the disabled docs plugin.
 - **Validation and deployment:** Existing browser six-viewport/two-theme Playwright and axe checks additionally require one visual line per catalog summary, visible contextual heading, and no GitHub authority link. Developer Check, new merged-SHA Full Admission, signed unique RC and exact-digest single-slot public swap remain mandatory. Human visual acceptance and rollback evidence must be recorded separately.
+
+## Core Concepts staging implementation evidence — issue #3
+
+- **Authority:** `OXY7O/KAORI` staging at
+  `7272c81e495ef8e4d590355f1d1e6c4dd785eb91`.
+- **Articles:** Five conceptual drafts in `content/core-concepts/`.
+- **Sources:** `app/integrations/README.md`,
+  `app/kubernetes/inventory/README.md`,
+  `app/security_posture/README.md`,
+  `app/artifact_registry/routes.py`, `app/access/README.md`,
+  `docs/modules/integrations/UI_REFERENCE.md`, and
+  `docs/rbac/README.md`.
+- **Scope:** Provider counts, committed inventory, freshness,
+  scoped Registry/Kubernetes correlation, and server authorization.
+- **Boundary:** Source review does not prove release, live-provider
+  readiness, browser UAT, or human acceptance.
+- **Publication:** All five pages retain `draft: true`. The native
+  version map `docs/PUBLISHED_VERSIONS.json` is empty, so no
+  application guide or version selector enters public RC builds.
