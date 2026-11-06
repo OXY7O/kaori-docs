@@ -15,7 +15,7 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 **The organization runner group must explicitly allow the public `OXY7O/kaori-docs` repository for the remaining self-hosted jobs.** Label matching does not grant permission. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
 
-**Hosted Route Checks increment #76:** The `Route Checks` job uses an ephemeral GitHub-hosted `ubuntu-24.04` worker for git-based SHA/path/issue-branch validation. It rejects external fork heads before checkout; this is a *trusted-source* gate, not a new fork-feedback check. The existing `Docs Validation` job deliberately remains on the authorized organization `platform-ci` runner because it contains conditional Docker/Trivy, Compose and release negative controls. No self-hosted Docker cache, registry/deployment credentials, or staging Full Admission authority are transferred to hosted by this increment.
+**Hosted Route Checks increment #76:** The `Route Checks` job uses an ephemeral GitHub-hosted `ubuntu-24.04` worker for git-based SHA/path/issue-branch validation. It rejects external fork heads before checkout; this is a _trusted-source_ gate, not a new fork-feedback check. The existing `Docs Validation` job deliberately remains on the authorized organization `platform-ci` runner because it contains conditional Docker/Trivy, Compose and release negative controls. No self-hosted Docker cache, registry/deployment credentials, or staging Full Admission authority are transferred to hosted by this increment.
 
 ## Developer Check
 
