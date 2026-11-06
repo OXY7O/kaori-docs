@@ -50,6 +50,12 @@ Open [http://localhost:3000](http://localhost:3000).
 
 **Bootstrap validation:** A registry-resolved `package-lock.json` is committed in the combined #11/#12 review branch. The [self-hosted Developer Check run #41396567726](https://github.com/OXY7O/kaori-docs/actions/runs/41396567726) passed on SHA `f2e13e631c71fa416c6c2f1f95b2b3cea43f7e4c`, including `npm ci`, formatting, TypeScript, npm security audit and Docusaurus build. Every later change requires a **new exact-head** gate. Full Admission, browser/server UAT and human acceptance remain separate, unclaimed checks. See [development guidance](docs/DEVELOPMENT.md).
 
+## Community pull requests
+
+This repository is public. External fork pull requests targeting `kaori/staging` receive **feedback-only** formatting, TypeScript and static Docusaurus build results from a separate GitHub-hosted `Community Fork Check`. The fork job uses exact-source checkout, a read-only token, no shared cache, and no deployment secrets or self-hosted runner access.
+
+An external fork check never replaces trusted `Route Checks`, `Docs Validation`, staging Full Admission, public-content security review, UAT or Human Acceptance. A maintainer must adopt reviewed changes into an approved issue-linked KAORI work branch before trusted admission. Do not contribute internal repository `docs/` operating material as public Docusaurus content: only explicitly reviewed `src/`, `static/` and approved content surfaces can be published. See [CI/CD governance](docs/CI_CD.md) and [KAORI product authority](https://github.com/OXY7O/KAORI).
+
 ## Quality checks
 
 Using the reviewed committed lockfile:
