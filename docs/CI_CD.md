@@ -4,13 +4,14 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 ## Runner eligibility (must be verified live)
 
-| Workflow                                          | Runner label set                               | Authority                               |
-| ------------------------------------------------- | ---------------------------------------------- | --------------------------------------- |
-| Developer Check: Route Checks and Docs Validation | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
-| Full Admission: promotion policy                  | `self-hosted, linux, x64, platform-ci`         | Staging/main gate                       |
-| Full Admission: static, container, browser        | `self-hosted, linux, x64, kaori-ci`            | Exact staging SHA; promotion PR to main |
-| Release Candidate (#13, manual-only)              | existing approved release control-plane runner | Explicit manual acceptance              |
-| Release Deployment (future #14)                   | approved release runner and SSH adapter        | Manual signed digest and host trust     |
+| Workflow                                   | Runner label set                       | Authority                    |
+| ------------------------------------------ | -------------------------------------- | ---------------------------- |
+| Developer Check: Route Checks              | `ubuntu-24.04`                         | Issue-branch and fork denial |
+| Developer Check: Docs Validation           | `self-hosted, linux, x64, platform-ci` | Trusted source validation    |
+| Full Admission: promotion policy           | `ubuntu-24.04`                         | Fail-closed staging-to-main  |
+| Full Admission: static, container, browser | `self-hosted, linux, x64, kaori-ci`    | Trusted admitted source      |
+| Release Candidate (#13, manual-only)       | approved release runner                | Human release authority      |
+| Release Deployment (future #14)            | approved SSH/deploy runner             | Signed digest and host trust |
 
 **The runner group must explicitly allow the public `OXY7O/kaori-docs` repository for trusted jobs.** Public visibility and matching labels do not grant runner-group access. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
 
@@ -40,24 +41,28 @@ CI PASS on the self-hosted staging runner is **not staging VPS UAT**, browser Hu
 
 ## Untrusted community PR runner boundary (#78)
 
-External fork PRs to `kaori/staging` use the separate GitHub-hosted,
-read-only `Community Fork Check` only as **feedback**. The trusted
-`Developer Check` now checks source repository identity at the
-**route job-level** before allocating `platform-ci`, then repeats the
-canonical issue-linked branch validation inside the existing first
-step. Every trusted downstream job depends on that route.
+External fork PRs to `kaori/staging` receive read-only hosted
+`Community Fork Check` feedback, **not** trusted admission.
+The canonical required `Route Checks` also runs on hosted
+`ubuntu-24.04` and **fails** a different-repository source in its
+first step before any checkout. This is necessary because GitHub
+considers a job-level `skipped` conclusion successful for branch
+required-check purposes; skipping alone does not reject the fork.
+`Docs Validation` remains on the trusted self-hosted runner and
+depends on successful Route Checks.
 
-For a promotion PR targeting `main`, `Full Admission` schedules
-`Promotion Policy` on `platform-ci` only for the same-repository
-`kaori/staging` source. That job-level guard denies fork PRs before
-runner allocation; the existing promotion step remains a second check.
-All later privileged validation jobs depend on the promotion gate,
-and push/manual release eligibility remains under existing controls.
+For PRs targeting `main`, `Promotion Policy` runs on hosted
+`ubuntu-24.04` and **fails** sources other than same-repository
+`kaori/staging`; its existing step guard is retained.
+All privileged Full Admission, container, browser and evidence jobs
+remain downstream of that policy. Current push/manual event
+authorization and release authority are unchanged. GitHub Admin
+must separately verify enforced review and status-check rulesets;
+this patch makes no Settings changes.
 
-Fork feedback cannot grant source authority, stage admission, signed
-publication or deployment. The real external-fork negative test,
-current exact-source checks, staging/UAT and Human Acceptance remain
-**NOT RUN** until independently evidenced.
+Do not count skipped jobs as PASS or hosted fork feedback as UAT.
+Live external-fork negative testing, Full Admission and Human
+Acceptance still require independent execution and evidence.
 
 ## Gate failure/recovery
 
