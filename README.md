@@ -99,4 +99,4 @@ and release acceptance; it is not permission to distribute the source code.
 
 ## Security and ownership
 
-This repository is private and maintained under KAORI issue-linked delivery governance. Public output must contain only reviewed, release-authorized content. Do not commit secrets, internal endpoints, hostnames, private inventory or operational evidence. No release badge is displayed until an actual signed Docs release has been verified.
+This repository is public but still governed by KAORI's proprietary internal-use license and issue-linked delivery workflow. Public output must contain only reviewed, release-authorized content. Do not commit secrets, internal endpoints, hostnames, private inventory or operational evidence. No release badge is displayed until an actual signed Docs release has been verified.
