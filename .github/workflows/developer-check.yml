@@ -25,6 +25,8 @@ env:
 jobs:
   route:
     name: Route Checks
+    # Forks must be denied before an organization runner is allocated.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.event.pull_request.head.ref, 'kaori/') }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 5
     outputs:
