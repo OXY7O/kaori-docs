@@ -37,7 +37,9 @@ test('required Docs Route Checks must fail untrusted forks on a hosted runner', 
   assert.ok(route.includes('HEAD_REPO:'));
   assert.ok(route.includes('head.repo.full_name'));
   assert.ok(route.includes('Fork PR cannot enter trusted Docs validation'));
-  const validation = route.indexOf('Require same-repository issue-linked branch before checkout');
+  const validation = route.indexOf(
+    'Require same-repository issue-linked branch before checkout',
+  );
   const checkout = route.indexOf('Checkout exact pull-request head');
   assert.ok(validation > -1 && checkout > validation);
   assert.match(job(developer, 'targeted'), /needs: route/);
@@ -53,5 +55,8 @@ test('Docs promotion fails untrusted PRs before allocating privileged jobs', () 
   assert.ok(promotion.includes('head.repo.full_name'));
   assert.ok(promotion.includes('Only kaori/staging may open a promotion PR to main'));
   assert.match(job(quality, 'validation-profile'), /needs: promotion-source/);
-  assert.match(job(quality, 'full-admission'), /needs: \[promotion-source, validation-profile\]/);
+  assert.match(
+    job(quality, 'full-admission'),
+    /needs: \[promotion-source, validation-profile\]/,
+  );
 });
