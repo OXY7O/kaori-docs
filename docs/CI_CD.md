@@ -38,6 +38,27 @@ The four canonical workflow names remain **Developer Check**, **Full Admission**
 
 CI PASS on the self-hosted staging runner is **not staging VPS UAT**, browser Human Acceptance, stable main promotion or deployment verification.
 
+## Untrusted community PR runner boundary (#78)
+
+External fork PRs to `kaori/staging` use the separate GitHub-hosted,
+read-only `Community Fork Check` only as **feedback**. The trusted
+`Developer Check` now checks source repository identity at the
+**route job-level** before allocating `platform-ci`, then repeats the
+canonical issue-linked branch validation inside the existing first
+step. Every trusted downstream job depends on that route.
+
+For a promotion PR targeting `main`, `Full Admission` schedules
+`Promotion Policy` on `platform-ci` only for the same-repository
+`kaori/staging` source. That job-level guard denies fork PRs before
+runner allocation; the existing promotion step remains a second check.
+All later privileged validation jobs depend on the promotion gate,
+and push/manual release eligibility remains under existing controls.
+
+Fork feedback cannot grant source authority, stage admission, signed
+publication or deployment. The real external-fork negative test,
+current exact-source checks, staging/UAT and Human Acceptance remain
+**NOT RUN** until independently evidenced.
+
 ## Gate failure/recovery
 
 1. Pin failing run URL, exact SHA, failing job, dependency and action versions.
