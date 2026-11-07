@@ -44,9 +44,9 @@ env:
 jobs:
   promotion-source:
     name: Promotion Policy
-    # Only trusted same-repository staging PRs can reach this runner.
-    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'kaori/staging' && github.event.pull_request.base.ref == 'main') }}
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    # Invalid promotion PRs must FAIL, not SKIP a required policy check.
+    # Later privileged jobs remain dependent on this hosted gate.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify permitted source and target
