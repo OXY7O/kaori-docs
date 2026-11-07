@@ -44,6 +44,8 @@ env:
 jobs:
   promotion-source:
     name: Promotion Policy
+    # Only trusted same-repository staging PRs can reach this runner.
+    if: ${{ github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'kaori/staging' && github.event.pull_request.base.ref == 'main') }}
     runs-on: [self-hosted, linux, x64, platform-ci]
     timeout-minutes: 5
     steps:
