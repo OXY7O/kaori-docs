@@ -12,7 +12,7 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 | Release Candidate (#13, manual-only)              | existing approved release control-plane runner | Explicit manual acceptance              |
 | Release Deployment (future #14)                   | approved release runner and SSH adapter        | Manual signed digest and host trust     |
 
-**The runner group must explicitly allow the private `OXY7O/kaori-docs` repository.** Label matching does not grant permission. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
+**The runner group must explicitly allow the public `OXY7O/kaori-docs` repository for trusted jobs.** Public visibility and matching labels do not grant runner-group access. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
 
 ## Developer Check
 
