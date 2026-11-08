@@ -173,6 +173,9 @@ jobs:
           fi
           test ! -e "$evidence"
           echo 'PASS: exact source/tree fingerprint emitted, skipped gate and fake workflow rejected'
+      - name: Verify fork runner isolation contracts
+        if: ${{ needs.route.outputs.site == 'true' }}
+        run: node --test tests/contracts/release/fork-runner-boundary.test.mjs
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
