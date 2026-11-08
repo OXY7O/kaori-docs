@@ -6,7 +6,8 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 | Workflow                                          | Runner label set                               | Authority                               |
 | ------------------------------------------------- | ---------------------------------------------- | --------------------------------------- |
-| Developer Check: Route Checks and Docs Validation | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
+| Developer Check: Route Checks                 | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
+| Developer Check: Docs Validation              | `ubuntu-24.04` (GitHub-hosted)                 | Exact trusted PR head; Node/Docker      |
 | Full Admission: promotion policy                  | `self-hosted, linux, x64, platform-ci`         | Staging/main gate                       |
 | Full Admission: static, container, browser        | `self-hosted, linux, x64, kaori-ci`            | Exact staging SHA; promotion PR to main |
 | Release Candidate (#13, manual-only)              | existing approved release control-plane runner | Explicit manual acceptance              |
@@ -15,6 +16,9 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 **The runner group must explicitly allow the private `OXY7O/kaori-docs` repository.** Label matching does not grant permission. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
 
 ## Developer Check
+
+**Trusted Docs Validation hosted migration (#82):** the existing Docs Validation job (pinned Node, locked npm install, Prettier, TypeScript, Docusaurus build, and conditional Docker/Trivy/release negative checks) runs on ephemeral `ubuntu-24.04`; the required `Route Checks` remains on `platform-ci` until #76 / PR #77 is accepted. Validate the actual hosted runner and cold-cache Docusaurus build; `Killed` followed by a self-hosted runner shutdown in [run #42427835303](https://github.com/OXY7O/kaori-docs/actions/runs/42427835303) does not prove an application defect or kernel OOM. Re-run the conditional runtime branch tests before asserting Docker/Trivy parity.
+
 
 `.github/workflows/developer-check.yml` is triggered on same-repo pull requests targeting `kaori/staging` (Draft and Ready). It verifies the canonical `kaori/<type>-<issue>-<slug>` branch; runs `git diff --check`; classifies changed paths and fails closed on unknown paths. Public site/source/configuration/workflow changes require committed lockfile, Node `22.23.2`, `npm ci`, Prettier, TypeScript `tsc --noEmit`, Docusaurus build and static boundary checks. Dependency authority changes additionally run `npm audit --audit-level=high`. An internal-only prose change avoids expensive full build; the routing job remains mandatory.
 
