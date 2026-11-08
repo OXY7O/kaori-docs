@@ -86,7 +86,7 @@ jobs:
   targeted:
     name: Docs Validation
     needs: route
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Report validation route
