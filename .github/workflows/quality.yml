@@ -44,7 +44,7 @@ env:
 jobs:
   promotion-source:
     name: Promotion Policy
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify permitted source and target
@@ -73,7 +73,7 @@ jobs:
   validation-profile:
     name: Resolve Admission Evidence
     needs: promotion-source
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 8
     permissions:
       contents: read
@@ -105,10 +105,11 @@ jobs:
     name: Full Admission
     needs: [promotion-source, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - name: Recover only runner checkout ownership from prior browser job
+        if: ${{ runner.environment == 'self-hosted' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -201,7 +202,7 @@ jobs:
     name: Container Admission
     needs: [full-admission, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - name: Checkout exact source
@@ -244,7 +245,7 @@ jobs:
     name: Browser Quality Evidence
     needs: [promotion-source, full-admission, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble
@@ -296,7 +297,7 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
       - name: Restore host runner checkout ownership
-        if: always()
+        if: ${{ always() && runner.environment == 'self-hosted' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -360,7 +361,7 @@ jobs:
           needs.full-admission.result == 'success' &&
           needs.container-admission.result == 'success' &&
           needs.browser-evidence.result == 'success' }}
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
