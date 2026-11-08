@@ -17,6 +17,30 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 **Self-hosted privileged jobs still require verified organization runner-group access for the public `OXY7O/kaori-docs` repository.** Label matching alone does not grant permission. Verify in GitHub repository Settings → Actions → Runners and organization runner groups, then require a real successful action run; do not repurpose/deregister the Application or Website runners. If CI remains queued, record BLOCKED rather than claiming PASS.
 
+## Untrusted community PR runner boundary (#78)
+
+External fork PRs targeting `kaori/staging` use `Community Fork Check`
+as **feedback only**, on a read-only GitHub-hosted runner with exact
+fork-head checkout, `npm ci --ignore-scripts`, formatting, TypeScript
+and static Docusaurus build. This does not authenticate an external
+contribution as governed KAORI source.
+
+The canonical required `Route Checks` already runs on hosted
+`ubuntu-24.04` under issue #76. It **fails** a fork in its first
+source-identity step before checkout, rather than conditionally
+skipping an otherwise required check. Hosted `Docs Validation`
+remains dependent on that successful route and now also executes the
+existing fork-boundary regression contract. No privileged runner is
+used for those validation jobs; the separate release/publish/deploy
+runner scope and authorizations above remain unchanged.
+
+For a `main` promotion PR, hosted `Promotion Policy` explicitly
+fails sources other than same-repository `kaori/staging`; downstream
+admission depends on successful promotion policy. A real external-fork
+negative test, effective ruleset and review enforcement, official
+staging Full Admission, security UAT, and Human Acceptance remain
+pending. This temporary holding integration is not a release approval.
+
 ## Developer Check
 
 **Hosted Docs Validation dependency (#82):** This candidate integrates the previously validated `Docs Validation` runner switch from [PR #83](https://github.com/OXY7O/kaori-docs/pull/83). The existing locked npm, formatting, TypeScript, Docusaurus build, and conditional Docker/Trivy checks are unchanged. The failed older self-hosted run #42427835303 terminated during Docusaurus client build; a hosted job on PR #83 subsequently passed. The new combined head must independently pass its own Developer Check and does not prove unselected conditional runtime paths. Route Checks now also runs on hosted Ubuntu via the existing #76 / PR #77 source; fork-origin PRs still fail trusted pre-checkout validation.
