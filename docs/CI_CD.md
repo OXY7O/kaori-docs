@@ -6,8 +6,8 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 | Workflow                                          | Runner label set                               | Authority                               |
 | ------------------------------------------------- | ---------------------------------------------- | --------------------------------------- |
-| Developer Check: Route Checks                 | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
-| Developer Check: Docs Validation              | `ubuntu-24.04` (GitHub-hosted)                 | Exact trusted PR head; Node/Docker      |
+| Developer Check: Route Checks                     | `self-hosted, linux, x64, platform-ci`         | Exact issue-linked PR head              |
+| Developer Check: Docs Validation                  | `ubuntu-24.04` (GitHub-hosted)                 | Exact trusted PR head; Node/Docker      |
 | Full Admission: promotion policy                  | `self-hosted, linux, x64, platform-ci`         | Staging/main gate                       |
 | Full Admission: static, container, browser        | `self-hosted, linux, x64, kaori-ci`            | Exact staging SHA; promotion PR to main |
 | Release Candidate (#13, manual-only)              | existing approved release control-plane runner | Explicit manual acceptance              |
