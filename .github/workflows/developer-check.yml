@@ -174,11 +174,6 @@ jobs:
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
-      - name: Show expected Markdown formatting on failure
-        if: ${{ failure() && needs.route.outputs.site == 'true' }}
-        shell: bash
-        run: |
-          ./node_modules/.bin/prettier docs/CI_CD.md | diff -u docs/CI_CD.md - || true
       - name: Audit dependency authority changes
         if: ${{ needs.route.outputs.dependencies == 'true' }}
         run: npm audit --audit-level=high
