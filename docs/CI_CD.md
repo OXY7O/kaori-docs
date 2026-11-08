@@ -6,7 +6,7 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 | Workflow                                             | Runner selector                | Authority                           |
 | ---------------------------------------------------- | ------------------------------ | ----------------------------------- |
-| Developer Check: Route Checks                        | `platform-ci` (self-hosted)    | Issue-linked PR; #76 separate       |
+| Developer Check: Route Checks                        | `ubuntu-24.04` (GitHub-hosted) | Issue-linked PR; #76 adopted        |
 | Developer Check: Docs Validation                     | `ubuntu-24.04` (GitHub-hosted) | Trusted issue-linked PR; #82        |
 | Full Admission: promotion policy and evidence lookup | `ubuntu-24.04` (GitHub-hosted) | Source validation / evidence reuse  |
 | Full Admission: static, container, and browser       | `ubuntu-24.04` (GitHub-hosted) | Exact source SHA and executed gates |
@@ -19,7 +19,7 @@ This is the Docs-specific implementation of [KAORI Engineering Delivery](https:/
 
 ## Developer Check
 
-**Hosted Docs Validation dependency (#82):** This candidate integrates the previously validated `Docs Validation` runner switch from [PR #83](https://github.com/OXY7O/kaori-docs/pull/83). The existing locked npm, formatting, TypeScript, Docusaurus build, and conditional Docker/Trivy checks are unchanged. The failed older self-hosted run #42427835303 terminated during Docusaurus client build; a hosted job on PR #83 subsequently passed. The new combined head must independently pass its own Developer Check and does not prove unselected conditional runtime paths. Route Checks remains governed separately by #76.
+**Hosted Docs Validation dependency (#82):** This candidate integrates the previously validated `Docs Validation` runner switch from [PR #83](https://github.com/OXY7O/kaori-docs/pull/83). The existing locked npm, formatting, TypeScript, Docusaurus build, and conditional Docker/Trivy checks are unchanged. The failed older self-hosted run #42427835303 terminated during Docusaurus client build; a hosted job on PR #83 subsequently passed. The new combined head must independently pass its own Developer Check and does not prove unselected conditional runtime paths. Route Checks now also runs on hosted Ubuntu via the existing #76 / PR #77 source; fork-origin PRs still fail trusted pre-checkout validation.
 
 `.github/workflows/developer-check.yml` is triggered on same-repo pull requests targeting `kaori/staging` (Draft and Ready). It verifies the canonical `kaori/<type>-<issue>-<slug>` branch; runs `git diff --check`; classifies changed paths and fails closed on unknown paths. Public site/source/configuration/workflow changes require committed lockfile, Node `22.23.2`, `npm ci`, Prettier, TypeScript `tsc --noEmit`, Docusaurus build and static boundary checks. Dependency authority changes additionally run `npm audit --audit-level=high`. An internal-only prose change avoids expensive full build; the routing job remains mandatory.
 
