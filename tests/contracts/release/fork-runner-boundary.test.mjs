@@ -172,20 +172,20 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
 
   assert.match(workflowSource, /'production' \|\| 'staging'/);
   for (const key of [
-    'KAORI_DOCS_RUNTIME_PROJECT',
-    'KAORI_DOCS_RUNTIME_STATE_DIR',
-    'KAORI_DOCS_RUNTIME_LOOPBACK_PORT',
+    'KAORI_DOCS_COMPOSE_PROJECT',
+    'KAORI_DOCS_STATE_DIR',
+    'KAORI_DOCS_LOOPBACK_PORT',
   ]) {
     assert.ok(workflowSource.includes(`vars.${key}`));
   }
-  assert.match(deployAdapter, /DOCS_RUNTIME_PROJECT:-kaori-docs/);
+  assert.match(deployAdapter, /DOCS_COMPOSE_PROJECT:-kaori-docs/);
   assert.ok(
     deployAdapter.includes(
-      'DOCS_RUNTIME_STATE_DIR:-/var/lib/$runtime_project/deploy-state',
+      'DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state',
     ),
   );
-  assert.match(deployAdapter, /DOCS_RUNTIME_LOOPBACK_PORT:-18081/);
-  assert.ok(deployAdapter.includes('DOCS_DEPLOY_ROOT" == "/opt/$runtime_project"'));
+  assert.match(deployAdapter, /DOCS_LOOPBACK_PORT:-18081/);
+  assert.ok(deployAdapter.includes('DOCS_DEPLOY_ROOT" == /opt/kaori-docs'));
   assert.match(deployAdapter, /compose_project=%q/);
   assert.match(deployAdapter, /state_dir=%q/);
   assert.match(deployAdapter, /loopback_port=%q/);
