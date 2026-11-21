@@ -136,21 +136,26 @@ Public single-slot UAT and eventual production approval remain separate.
 
 The `Release Deployment` workflow selects GitHub Environment `staging` for
 the exact approved RC source and `production` for accepted stable-main
-publication. Environment-level variables/secrets take precedence over
-repository defaults for the **same names**; operators may deliberately assign
-identical values to both Environments. The working current target is the safe
-fallback when the optional runtime variables are unset.
+publication. Environment-level Variables/Secrets override repository-level values of
+**the same names** in the privileged job. At this checkpoint, the established
+Docs registry and SSH credentials are still **repository-scoped**: merely
+binding a job to an Environment does not move them or prove isolation. Until
+the operator completes scoped migration, the existing repository values are
+an intentional compatibility fallback. No secret values belong in Git, logs
+or issue comments. Both Environments may deliberately select identical
+values, yielding the same effective runtime.
 
 - `KAORI_DOCS_HOST`, `KAORI_DOCS_HOST_PORT`,
   `KAORI_DOCS_HOST_USER`: existing approved pinned SSH host identity,
   selected from the GitHub Environment.
-- `KAORI_DOCS_HOST_DEPLOY_ROOT`: current `/opt/kaori-docs`, or an
-  operator-prepared `/opt/<configured-project>` matching the runtime.
-- `KAORI_DOCS_RUNTIME_PROJECT`: defaults to `kaori-docs`; a distinct
+- `KAORI_DOCS_HOST_DEPLOY_ROOT`: current `/opt/kaori-docs`; a separately
+  prepared `/opt/<configured-project>` is also accepted for a Docs runtime.
+- `KAORI_DOCS_COMPOSE_PROJECT`: defaults to `kaori-docs`; a distinct
   runtime uses a validated `kaori-docs-<suffix>` namespace.
-- `KAORI_DOCS_RUNTIME_STATE_DIR`: defaults to
-  `/var/lib/<configured-project>/deploy-state` and must match the project.
-- `KAORI_DOCS_RUNTIME_LOOPBACK_PORT`: defaults to `18081`; choose an
+- `KAORI_DOCS_STATE_DIR`: defaults to
+  `/var/lib/kaori-docs/deploy-state`; for another project the operator must
+  explicitly configure `/var/lib/<configured-project>/deploy-state`.
+- `KAORI_DOCS_LOOPBACK_PORT`: defaults to `18081`; choose an
   available numeric port 1024–65535 for each separate runtime.
 - `KAORI_DOCS_PUBLIC_DOMAIN`: remains the approved
   `docs.kaori.cloud` public hostname; no arbitrary new hostnames.
@@ -176,6 +181,57 @@ particular, source-level support for a configured target is not evidence
 that stable-main already performs safe bootstrap of a fresh production
 target. See Docs [#40](https://github.com/OXY7O/kaori-docs/issues/40) and
 Website [#234](https://github.com/OXY7O/kaori-website/issues/234).
+
+### Operator migration: repository → GitHub Environments
+
+Current release and deployment workflow paths already bind to `staging`
+or `production`, but that **does not mean the variables or secrets have
+been moved**. GitHub is authoritative for their actual values. Move them
+through GitHub repository **Settings → Environments → staging / production**
+or through an operator-authenticated `gh` session; never copy secrets
+into documentation, tickets or CI output.
+
+1. Inventory repository and both Environment **names** only, using
+   `gh variable list -R OXY7O/kaori-docs`,
+   `gh variable list -R OXY7O/kaori-docs --env staging`,
+   `gh variable list -R OXY7O/kaori-docs --env production`,
+   and equivalent `gh secret list` commands. Secret values cannot be
+   retrieved from GitHub; the operator must source approved original
+   credentials through the secure credential owner.
+2. Create or verify each Environment's nonsecret target variables:
+   `KAORI_DOCS_DOCKER_REGISTRY_HOST`,
+   `KAORI_DOCS_DOCKER_REGISTRY_IMAGE`, `KAORI_DOCS_HOST`,
+   `KAORI_DOCS_HOST_PORT`, `KAORI_DOCS_HOST_USER`,
+   `KAORI_DOCS_HOST_DEPLOY_ROOT`, `KAORI_DOCS_PUBLIC_DOMAIN`,
+   and the optional `KAORI_DOCS_COMPOSE_PROJECT`,
+   `KAORI_DOCS_STATE_DIR`, `KAORI_DOCS_LOOPBACK_PORT`.
+   Preserve the approved current values and original Docs-only host
+   identity when both Environments point to the present shared runtime.
+3. Independently configure each Environment's required secret **names**:
+   `KAORI_DOCS_DOCKER_REGISTRY_USERNAME`,
+   `KAORI_DOCS_DOCKER_REGISTRY_PASSWORD`,
+   `KAORI_DOCS_HOST_SSH_PRIVATE_KEY`,
+   `KAORI_DOCS_HOST_KNOWN_HOSTS`, and
+   `KAORI_DOCS_HOST_SSH_PASSPHRASE` only when needed. Ensure the
+   approved staging and protected production workflows have the correct
+   per-Environment registry and host credentials. Do not assume copying
+   a repository secret automatically creates an Environment secret.
+4. Verify the effective Environment **names, protection policies and
+   scope** with operator `gh` metadata readback. Keep production
+   `main`-only, independent `donibawono` approval, no self-review
+   and no bypass. A separately authorized protected staging/production
+   run must show the expected configured target and positive/negative
+   approval/receipt behavior **without printing secrets**.
+5. Do not delete repository-level fallback secrets or enable automatic
+   deployment until both Environment scopes have passed dedicated
+   acceptance and a reviewed credential-scope cutover. Without such
+   evidence, mark Environment secret isolation **PENDING**, not PASS.
+
+This is a separately auditable operator task under
+[Docs #96](https://github.com/OXY7O/kaori-docs/issues/96);
+the GitHub integration available to this implementation cannot read
+or mutate repository/Environment secret or variable settings. The
+current public RC.9 service must remain unchanged.
 
 ## Single previous-release rollback
 
