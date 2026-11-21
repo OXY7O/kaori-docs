@@ -3,6 +3,18 @@ set -Eeuo pipefail
 mode="${1:?expected preflight or deploy}"
 [[ "$mode" == preflight || "$mode" == deploy ]] || { echo 'BLOCK: unsupported operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+# GitHub Environment configuration variables are injected on the runner only
+# AFTER job-level ${{ vars.* }} expressions have resolved. Do not mistake
+# job.env's repository-level fallback for the final selected target. Use the
+# actual Environment-level values when present; retain the old repository
+# mapped values while #108 credential/variable migration is in progress.
+REGISTRY_HOST="${KAORI_DOCS_DOCKER_REGISTRY_HOST:-${REGISTRY_HOST:-}}"
+REGISTRY_IMAGE="${KAORI_DOCS_DOCKER_REGISTRY_IMAGE:-${REGISTRY_IMAGE:-}}"
+DOCS_HOST="${KAORI_DOCS_HOST:-${DOCS_HOST:-}}"
+DOCS_SSH_PORT="${KAORI_DOCS_HOST_PORT:-${DOCS_SSH_PORT:-}}"
+DOCS_SSH_USER="${KAORI_DOCS_HOST_USER:-${DOCS_SSH_USER:-}}"
+DOCS_DEPLOY_ROOT="${KAORI_DOCS_HOST_DEPLOY_ROOT:-${DOCS_DEPLOY_ROOT:-}}"
+DOCS_PUBLIC_DOMAIN="${KAORI_DOCS_PUBLIC_DOMAIN:-${DOCS_PUBLIC_DOMAIN:-}}"
 # Production is a stable main release, never an RC publisher completion.
 # Old #33 RC-to-public auto mode is permanently fail-closed.
 [[ "${KAORI_DOCS_AUTO_POLICY:-0}" == 0 ]] ||
@@ -79,13 +91,13 @@ port="${DOCS_SSH_PORT:-22}"
 # host/IP and any number of Environments may legitimately select one project.
 # Distinct projects require separate state receipts and effective ports;
 # the existing Docs code root may be shared as in Website #237.
-runtime_project="${DOCS_COMPOSE_PROJECT:-kaori-docs}"
+runtime_project="${KAORI_DOCS_COMPOSE_PROJECT:-${DOCS_COMPOSE_PROJECT:-kaori-docs}}"
 [[ "$runtime_project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
   fail 'Docs runtime project must remain in the validated kaori-docs namespace'
-runtime_state_dir="${DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
+runtime_state_dir="${KAORI_DOCS_STATE_DIR:-${DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}}"
 [[ "$runtime_state_dir" == "/var/lib/$runtime_project/deploy-state" ]] ||
   fail 'Docs receipt must belong to the selected runtime project'
-runtime_port="${DOCS_LOOPBACK_PORT:-18081}"
+runtime_port="${KAORI_DOCS_LOOPBACK_PORT:-${DOCS_LOOPBACK_PORT:-18081}}"
 [[ "$runtime_port" =~ ^[1-9][0-9]{3,4}$ ]] &&
   (( runtime_port >= 1024 && runtime_port <= 65535 )) ||
   fail 'Docs loopback port must be between 1024 and 65535'
