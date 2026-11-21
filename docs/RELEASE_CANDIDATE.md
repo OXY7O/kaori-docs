@@ -8,15 +8,20 @@ The multi-stage Dockerfile builds Docusaurus using locked Node 22 dependencies, 
 
 ## License authority
 
-The rights holder selected **the same proprietary KAORI Internal Use License**
-as the Application (the Website has no separate open-source grant). The exact
-root [LICENSE](../LICENSE) is copied from the approved KAORI source; do not
-substitute MIT or Apache-2.0. The OCI license identifier for KAORI-owned
-material is `LicenseRef-KAORI-Internal-Use`, a valid SPDX custom reference,
-**not** an entry in the SPDX License List. The signed SPDX document must
-contain a `hasExtractedLicensingInfos` record with the complete license
-text. Never replace licenses of third-party packages. The label and signed SBOM
-are not authorization to publish internal KAORI source or sensitive docs.
+KAORI-authored Docs application/tooling code uses the
+[Apache License 2.0](../LICENSE); public original prose under
+`content/` is separately [CC BY 4.0](../CONTENT_LICENSE.md). Protected
+KAORI/OXY7O brand assets, internal engineering documents and independent
+third-party content are excluded from these project-owned grants.
+
+The OCI `org.opencontainers.image.licenses` value is the standard SPDX
+identifier `Apache-2.0`, replacing the historical
+`LicenseRef-KAORI-Internal-Use` custom reference. The signed SPDX SBOM
+includes an explicit `kaori-docs-source` package declaration, preserves
+third-party package licenses, and does **not** require a custom extracted
+licensing record for the standard Apache-2.0 license. Existing SHA/tag
+approval, image scan, digest, signatures and attestation remain unchanged.
+This license migration does not approve any release or public Docs content.
 
 ## Staging-only RC activation — temporary issue #24
 
@@ -57,7 +62,7 @@ promote Docs to `main` solely to enable manual workflow execution.
 
 ## Manual release authority
 
-The canonical Release Candidate workflow is .github/workflows/publish-staging-image.yml. It is manual-only except for the explicitly guarded one-time #24 staging bootstrap described above, and must run against kaori/staging at an exact SHA with a completed-success Full Admission run. Complete the repository-specific Variables/Secrets and registry robot-scope checks in #10 before dispatch. The image repository must end with /kaori-docs.
+The canonical Release Candidate workflow is `.github/workflows/publish-staging-image.yml`. It accepts an explicit `kaori/rc-request` push at the exact currently admitted staging SHA (issue #51) and separately retains governed manual `workflow_dispatch` from `kaori/staging`. The former one-time #24 staging activation is historical and must not be repeated. Both require an exact successful Full Admission, unique source-SHA/tag issue #13 authorization, signed immutable digest, license, and attestations. Complete the repository-specific Variables/Secrets and registry robot-scope checks in #10 before dispatch. The image repository must end with /kaori-docs.
 
 Provide a permanent GitHub comment URL as approval_reference. That comment must belong to issue #13 and include a complete approval marker line of the form:
 
@@ -67,24 +72,88 @@ The publisher verifies the exact marker and the comment author's repository writ
 
 A candidate is built once and uses immutable OCI SHA256 digest, checked source/revision/version/created/title/description/documentation/license metadata, offline runtime smoke, Trivy HIGH/CRITICAL scan, SPDX SBOM, source/run-linked provenance and cosign keyless digest signatures plus SBOM/provenance attestations. Signature and attestation verification must complete before Git tag and prerelease metadata creation. All identities are separate from KAORI Application version routing.
 
+## Opt-in protected staging publisher parity — issue #102
+
+The existing explicit `kaori/rc-request` and manually dispatched candidate
+remain supported. A separate `Full Admission` job may select and publish a
+signed Docs `v0.3.0-rc.N` directly after all admission jobs succeed when
+`KAORI_DOCS_AUTO_STAGING_ENABLED=true` is explicitly configured.
+The secure default is **disabled**. This is a new governed staging RC
+publication caller of the **same** `scripts/release/publish-candidate.sh`,
+not a copied signer or a release-triggered production deployment.
+
+Auto publication requires a completed Docs [rights authority #74](https://github.com/OXY7O/kaori-docs/issues/74)
+and exactly one owner-authored standing authorization line:
+
+    KAORI_DOCS_PUBLICATION_GO:STANDING
+
+It must predate the issue's completed closure. An owner/reviewer
+`KAORI_DOCS_PUBLICATION_REVOKED:STANDING` blocks future publications;
+modified-after-acceptance approvals, incomplete comments, unreviewed
+rights, wrong SHA/workflow identity, incomplete admission and stale tag
+selection all fail closed. The code checks rights before work, before
+registry push and again before GitHub tag/release creation. **No standing
+authorization exists merely because the code path or feature flag exists.**
+Current Docs #74 remains open. Explicit #13 per-SHA/tag approvals remain
+required for manual and `rc-request` publication.
+
+The opt-in selector reuses a single already-published, exact-source RC
+without changing its tag or OCI digest. Otherwise it selects the next
+unused `v0.3.0-rc.N`, refusing an already-stable `v0.3.0` or ambiguous
+source. A future Docs stable series needs a separate version decision.
+The existing deploy verifier **and main-only stable promoter**
+both accept the same immutable Cosign identity from the trusted staging
+`quality.yml` publisher, in addition to the two manual/request publisher
+identities. Both require the selected exact identity on the RC image
+signature and its SPDX/SLSA attestations; stable retains its independent
+Human Acceptance, unchanged RC digest and main-only gates. This is **not**
+a new automatic deployment trigger: the separate digest-bound #14 public
+swap approval, same-slot host gates, Human UAT and rollback policy remain
+mandatory. See [Docs Delivery](DELIVERY.md) and
+[Release Deployment](RELEASE_DEPLOYMENT.md).
+
 ## Registry digest authority and incomplete RC quarantine — issue #30
 
 The immutable digest must come from the **registry's actual manifest/index**, retrieved through the existing Docker buildx `imagetools inspect --format '{{json .Manifest}}'` contract, not from comparing Docker's local `RepoDigests` repository string byte-for-byte. Docker Hub may present a familiar name without the optional `docker.io/` prefix; a local image alias is not a reliable registry identity proof. The publisher validates the registry SHA256 format, explicitly pulls `<configured-image>@sha256:<digest>`, checks exact source/version/license labels and performs all Trivy/Cosign/SPDX/SLSA gates before creating GitHub tag/prerelease evidence. Failed digest resolution blocks publication.
 
 **Quarantine record (2026-11-02):** Attempt 2 of [RC run #41447703825](https://github.com/OXY7O/kaori-docs/actions/runs/41447703825) built/pushed the registry tag `v0.1.0-rc.1` from staging source `129336ff33d7e96a76d4ae9ea1df4b35e1628c2e`. Docker push and pull reported digest `sha256:c466a76d617ae3aa92439630b36bc618e9acf191882ab5385e844daf9b4ebc1d`, but strict local `RepoDigests` equality failed **before signature/SBOM attestation and GitHub release finalization**. Therefore `v0.1.0-rc.1` is **INCOMPLETE / QUARANTINED / NEVER DEPLOY**, even though registry storage contains a tag. No mutating retry, retag, overwrite or deletion is authorized by the digest fix. A newly admitted source must use a **new** explicitly approved artifact tag, initially proposed `v0.1.0-rc.2`, with complete signed evidence. Registry tag visibility never substitutes for acceptance.
 
-## Automated downstream handoff (issue #33)
+## Stable-release use of accepted RC (issue #39)
 
-GitHub Actions `GITHUB_TOKEN` creates the signed prerelease metadata only
-after immutable digest, Trivy, Cosign and signed SPDX/SLSA verification.
-GitHub suppresses downstream `release.published` workflow triggers
-generated with the same token; release auto-deployment therefore uses the
-canonical publisher's completed-success `workflow_run` on the default branch
-after separate issue #33 standing policy and first-public/UAT acceptance.
-Publisher approval remains **per exact staging SHA and RC tag** under #13.
-The deployment workflow revalidates the signed release; publisher success
-alone is not server-change authority. Details:
+After staging/UAT Human Acceptance and a reviewed `kaori/staging` → `main`
+promotion, the stable SemVer `vX.Y.Z` **must refer to exactly the same signed
+RC OCI digest** as `vX.Y.Z-rc.N`. No new application image build, no
+retag/overwrite of a previously signed RC, and no public production mutation
+from merely creating the stable GitHub Release. Main-only manual stable
+publication runs as a gated job in `Full Admission`, with issue #39
+SHA/tag/digest-bound approval, unchanged application build inputs, signed
+image/SBOM/SLSA verification, and unique SemVer. See
 [Release Deployment](RELEASE_DEPLOYMENT.md).
+
+The historic #33 proposed RC publisher-completion auto-to-public path must
+remain DISABLED: final production deployment is owned by the separate stable
+release/production workstream #40. An RC is staging/UAT evidence rather than accepted stable identity, **not**
+proof of stable main acceptance.
+
+## Production handoff from stable main only (issue #40)
+
+The previously proposed successful `Release Candidate` →
+public Docs auto-deployment under #33 is obsolete and explicitly
+fail-closed. RC `vX.Y.Z-rc.N` remains the **staging/UAT artifact**,
+which is not accepted as a stable production version on the strength
+of signature or CI alone.
+
+After explicit RC/UAT Human Acceptance and reviewed promotion into
+`main`, the main-only signed stable publisher #39 creates
+`vX.Y.Z` GitHub Release metadata containing the **unchanged RC
+digest and source** plus the exact successful main publisher run ID.
+It does **not** rebuild the container image. GitHub suppresses
+follow-up `release.published` events from `GITHUB_TOKEN`:
+the release deployment workflow therefore listens for completion of
+the exact successful main `Full Admission` stable publication run,
+then rechecks stable release/RC/digest/human approval and separate
+production issue #40 standing authorization. Default is disabled.
+See [Release Deployment](RELEASE_DEPLOYMENT.md).
 
 ## Recovery without mutation
 

@@ -22,7 +22,7 @@ docker run --rm --network none --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64
       [ "$count" -lt 20 ] || exit 1
       sleep 1
     done
-    wget -q -O - http://127.0.0.1:8080/ | grep -qi "KAORI Docs"
+    wget -q -O - http://127.0.0.1:8080/ | grep -Fq "KAORI Documentation"
   '
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v kaori-docs-trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0 image --cache-dir /root/.cache/trivy --exit-code 1 --ignore-unfixed --scanners vuln --severity HIGH,CRITICAL "$image"
 printf 'PASS: isolated static nonroot Docs runtime verified without host deployment\n'

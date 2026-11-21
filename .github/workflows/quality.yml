@@ -16,6 +16,19 @@ on:
       - ready_for_review
       - converted_to_draft
   workflow_dispatch:
+    inputs:
+      stable_version:
+        description: 'Approved Docs stable SemVer, e.g. v0.1.0 (optional; absent means validation only)'
+        type: string
+        required: false
+      accepted_candidate_tag:
+        description: 'Exactly accepted, signed RC for stable promotion, e.g. v0.1.0-rc.3'
+        type: string
+        required: false
+      stable_approval_reference:
+        description: 'Human-accepted issue #39 comment URL binding main/RC/stable/digest'
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -31,7 +44,7 @@ env:
 jobs:
   promotion-source:
     name: Promotion Policy
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Verify permitted source and target
@@ -57,14 +70,46 @@ jobs:
             [[ "$GITHUB_REF" == refs/heads/kaori/staging || "$GITHUB_REF" == refs/heads/main ]] || exit 1
           fi
 
+  validation-profile:
+    name: Resolve Admission Evidence
+    needs: promotion-source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      reuse: ${{ steps.evidence.outputs.reuse }}
+      evidence_run_id: ${{ steps.evidence.outputs.evidence_run_id }}
+      reason: ${{ steps.evidence.outputs.reason }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ADMISSION_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Checkout exact integrated Docs source with ancestry
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify immutable source/tree and route existing evidence
+        id: evidence
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
+          python3 scripts/ci/admission-reuse.py resolve
+          echo 'Evidence is advisory until fresh smoke or comprehensive fallback PASS' >> "$GITHUB_STEP_SUMMARY"
+
   full-admission:
     name: Full Admission
-    needs: promotion-source
+    needs: [promotion-source, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - name: Recover only runner checkout ownership from prior browser job
+        if: ${{ runner.environment == 'self-hosted' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -87,44 +132,77 @@ jobs:
           test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
           test -s package-lock.json || { echo 'BLOCK: missing reproducible lockfile.' >&2; exit 1; }
           printf 'Source: %s\nTree: %s\n' "$(git rev-parse HEAD)" "$(git show -s --format=%T HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Report verified reuse or full fallback
+        shell: bash
+        env:
+          REUSE: ${{ needs.validation-profile.outputs.reuse }}
+          EVIDENCE_RUN_ID: ${{ needs.validation-profile.outputs.evidence_run_id }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "$REUSE" == true ]]; then
+            [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] ||
+              { echo 'BLOCK: reuse lacks trusted prior full run' >&2; exit 1; }
+            printf 'REUSED: Full Admission evidence from trusted staging run #%s. Fresh Browser/Runtime Smoke still mandatory.\n' "$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'FALLBACK: full formatting, TypeScript, security audit and Docusaurus build required.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Set up pinned Node
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
         with:
           node-version: '22.23.2'
           cache: npm
       - name: Install locked dependencies
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm ci --no-audit --no-fund
       - name: Check formatting
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run check-format
       - name: Check TypeScript and MDX configuration
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run check
       - name: Dependency security audit
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm audit --audit-level=high
       - name: Build static documentation
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run build
       - name: Check approved static scope
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         shell: bash
         run: |
           set -Eeuo pipefail
           test -s build/index.html
           test -s build/branding/kaori-logo.svg
-          grep -q 'KAORI Docs' build/index.html
+          grep -Fq 'KAORI Documentation' build/index.html
           for path in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github .devcontainer package.json package-lock.json content; do
             test ! -e "build/$path" || { echo "Public scope leaked: $path" >&2; exit 1; }
+          done
+          test ! -e build/versions.json
+          test ! -e build/docs/PUBLISHED_VERSIONS.json
+          for forbidden in build/v0.3 build/editorial-preview build/getting-started; do
+            test ! -e "$forbidden" || {
+              echo "Unpublished Docs route leaked: $forbidden" >&2
+              exit 1
+            }
           done
           if [[ -d build/v0.0 ]]; then
             echo 'Unverified application version route is forbidden.' >&2
             exit 1
           fi
-          # #15 will replace this bootstrap-only assertion with verified release mapping.
-          grep -q 'No public product documentation version is available' build/index.html
-          echo 'PASS: bootstrap public scope, no release claims.' >> "$GITHUB_STEP_SUMMARY"
+          # #57: the reviewed concise publication notice replaces the old
+          # long bootstrap sentence. Keep the same fail-closed public-corpus
+          # gate while checking current, truthful unversioned-page semantics.
+          grep -Fq 'Documentation status' build/index.html
+          grep -Fq 'Versioned guides, release notes, and search appear after review.' build/index.html
+          grep -Fq 'In preparation' build/index.html
+          echo 'PASS: bootstrap public scope, truthful unpublished documentation state.' >> "$GITHUB_STEP_SUMMARY"
 
   container-admission:
     name: Container Admission
-    needs: full-admission
+    needs: [full-admission, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
       - name: Checkout exact source
@@ -133,6 +211,7 @@ jobs:
           ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
           persist-credentials: false
       - name: Enforce runtime admission when runtime implementation exists
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -147,11 +226,26 @@ jobs:
             printf 'NOT APPLICABLE: no production image exists yet; #13 owns image runtime admission.\n' >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Fresh Compose and release-contract smoke for verified reuse
+        if: ${{ needs.validation-profile.outputs.reuse == 'true' }}
+        shell: bash
+        env:
+          EVIDENCE_RUN_ID: ${{ needs.validation-profile.outputs.evidence_run_id }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || exit 1
+          test "$(git rev-parse HEAD)" = "$KAORI_DOCS_SOURCE_SHA"
+          export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
+          docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
+          test ! -e deploy/server/compose.staging.yml
+          bash -n scripts/release/deploy-release.sh deploy/server/deploy.sh deploy/server/rollback.sh
+          echo "PASS: fresh single-slot Docs Compose and RC/stable release guards from trusted full #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
+
   browser-evidence:
     name: Browser Quality Evidence
-    needs: [promotion-source, full-admission]
+    needs: [promotion-source, full-admission, validation-profile]
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
-    runs-on: [self-hosted, linux, x64, kaori-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     container:
       image: mcr.microsoft.com/playwright:v1.56.1-noble
@@ -177,9 +271,21 @@ jobs:
           set -Eeuo pipefail
           test "$(npx playwright --version)" = "Version 1.56.1"
       - name: Build exact browser candidate
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run build
       - name: Test browser layout, navigation, theme, keyboard and accessibility
+        if: ${{ needs.validation-profile.outputs.reuse != 'true' }}
         run: npm run test:browser
+      - name: Fresh bounded browser and static-site Fast Smoke for verified reuse
+        if: ${{ needs.validation-profile.outputs.reuse == 'true' }}
+        shell: bash
+        env:
+          EVIDENCE_RUN_ID: ${{ needs.validation-profile.outputs.evidence_run_id }}
+        run: |
+          set -Eeuo pipefail
+          [[ "$EVIDENCE_RUN_ID" =~ ^[1-9][0-9]*$ ]] || exit 1
+          bash scripts/ci/fast-smoke.sh "$KAORI_DOCS_SOURCE_SHA"
+          echo "PASS: fresh Docs Fast Smoke after REUSED Full Admission run #$EVIDENCE_RUN_ID" >> "$GITHUB_STEP_SUMMARY"
       - name: Upload browser evidence (including failures)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -191,10 +297,231 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
       - name: Restore host runner checkout ownership
-        if: always()
+        if: ${{ always() && runner.environment == 'self-hosted' }}
         shell: bash
         run: |
           set -Eeuo pipefail
           owner="$(stat -c '%u:%g' "$RUNNER_TEMP")"
           [[ "$owner" =~ ^[0-9]+:[0-9]+$ ]] || exit 1
           chown -R "$owner" "$GITHUB_WORKSPACE"
+
+  stable-publication:
+    name: Publish Accepted Stable Release
+    needs: [promotion-source, full-admission, container-admission, browser-evidence]
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.stable_version != '' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    # Stable GitHub Releases require independent native deployment approval.
+    environment:
+      name: production
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+      issues: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      STABLE_TAG: ${{ inputs.stable_version }}
+      ACCEPTED_RC_TAG: ${{ inputs.accepted_candidate_tag }}
+      APPROVAL_REF: ${{ inputs.stable_approval_reference }}
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout admitted main identity
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preflight approved stable RC without mutation
+        shell: bash
+        run: bash scripts/release/promote-stable.sh preflight
+      - name: Verify same signed RC digest and publish stable metadata
+        shell: bash
+        run: bash scripts/release/promote-stable.sh publish
+      - name: Registry logout
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi
+
+  admission-evidence:
+    name: Admission Evidence
+    # Fresh FULL artifacts are eligible for later verified reuse; REUSED
+    # artifacts cannot be chained to bypass the original full authority.
+    needs:
+      [
+        promotion-source,
+        validation-profile,
+        full-admission,
+        container-admission,
+        browser-evidence,
+      ]
+    if: >-
+      ${{ needs.promotion-source.result == 'success' &&
+          needs.full-admission.result == 'success' &&
+          needs.container-admission.result == 'success' &&
+          needs.browser-evidence.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    env:
+      ADMISSION_PROMOTION: ${{ needs.promotion-source.result }}
+      ADMISSION_FULL: ${{ needs.full-admission.result }}
+      ADMISSION_CONTAINER: ${{ needs.container-admission.result }}
+      ADMISSION_BROWSER: ${{ needs.browser-evidence.result }}
+      ADMISSION_PROFILE: ${{ needs.validation-profile.outputs.reuse == 'true' && 'reused' || 'full' }}
+      ADMISSION_REUSED_FROM: ${{ needs.validation-profile.outputs.evidence_run_id }}
+      ADMISSION_HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+    steps:
+      - name: Checkout exact tested source and tree
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.KAORI_DOCS_SOURCE_SHA }}
+          persist-credentials: false
+      - name: Record full-gate source, tree and validation-authority fingerprint
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          bash scripts/ci/admission-evidence.sh write tmp/ci-artifacts/admission-evidence.json
+          jq -r '"Source SHA: " + .source_sha + "\nSource tree: " +
+            .source_tree_sha + "\nValidation authority: " +
+            .validation_authority_fingerprint + "\nProfile: " + .profile + "\nReuse permitted: " + (.reuse_authorized|tostring)' \
+            tmp/ci-artifacts/admission-evidence.json >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish immutable source-bound admission artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: kaori-docs-admission-${{ env.KAORI_DOCS_SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: tmp/ci-artifacts/admission-evidence.json
+          retention-days: 30
+          if-no-files-found: error
+
+  staging-rc-publish:
+    name: Publish Accepted Staging RC (Opt-in)
+    needs:
+      [
+        promotion-source,
+        validation-profile,
+        full-admission,
+        container-admission,
+        browser-evidence,
+        admission-evidence,
+      ]
+    if: >-
+      ${{ github.event_name == 'push' &&
+          github.ref == 'refs/heads/kaori/staging' &&
+          vars.KAORI_DOCS_AUTO_STAGING_ENABLED == 'true' &&
+          needs.promotion-source.result == 'success' &&
+          needs.full-admission.result == 'success' &&
+          needs.container-admission.result == 'success' &&
+          needs.browser-evidence.result == 'success' &&
+          needs.admission-evidence.result == 'success' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    environment:
+      name: staging
+    concurrency:
+      group: kaori-docs-release-candidate
+      cancel-in-progress: false
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      actions: read
+      issues: read
+      id-token: write
+    env:
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+      KAORI_DOCS_STAGING_AUTO: '1'
+      APP_LICENSE: Apache-2.0
+      RESUME_EXISTING: 'false'
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout exact admitted source and immutable release tags
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - name: Require Docs-specific standing public publication rights
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || exit 1
+          bash scripts/release/publish-candidate.sh rights
+      - name: Select unused current-series RC or verify exact-source existing release
+        id: candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          [[ "$GITHUB_REPOSITORY" == OXY7O/kaori-docs && "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+            fail 'automatic RC requires protected Docs staging'
+          [[ "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging' ]] ||
+            fail 'automatic RC must be executed by canonical Full Admission'
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'source drift'
+          current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging advanced before RC selection'
+          existing="$(git tag --points-at "$ACCEPTED_SHA" |
+            grep -E '^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$' || true)"
+          if [[ -n "$existing" ]]; then
+            [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] || fail 'ambiguous RCs on current source'
+            [[ "$existing" =~ ^v0[.]3[.]0-rc[.][1-9][0-9]*$ ]] ||
+              fail 'existing RC belongs to a different version series'
+            release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")" ||
+              fail 'current-source RC not fully published'
+            jq -e --arg sha "$ACCEPTED_SHA" '
+              .draft == false and .prerelease == true and .target_commitish == $sha and
+              (.body // "" | contains("Staging source SHA: " + $sha + "\n")) and
+              (.body // "" | contains("Immutable digest: sha256:")) and
+              (.body // "" | contains("Trivy security and signed SBOM/provenance: PASS"))
+            ' <<< "$release" >/dev/null || fail 'existing RC identity/evidence not accepted'
+            printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
+            echo "PASS: reuse existing signed Docs RC $existing; no rebuild or retag"
+            exit 0
+          fi
+          [[ -z "$(git tag --list 'v0.3.0')" ]] ||
+            fail 'stable v0.3.0 already exists; version-series authority must be reviewed'
+          highest=0
+          while IFS= read -r used; do
+            [[ -n "$used" && "$used" =~ ^v0[.]3[.]0-rc[.][1-9][0-9]*$ ]] || continue
+            suffix="${used##*.}"
+            if (( 10#$suffix > highest )); then highest=$((10#$suffix)); fi
+          done < <(git tag --list 'v0.3.0-rc.*' --sort=version:refname)
+          candidate="v0.3.0-rc.$((highest + 1))"
+          status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$candidate")"
+          [[ "$status" == 404 ]] || fail 'candidate tag reserved or GitHub tag lookup unavailable'
+          printf 'tag=%s\nshould_publish=true\n' "$candidate" >> "$GITHUB_OUTPUT"
+          echo "PASS: unique automatic Docs candidate $candidate selected from accepted $current"
+      - name: Preflight existing immutable Docs publisher
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build scan sign and publish through existing Docs release engine
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Record acceptance boundary
+        shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: |
+          printf 'Staging RC: %s\nSource: %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Immutable signing path preserved. PUBLIC HOST DEPLOYMENT: NOT TRIGGERED. HUMAN UAT: PENDING.\n' >> "$GITHUB_STEP_SUMMARY"
+      - name: Logout of Docs registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi

@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# Both release types replace one existing Docs project/image and share the
+# SAME committed current and previous release pointers.
+[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
+  { echo 'BLOCK: rollback must target only canonical Docs project' >&2; exit 1; }
 state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
+[[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
+  { echo 'BLOCK: rollback must use canonical Docs receipt' >&2; exit 1; }
+compose_project=kaori-docs
 previous="$state_dir/previous-release.env"
 [[ -f "$previous" && ! -L "$previous" && -r "$previous" ]] || { echo 'BLOCK: reviewed previous release state unavailable' >&2; exit 1; }
 # shellcheck source=/dev/null
@@ -8,6 +15,13 @@ source "$previous"
 [[ "${KAORI_DOCS_IMAGE:-}" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: previous image is not immutable' >&2; exit 1; }
 [[ "${KAORI_DOCS_SOURCE_SHA:-}" =~ ^[a-f0-9]{40}$ ]] || { echo 'BLOCK: previous source SHA invalid' >&2; exit 1; }
 [[ "${KAORI_DOCS_VERSION:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]] || { echo 'BLOCK: previous release version invalid' >&2; exit 1; }
+if [[ "${KAORI_DOCS_ARTIFACT_VERSION:-${KAORI_DOCS_VERSION}}" != "${KAORI_DOCS_VERSION}" ]]; then
+  [[ "${KAORI_DOCS_ARTIFACT_VERSION:-}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ &&
+     "${KAORI_DOCS_ARTIFACT_VERSION%-rc.*}" == "${KAORI_DOCS_VERSION}" &&
+     "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]] ||
+    { echo 'BLOCK: prior stable receipt requires approved public RC-identity recovery' >&2; exit 1; }
+  export KAORI_DOCS_STABLE_RELEASE_CONFIRMED=1
+fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" =~ ^[01]$ ]] || { echo 'BLOCK: invalid public rollback option' >&2; exit 1; }
 if [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
@@ -16,7 +30,7 @@ if [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
   bash "$script_dir/reattach-existing-site.sh" preflight
 else
   # Never replace a publicly attached Docs container during private rollback.
-  mapfile -t containers < <(docker ps --filter label=com.docker.compose.project=kaori-docs \
+  mapfile -t containers < <(docker ps --filter label=com.docker.compose.project="$compose_project" \
     --filter label=com.docker.compose.service=web --format '{{.ID}}')
   if [[ "${#containers[@]}" -eq 1 ]]; then
     attached="$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "${containers[0]}")"

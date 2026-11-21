@@ -16,13 +16,13 @@ Authority order: the current approved KAORI Application product/design/release s
 
 | Path                                            | Role                                                         | Public build               |
 | ----------------------------------------------- | ------------------------------------------------------------ | -------------------------- |
-| `src/pages/`                                    | Approved static pages; initial preparation fixture           | Yes                        |
+| `src/pages/`                                    | Documentation Home under issue #1 (review candidate)         | Yes                        |
 | `static/`                                       | Reviewed public assets; logo and restrictive robots policy   | Yes                        |
 | `content/`                                      | Native Docusaurus article/version content after #15 approval | **Disabled** for bootstrap |
 | `docs/`                                         | Internal engineering, authoring and governance material      | **No**                     |
 | `.github/`, `.devcontainer/`, `compose.dev.yml` | Development and CI metadata                                  | **No**                     |
 
-The Docusaurus classic preset currently sets `docs: false` and `blog: false` explicitly. This avoids Docusaurus defaulting to repository `docs/` and mistakenly publishing internal engineering material. Do not enable a docs plugin until #15 implements a release-evidence-backed source path, routes and draft exclusion tests. Release-specific docs, the version selector and local search must remain absent until their respective issues and evidence gates are accepted.
+The root Home has an unversioned, product-direction editorial scope, with only real same-page or external links. Its category cards are non-clickable pending release qualification. The Docusaurus classic preset explicitly uses `content/` for opt-in local editorial review and never mounts internal `docs/`. Issue #15 adds a strict, currently **empty** internal `docs/PUBLISHED_VERSIONS.json` and native `versions.json`. Production therefore continues with `docs: false` and `blog: false` until release-qualified, reviewed native `versioned_docs/` snapshots are admitted. When mapped lines exist, `includeCurrentVersion: false` keeps unpublished `content/` drafts out of public routes, and the native version selector only lists approved lines. See [Version Routing](VERSION_ROUTING.md). Local search remains a separate #16 gate.
 
 ## Capability and design boundaries
 

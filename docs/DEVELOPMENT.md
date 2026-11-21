@@ -19,6 +19,37 @@ docker compose -f compose.dev.yml exec workspace npm run dev
 
 Stop with `docker compose -f compose.dev.yml down`. Do not remove the named volume unless intentionally discarding local dependencies.
 
+## Local editorial article preview (issue #2)
+
+The Introduction is an unpublished `draft: true` document. It is deliberately
+absent from the normal public `npm run build` and static release image.
+To review the native Docusaurus article/sidebar/breadcrumb/table-of-contents
+layout **locally only**, opt in during the development command:
+
+```bash
+KAORI_DOCS_EDITORIAL_PREVIEW=1 npm run dev
+```
+
+Browse `http://localhost:3000/editorial-preview/getting-started/introduction`.
+This **editorial-preview** path is a development-only route and is **not** the
+future public version path `/v0.3/getting-started/introduction`. It must not
+be linked from the public Home, uploaded to a public search index, or deployed
+as a substitute for the signed release flow. Normal `npm run dev` shows the
+approved Home without enabling articles.
+
+Run existing Playwright checks against that opt-in preview, including the
+article's six viewports, both themes, accessibility and screenshot evidence:
+
+```bash
+KAORI_DOCS_EDITORIAL_PREVIEW=1 npm run test:browser
+```
+
+Both `npm run build` and the self-hosted CI workflows keep the docs plugin
+disabled, including if `KAORI_DOCS_EDITORIAL_PREVIEW` is accidentally present
+during a build. Issue #15 owns real Docusaurus `/vX.Y/` routing, release
+mapping, version selector and publication. There is no accepted stable
+application `v0.3.0` claim in this preview.
+
 ## Reproducible install and real CI evidence
 
 The original authoring environment could not resolve `registry.npmjs.org`. The approved `platform-ci` self-hosted runner resolved the pinned Docusaurus dependencies, and `package-lock.json` is now committed in the combined #11/#12 review branch.

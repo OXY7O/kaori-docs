@@ -18,14 +18,14 @@ This repository contains **documentation only**. It does not authenticate users,
 
 **Engineering release adapter:** [Issue #14](https://github.com/OXY7O/kaori-docs/issues/14) defines a separately governed [private Release Deployment and rollback procedure](docs/RELEASE_DEPLOYMENT.md). This is not an active public Docs site or a completed signed image publication.
 
-**Publication state:** The Docusaurus scaffold is in progress under [#11](https://github.com/OXY7O/kaori-docs/issues/11). No release-qualified product documentation or public Docs deployment is claimed. The minimal root page is a truthful preparation state, not the approved Documentation Home (#1).
+**Publication state:** The Docusaurus foundation is in place. The root Documentation Home under [#1](https://github.com/OXY7O/kaori-docs/issues/1) is an editorial/visual review candidate, not an accepted Docs release. No release-qualified versioned product guides, published search or stable Docs deployment is claimed.
 
 ## Technology and project structure
 
 The project uses **Docusaurus 3, TypeScript 5, React, Node.js 22 and Inter**, with the existing KAORI Violet design principles. Docusaurus native theme and Infima tokens are preferred over a separate design system or custom router.
 
 - `docusaurus.config.ts`, `sidebars.ts` — Docusaurus configuration and reserved native docs navigation.
-- `src/pages/` — minimal static preparation page; approved Docs Home is owned by #1.
+- `src/pages/` — release-neutral Documentation Home and reviewed public-safe static pages; issue #1 owns Home acceptance.
 - `src/css/` — small KAORI Violet/Inter theme-token adaptation.
 - `static/branding/` — approved KAORI logo reused from the Website.
 - `content/` — reserved **public** Docusaurus article/version content; not enabled for public builds until #15 release mapping is approved.
@@ -50,6 +50,18 @@ Open [http://localhost:3000](http://localhost:3000).
 
 **Bootstrap validation:** A registry-resolved `package-lock.json` is committed in the combined #11/#12 review branch. The [self-hosted Developer Check run #41396567726](https://github.com/OXY7O/kaori-docs/actions/runs/41396567726) passed on SHA `f2e13e631c71fa416c6c2f1f95b2b3cea43f7e4c`, including `npm ci`, formatting, TypeScript, npm security audit and Docusaurus build. Every later change requires a **new exact-head** gate. Full Admission, browser/server UAT and human acceptance remain separate, unclaimed checks. See [development guidance](docs/DEVELOPMENT.md).
 
+## Community pull requests
+
+This repository is public. External fork pull requests targeting `kaori/staging` receive **feedback-only** formatting, TypeScript and static Docusaurus build results from a separate GitHub-hosted `Community Fork Check`. The fork job uses exact-source checkout, a read-only token, no shared cache, and no deployment secrets or self-hosted runner access.
+
+An external fork check never replaces trusted `Route Checks`, `Docs Validation`, staging Full Admission, public-content security review, UAT or Human Acceptance. A maintainer must adopt reviewed changes into an approved issue-linked KAORI work branch before trusted admission. Do not contribute internal repository `docs/` operating material as public Docusaurus content: only explicitly reviewed `src/`, `static/` and approved content surfaces can be published. See [CI/CD governance](docs/CI_CD.md) and [KAORI product authority](https://github.com/OXY7O/KAORI).
+
+**Community intake is not yet an open contribution launch.** Before filing a public proposal, review the [OXY7O organization contribution guidance](https://github.com/OXY7O/.github/blob/main/CONTRIBUTING.md) and [support routing](https://github.com/OXY7O/.github/blob/main/SUPPORT.md). Existing repository issue/PR templates and the governed KAORI issue process take precedence. A question, fork PR, or successful feedback check does **not** create an accepted issue or permission to merge. Central feedback/discussion launch remains separately governed by [KAORI #4217](https://github.com/OXY7O/KAORI/issues/4217).
+
+**Report vulnerabilities privately.** Use the affected repository's verified GitHub private vulnerability reporting channel when it is available; otherwise contact authorized maintainers through an established confidential channel, following the [organization security guidance](https://github.com/OXY7O/.github/blob/main/SECURITY.md). Do **not** put credentials, internal endpoints, customer data, exploitation steps, or private operational logs in public issues, forks, PRs, or discussions. This guidance does **not** claim Docs' native private-reporting setting has been verified; that remains under [Docs #75](https://github.com/OXY7O/kaori-docs/issues/75).
+
+**Licensing and access are separate.** Apache-2.0 and CC BY 4.0 permit reuse within their defined scopes; they do not license KAORI trademarks, internal operating records, external-provider credentials, hosted access, or acceptance of unsolicited deployment changes. Maintainer review and release qualification remain mandatory.
+
 ## Quality checks
 
 Using the reviewed committed lockfile:
@@ -71,6 +83,7 @@ A complete acceptance requires actual Developer Check, browser light/dark/mobile
 - [Public authoring and content safety](docs/CONTENT_SAFETY.md)
 - [Governed delivery](docs/DELIVERY.md)
 - [CI/CD and quality gates](docs/CI_CD.md)
+- [Docker Hub repository overview and image usage](docs/DOCKER_HUB_OVERVIEW.md)
 - [KAORI product authority](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md)
 - [KAORI Design System](https://github.com/OXY7O/KAORI/blob/main/docs/design/KAORI_DESIGN_SYSTEM.md)
 
@@ -78,19 +91,21 @@ The Docs Home (#1), introductory article (#2), version mapping (#15), local sear
 
 ## License
 
-KAORI Docs uses the same [KAORI Internal Use License](LICENSE) as the
-[KAORI Application](https://github.com/OXY7O/KAORI/blob/main/LICENSE).
-This is **proprietary, not an OSI open-source license**; repository access does
-not grant permission to redistribute source or publish internal operational data.
-The Website repository declares no separate open-source license and follows
-the approved KAORI product ownership policy.
+KAORI-authored **Docs application/tooling code** is licensed under
+[Apache License 2.0](LICENSE). KAORI-authored **public documentation prose**
+under `content/` is separately licensed under
+[Creative Commons Attribution 4.0 International](CONTENT_LICENSE.md).
+The two scopes are independent; neither license grants rights to KAORI/OXY7O
+names, logos, trademarks, protected images or third-party components.
+See [NOTICE](NOTICE) and the [Website's existing upstream attribution](https://github.com/OXY7O/kaori-website/tree/main/public/licenses).
 
-The container uses the SPDX-compatible custom reference
-`LicenseRef-KAORI-Internal-Use`, with the complete existing license text in the
-signed SPDX SBOM. Third-party dependencies retain their independent licenses.
-Public read-only documentation publication requires separate approved content
-and release acceptance; it is not permission to distribute the source code.
+The project owner is **Lethisa (`@lethisa`)** and the independent reviewer
+is **`@donibawono`**; review does not transfer copyright. Repository-internal
+`docs/` runbooks, operational evidence, unapproved publication claims and
+third-party material are not covered by the public documentation CC grant.
+**License approval is not permission to publish Docs content or release a site.**
+The existing release/UAT workflow and `private: true` npm package setting stay intact.
 
 ## Security and ownership
 
-This repository is private and maintained under KAORI issue-linked delivery governance. Public output must contain only reviewed, release-authorized content. Do not commit secrets, internal endpoints, hostnames, private inventory or operational evidence. No release badge is displayed until an actual signed Docs release has been verified.
+This repository uses separate Apache-2.0 source and CC BY 4.0 public-prose licensing and retains issue-linked delivery governance. Public output must contain only reviewed, release-authorized content. Do not commit secrets, internal endpoints, hostnames, private inventory or operational evidence. No release badge is displayed until an actual signed Docs release has been verified.

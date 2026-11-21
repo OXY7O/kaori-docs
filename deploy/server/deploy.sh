@@ -7,10 +7,28 @@ image="$1"; source_sha="$2"; release_version="$3"
 [[ "$image" =~ ^[^[:space:]]+@sha256:[a-f0-9]{64}$ ]] || fail 'image must use exact OCI digest'
 [[ "$source_sha" =~ ^[a-f0-9]{40}$ ]] || fail 'source SHA must be a 40-character lowercase Git SHA'
 [[ "$release_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?$ ]] || fail 'release version must be governed SemVer'
+# The stable public version is a metadata promotion of an accepted RC image.
+# Retain RC as the OCI build version; stable tag/approval is checked upstream.
+artifact_version="${KAORI_DOCS_ARTIFACT_VERSION:-$release_version}"
+[[ "$artifact_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ || "$artifact_version" == "$release_version" ]] ||
+    fail 'invalid original immutable image version'
+if [[ "$artifact_version" != "$release_version" ]]; then
+    [[ "$release_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ &&
+       "${artifact_version%-rc.*}" == "$release_version" &&
+       "${KAORI_DOCS_STABLE_RELEASE_CONFIRMED:-0}" == 1 &&
+       "${KAORI_DOCS_RELEASE_LOCAL_ONLY:-0}" == 1 ]] ||
+        fail 'stable identity cannot reuse an unapproved or unrelated RC image'
+fi
 command -v docker >/dev/null || fail 'Docker is not available'
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_DOCS_COMPOSE_FILE:-$script_dir/compose.docs.yml}"
+# Docs has exactly one active image slot on the existing shared KAORI VPS.
+# RC/stable is a governed release identity, not an additional Compose runtime.
+[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
+    fail 'only the canonical Docs Compose project may be deployed'
 state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
+[[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
+    fail 'only the canonical Docs release receipt is permitted'
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'docs release state directory must be prepared and writable by deployment identity'
 docker info >/dev/null || fail 'Docker daemon unavailable'
@@ -28,14 +46,15 @@ docker pull "$image"
 revision="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$image")"
 [[ "$revision" == "$source_sha" ]] || fail "OCI revision $revision differs from admitted source $source_sha"
 configured_version="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.version"}}' "$image")"
-[[ "$configured_version" == "${release_version#v}" ]] || fail 'OCI version differs from admitted release identity'
+[[ "$configured_version" == "${artifact_version#v}" ]] || fail 'OCI version differs from accepted RC artifact identity'
 export KAORI_DOCS_IMAGE="$image"
 docker compose "${compose_args[@]}" config --quiet || fail 'Compose validation failed'
 
 candidate="$(mktemp "$state_dir/.release-candidate.XXXXXXXX")"
 cleanup() { rm -f -- "$candidate"; }
 trap cleanup EXIT
-printf 'KAORI_DOCS_IMAGE=%s\nKAORI_DOCS_SOURCE_SHA=%s\nKAORI_DOCS_VERSION=%s\n' "$image" "$source_sha" "$release_version" > "$candidate"
+printf 'KAORI_DOCS_IMAGE=%s\nKAORI_DOCS_SOURCE_SHA=%s\nKAORI_DOCS_VERSION=%s\nKAORI_DOCS_ARTIFACT_VERSION=%s\n' \
+    "$image" "$source_sha" "$release_version" "$artifact_version" > "$candidate"
 
 # Keep the prior immutable identity separate; failed candidate must not advance state.
 previous_image=''

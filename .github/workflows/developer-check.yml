@@ -25,7 +25,8 @@ env:
 jobs:
   route:
     name: Route Checks
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    # Hosted trusted validation; privileged container/release lanes stay self-hosted.
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       site: ${{ steps.paths.outputs.site }}
@@ -39,7 +40,7 @@ jobs:
           SOURCE_BRANCH: ${{ github.event.pull_request.head.ref }}
         run: |
           set -Eeuo pipefail
-          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Fork PR cannot run on the self-hosted runner.' >&2; exit 1; }
+          [[ "$HEAD_REPO" == "$GITHUB_REPOSITORY" ]] || { echo 'Fork PR cannot enter the trusted Developer Check.' >&2; exit 1; }
           [[ "$SOURCE_BRANCH" =~ ^kaori/(story|bug|task|spike|chore|tech-debt|hotfix)-[0-9]+-[a-z0-9-]+$ ]] || { echo 'Source branch must use canonical KAORI issue-linked type.' >&2; exit 1; }
       - name: Checkout exact pull-request head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,9 +65,9 @@ jobs:
           while IFS= read -r path; do
             echo "Changed: $path"
             case "$path" in
-              src/*|static/*|content/*|tests/*|docusaurus.config.ts|sidebars.ts|tsconfig.json|playwright.config.ts|package.json|package-lock.json|.npmrc|.nvmrc|.prettierrc.json|.prettierignore|.github/workflows/*|.devcontainer/*|compose.dev.yml|Dockerfile|.dockerignore|deploy/*|scripts/*)
+              docs/DOCKER_HUB_OVERVIEW.md|src/*|static/*|content/*|versioned_docs/*|versioned_sidebars/*|versions.json|tests/*|docusaurus.config.ts|sidebars.ts|tsconfig.json|playwright.config.ts|package.json|package-lock.json|.npmrc|.nvmrc|.prettierrc.json|.prettierignore|.github/workflows/*|.devcontainer/*|compose.dev.yml|Dockerfile|.dockerignore|deploy/*|scripts/*)
                 site=true ;;
-              docs/*|README.md|LICENSE|.github/PULL_REQUEST_TEMPLATE.md|.gitignore)
+              docs/*|README.md|LICENSE|NOTICE|CONTENT_LICENSE.md|.github/PULL_REQUEST_TEMPLATE.md|.gitignore)
                 ;;
               *)
                 echo "Unrecognized change path; fail closed: $path" >&2
@@ -86,7 +87,7 @@ jobs:
   targeted:
     name: Docs Validation
     needs: route
-    runs-on: [self-hosted, linux, x64, platform-ci]
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Report validation route
@@ -107,6 +108,7 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v4.4.0
         with:
           node-version: '22.23.2'
+          cache: npm
       - name: Require committed reproducible lock
         if: ${{ needs.route.outputs.site == 'true' }}
         shell: bash
@@ -130,6 +132,50 @@ jobs:
         run: |
           set -Eeuo pipefail
           while IFS= read -r path; do bash -n "$path"; done < <(git ls-files '*.sh')
+      - name: Verify admission evidence identity fail-closed contract
+        if: ${{ needs.route.outputs.site == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          test -f scripts/ci/admission-evidence.sh
+          sha="$KAORI_DOCS_SOURCE_SHA"
+          evidence=tmp/ci-test-admission.json
+          mkdir -p tmp
+          rm -f "$evidence"
+          canonical="OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging"
+          base=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_REF=refs/heads/kaori/staging
+            GITHUB_EVENT_NAME=push GITHUB_RUN_ID=1 GITHUB_RUN_ATTEMPT=1
+            GITHUB_WORKFLOW_REF="$canonical" GITHUB_WORKFLOW_SHA="$sha"
+            KAORI_DOCS_SOURCE_SHA="$sha" ADMISSION_PROMOTION=success ADMISSION_FULL=success
+            ADMISSION_CONTAINER=success ADMISSION_BROWSER=success
+            ADMISSION_PROFILE=reused ADMISSION_REUSED_FROM=10)
+          "${base[@]}" bash scripts/ci/admission-evidence.sh write "$evidence"
+          jq -e --arg source "$sha" '.source_sha == $source and
+            .reuse_authorized == false and
+            .mandatory_gate_conclusions["Browser Quality Evidence"] == "success"' "$evidence" >/dev/null
+          rm -f "$evidence"
+          "${base[@]}" ADMISSION_PROFILE=full ADMISSION_REUSED_FROM='' \
+            bash scripts/ci/admission-evidence.sh write "$evidence"
+          jq -e '.schema_version == 2 and .profile == "full" and
+            .reuse_authorized == true and .reused_from_full_run == null' "$evidence" >/dev/null
+          rm -f "$evidence"
+          python3 scripts/ci/admission-reuse.py test
+          if "${base[@]}" ADMISSION_BROWSER=skipped \
+            bash scripts/ci/admission-evidence.sh write "$evidence"; then
+            echo 'BLOCK: skipped browser gate was accepted as reusable evidence' >&2
+            exit 1
+          fi
+          if "${base[@]}" \
+            GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/fake.yml@refs/heads/main \
+            bash scripts/ci/admission-evidence.sh write "$evidence"; then
+            echo 'BLOCK: noncanonical workflow was accepted as admission authority' >&2
+            exit 1
+          fi
+          test ! -e "$evidence"
+          echo 'PASS: exact source/tree fingerprint emitted, skipped gate and fake workflow rejected'
+      - name: Verify fork runner isolation contracts
+        if: ${{ needs.route.outputs.site == 'true' }}
+        run: node --test tests/contracts/release/fork-runner-boundary.test.mjs
       - name: Check formatting
         if: ${{ needs.route.outputs.site == 'true' }}
         run: npm run check-format
@@ -146,13 +192,43 @@ jobs:
         if: ${{ needs.route.outputs.runtime == 'true' }}
         shell: bash
         run: bash scripts/container_smoke.sh "$KAORI_DOCS_SOURCE_SHA"
-      - name: Verify isolated Docs Compose private UAT overlay
+      - name: Verify one canonical Docs Compose slot for RC and stable
         if: ${{ needs.route.outputs.runtime == 'true' }}
         shell: bash
         run: |
           set -Eeuo pipefail
           export KAORI_DOCS_IMAGE="docker.io/example/kaori-docs@sha256:$(printf '0%.0s' {1..64})"
-          docker compose -f deploy/server/compose.docs.yml -f deploy/server/compose.release.yml config --quiet
+          compose="$(docker compose -f deploy/server/compose.docs.yml             -f deploy/server/compose.release.yml config --format json)"
+          jq -e '
+            .name == "kaori-docs" and
+            ([.services.web.ports[] |
+              select(.host_ip == "127.0.0.1" and (.published | tostring) == "18081" and .target == 8080)] | length) == 1
+          ' <<< "$compose" >/dev/null || {
+            echo 'BLOCK: Docs must have exactly one existing Compose project and 18081 loopback listener' >&2
+            exit 1
+          }
+          test ! -e deploy/server/compose.staging.yml || {
+            echo 'BLOCK: parallel Docs staging Compose overlay must not exist' >&2
+            exit 1
+          }
+          grep -Fq 'KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED:' scripts/release/deploy-release.sh || {
+            echo 'BLOCK: public RC swap per-digest marker gate missing' >&2
+            exit 1
+          }
+          # #32: the RC deployer exports COMPOSE_PROJECT_NAME=kaori-docs for
+          # the Docs service. Standalone edge verification MUST remove that
+          # inherited override and retain its own Compose project identity.
+          grep -Fxq 'env -u COMPOSE_PROJECT_NAME bash "$edge_root/runtime/verify.sh" --wait-seconds 120 ||' \
+            deploy/server/reattach-existing-site.sh || {
+            echo 'BLOCK: edge verifier inherited Docs Compose project override' >&2
+            exit 1
+          }
+          env COMPOSE_PROJECT_NAME=kaori-docs env -u COMPOSE_PROJECT_NAME \
+            bash -c '[[ -z ${COMPOSE_PROJECT_NAME+x} ]]' || {
+            echo 'BLOCK: standalone verifier isolation failed' >&2
+            exit 1
+          }
+          echo 'PASS: one Docs runtime; RC and stable differ only by approved signed image identity'
       - name: Negative admission tests for governed Release Deployment
         if: ${{ needs.route.outputs.runtime == 'true' }}
         shell: bash
@@ -210,7 +286,145 @@ jobs:
             exit 1
           fi
           echo 'PASS: manual/event impersonation and unapproved public auto release fail closed'
+          # #39: main-only stable promotion must block early, before GitHub API
+          # calls, registry access, stable tag creation or any host activity.
+          if env GITHUB_EVENT_NAME=workflow_dispatch GITHUB_REF=refs/heads/kaori/staging \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              GH_TOKEN=dummy REGISTRY_HOST=docker.io \
+              REGISTRY_IMAGE=docker.io/lethisaputri/kaori-docs \
+              STABLE_TAG=v0.1.0 ACCEPTED_RC_TAG=v0.1.0-rc.2 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/39#issuecomment-1 \
+              bash scripts/release/promote-stable.sh preflight; then
+            echo 'BLOCK: stable publisher accepted non-main source' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_dispatch GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              GH_TOKEN=dummy REGISTRY_HOST=docker.io \
+              REGISTRY_IMAGE=docker.io/lethisaputri/kaori-docs \
+              STABLE_TAG=v0.1.0 ACCEPTED_RC_TAG=v0.2.0-rc.1 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/39#issuecomment-1 \
+              bash scripts/release/promote-stable.sh preflight; then
+            echo 'BLOCK: stable publisher accepted RC from different SemVer train' >&2
+            exit 1
+          fi
+          echo 'PASS: stable main-only, RC-base version and human-approval guards fail closed before mutation'
+          # #40: a completed RC publisher or a fake stable event must not be
+          # allowed to replace a publicly attached Docs frontend.
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              KAORI_DOCS_AUTO_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/33#issuecomment-1 \
+              bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: deprecated RC-to-production auto policy was accepted' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              KAORI_DOCS_STABLE_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              KAORI_DOCS_MAIN_SHA="$sha" KAORI_DOCS_STABLE_TAG=v0.1.0 \
+              KAORI_DOCS_STABLE_RUN_ID=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/40#issuecomment-1 \
+              bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: stable production bypassed public edge safety' >&2
+            exit 1
+          fi
+          if env GITHUB_EVENT_NAME=workflow_run GITHUB_REF=refs/heads/main \
+              GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_SHA="$sha" \
+              KAORI_DOCS_STABLE_POLICY=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              KAORI_DOCS_MAIN_SHA="$sha" KAORI_DOCS_STABLE_TAG=v0.1.0 \
+              KAORI_DOCS_STABLE_RUN_ID=1 \
+              ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: stable production accepted RC/UAT approval instead of issue #40' >&2
+            exit 1
+          fi
+          echo 'PASS: deprecated RC-auto, missing edge and wrong stable production authority fail closed'
+          # Explicitly fail the deprecated parallel-staging mode and private
+          # rollback target, while keeping RC/stable on one public Docs slot.
+          if env KAORI_DOCS_STAGING_UAT=1 KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+              GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: parallel private staging mode accepted' >&2
+            exit 1
+          fi
+          if env KAORI_DOCS_STAGING_UAT=0 KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              GITHUB_REF=refs/heads/kaori/staging ACCEPTED_SHA="$sha" RC_TAG=v0.1.0-rc.3 \
+              APPROVAL_REF=https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1 \
+              bash "$script" preflight; then
+            echo 'BLOCK: RC request accepted without explicit source branch mode' >&2
+            exit 1
+          fi
+          if env COMPOSE_PROJECT_NAME=kaori-docs-staging \
+              KAORI_DOCS_STATE_DIR=/var/lib/kaori-docs/deploy-state \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              bash deploy/server/rollback.sh; then
+            echo 'BLOCK: parallel staging project accepted for rollback' >&2
+            exit 1
+          fi
+          if env COMPOSE_PROJECT_NAME=kaori-docs \
+              KAORI_DOCS_STATE_DIR=/var/lib/kaori-docs-staging/deploy-state \
+              KAORI_DOCS_ATTACH_EXISTING_EDGE=1 \
+              bash deploy/server/rollback.sh; then
+            echo 'BLOCK: separate staging receipt directory accepted' >&2
+            exit 1
+          fi
+          echo 'PASS: single-slot release blocks parallel project/state and private staging mode'
+          echo 'PASS: RC and stable require explicit existing public-edge reconciliation'
           echo 'PASS: non-staging, non-RC, and unscoped approvals fail closed before API/registry/host access'
+
+      - name: Request-branch fail-closed identity and single-slot negative checks
+        if: ${{ needs.route.outputs.runtime == 'true' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          sha="$KAORI_DOCS_SOURCE_SHA"
+          wrong="$(printf 'f%.0s' {1..40})"
+          rc=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GH_TOKEN=dummy
+            ACCEPTED_SHA="$sha" RC_TAG=v0.3.0-rc.99 GITHUB_SHA="$sha")
+          if "${rc[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/staging \
+               bash scripts/release/publish-candidate.sh preflight; then
+            echo 'BLOCK: ordinary staging push published an RC without rc-request' >&2
+            exit 1
+          fi
+          if "${rc[@]}" GITHUB_EVENT_NAME=push GITHUB_REF=refs/heads/kaori/rc-request \
+               GITHUB_SHA="$wrong" bash scripts/release/publish-candidate.sh preflight; then
+            echo 'BLOCK: rc-request accepted a stale SHA' >&2
+            exit 1
+          fi
+          uat=(env GITHUB_REPOSITORY=OXY7O/kaori-docs GITHUB_EVENT_NAME=push
+            GITHUB_REF=refs/heads/kaori/uat-request
+            GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/deploy-staging-host.yml@refs/heads/kaori/uat-request
+            GITHUB_SHA="$sha" ACCEPTED_SHA="$sha" KAORI_DOCS_STAGING_UAT=1
+            KAORI_DOCS_ATTACH_EXISTING_EDGE=1)
+          if "${uat[@]}" GITHUB_REF=refs/heads/kaori/staging \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: untrusted staging push bypassed uat-request' >&2
+            exit 1
+          fi
+          if "${uat[@]}" GITHUB_SHA="$wrong" \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: uat-request accepted a stale SHA' >&2
+            exit 1
+          fi
+          if "${uat[@]}" KAORI_DOCS_ATTACH_EXISTING_EDGE=0 \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: uat-request created an unapproved private parallel runtime' >&2
+            exit 1
+          fi
+          if "${uat[@]}" GITHUB_WORKFLOW_REF=OXY7O/kaori-docs/.github/workflows/evil.yml@refs/heads/kaori/uat-request \
+               bash scripts/release/deploy-release.sh preflight; then
+            echo 'BLOCK: uat-request accepted an untrusted workflow identity' >&2
+            exit 1
+          fi
+          grep -Fq 'KAORI_DOCS_RC_PUBLIC_SWAP_APPROVED:' scripts/release/deploy-release.sh
+          grep -Fq 'public_marker=' .github/workflows/deploy-staging-host.yml
+          test ! -e deploy/server/compose.staging.yml
+          echo 'PASS: request branches cannot bypass exact SHA/workflow identity or create a second Docs runtime'
 
       - name: Validate static output and public boundary
         if: ${{ needs.route.outputs.site == 'true' }}
@@ -219,7 +433,7 @@ jobs:
           set -Eeuo pipefail
           test -s build/index.html
           test -s build/branding/kaori-logo.svg
-          grep -q 'KAORI Docs' build/index.html
+          grep -Fq 'KAORI Documentation' build/index.html
           test ! -e build/docs/ARCHITECTURE.md
           test ! -e build/docs/CONTENT_SAFETY.md
           test ! -e build/.github
@@ -227,4 +441,7 @@ jobs:
           test ! -e build/package.json
           test ! -e build/content
           test ! -e build/v0.0
+          test ! -e build/v0.3
+          test ! -e build/editorial-preview
+          test ! -e build/getting-started
           printf 'Static output boundary verified at %s\n' "$KAORI_DOCS_SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
