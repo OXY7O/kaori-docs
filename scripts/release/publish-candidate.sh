@@ -7,8 +7,11 @@ fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 repo="${GITHUB_REPOSITORY:?}"
 sha="${ACCEPTED_SHA:?}"
 tag="${RC_TAG:-}"
-host="${REGISTRY_HOST:-}"
-image="${REGISTRY_IMAGE:-}"
+# GitHub Environment-scoped configuration variables arrive on the runner
+# after job.env's repository-level vars expressions are evaluated. Resolve
+# the effective registry identity at execution time, never from job.env alone.
+host="${KAORI_DOCS_DOCKER_REGISTRY_HOST:-${REGISTRY_HOST:-}}"
+image="${KAORI_DOCS_DOCKER_REGISTRY_IMAGE:-${REGISTRY_IMAGE:-}}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
 [[ "$repo" == "OXY7O/kaori-docs" ]] || fail 'wrong repository authority'
