@@ -12,6 +12,26 @@ Follow the [KAORI Engineering Delivery Workflow](https://github.com/OXY7O/KAORI/
 8. Collect staging/server UAT, accessibility/light-dark/mobile/six-viewport evidence and explicit human acceptance.
 9. Promote via a `kaori/staging` → `main` PR; publish only after all relevant release and public-edge gates, with separately approved DNS/TLS/Host/SNI changes.
 
+## Configuration-first deployment targets — Docs #106
+
+Follow the KAORI Website [approved reference #231](https://github.com/OXY7O/kaori-website/issues/231)
+and its newer [configuration-first authority #234](https://github.com/OXY7O/kaori-website/issues/234):
+GitHub Environments are **source approval/credential boundaries**, not a
+`single-slot` or `multi-slot` feature. An approved staging source runs
+through GitHub `staging`; accepted stable `main` runs through `production`.
+The effective runtime is the host/SSH identity **plus** its Compose project,
+deploy root, state/receipt, loopback and preapproved ingress configuration.
+
+Today both targets intentionally resolve to the **existing shared VM and
+`kaori-docs` runtime**. Changing Environment settings to point to a distinct
+project/host is an operator topology decision, not a new RC/stable release
+policy. The existing release adapter validates selected target identity,
+immutable image, receipt and edge before mutation; it never creates ingress,
+DNS or target infrastructure. A fresh distinct production target additionally
+requires independently accepted provisioning, release reconciliation, rollback
+and UAT under #40. The current live RC.9 is unaffected. See
+[Release Deployment](RELEASE_DEPLOYMENT.md#environment-scoped-runtime-target-docs-106--website-234).
+
 **Approved version/environment contract (issue #38 / #39):**
 KAORI Application and Website already treat `vX.Y.Z-rc.N` as the staging
 candidate/UAT identity and `vX.Y.Z` as the promoted **main** stable identity
