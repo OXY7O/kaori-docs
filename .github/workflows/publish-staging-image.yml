@@ -43,6 +43,8 @@ jobs:
     name: Publish Release Candidate
     if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/kaori/staging') || (github.event_name == 'push' && github.ref == 'refs/heads/kaori/rc-request') }}
     runs-on: [self-hosted, linux, x64, platform-ci]
+    environment:
+      name: staging
     timeout-minutes: 120
     env:
       REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}

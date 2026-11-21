@@ -56,6 +56,11 @@ jobs:
         )
       }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
+    # The same single-slot host job serves RC/UAT and accepted stable events;
+    # GitHub Environment selection happens before any SSH or registry secret use.
+    environment:
+      name: ${{ (github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && 'production' || 'staging' }}
+      url: https://docs.kaori.cloud
     timeout-minutes: 45
     env:
       ACCEPTED_SHA: ${{ github.sha }}

@@ -131,3 +131,13 @@ Because the deployment slot is shared, the selected RC is visible on **https://d
 After explicit acceptance, promote using `kaori/staging → main`, verify the same signed digest, publish stable under `vX.Y.Z` and select its stable release for **this same slot**. RC-only acceptance is not an automatic main promotion.
 
 **Historical evidence:** prior `v0.1.0-rc.2` private/bootstrap deployment and current signed `v0.3.0-rc.1` remain auditable. The new single-slot behavior is **not** active until its PR merges, a fresh exact-SHA Full Admission and new RC approval/deployment prove it. The old separate-runtime design is superseded, not evidence that a new swap already occurred.
+
+## GitHub Environment deployment approval — Docs #96
+
+The existing signed RC publisher uses GitHub Environment `staging`. The accepted stable publisher on `main` uses `production`. The single-slot Docs deployment job selects `staging` for signed RC/UAT requests and `production` for approved stable-main publication or explicit main stable dispatch. This is an authorization boundary, not a new host, proxy, port or Compose project. Existing issue #13, #14, #39 and #40 approval references, SHA/digest, Cosign, Trivy, SPDX/SLSA, rollback and shared-edge checks remain mandatory.
+
+**Administrator configuration:** In GitHub repository Settings → Environments, restrict `staging` to `kaori/staging`, `kaori/rc-request` and `kaori/uat-request`. Restrict `production` to `main` only; require independent `donibawono` approval, prevent self-review and disable administrator bypass. Check scoped credentials and variables without exposing values. The GitHub connector cannot verify or change these protection rules, so production activation remains HOLD until the administrator confirms them.
+
+**Deployment review evidence:** Verify a real, separately authorized stable run is **Waiting for review** before the privileged runner starts. Confirm denied/unapproved and self-review cannot reach registry or host mutation. For an approved release, record the native `Review deployments → production → Approve and deploy` actor, accepted signed digest, current/previous host receipts, public HTTPS/shared-edge health and rollback readiness. Source CI PASS alone is not evidence of enforced Environment approval.
+
+Docs first-main broad promotion [#95](https://github.com/OXY7O/kaori-docs/pull/95), public content publication, live DNS/TLS changes and automatic production deployment remain outside this issue.
