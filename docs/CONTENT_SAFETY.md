@@ -17,7 +17,6 @@ Check capability maturity (Available/In progress/Planned/Future), provider autho
 
 Docs Major.Minor applicability and exact patch release notes follow #15 and #9. Local-first version-isolated search is a separate #16 gate. Public DNS/TLS/routing and host deployment remain separate infrastructure approvals.
 
-
 ## Release-neutral drafting before the first stable Application release
 
 While [KAORI Application](https://github.com/OXY7O/KAORI) has no accepted stable release for the documented line, **draft only** conceptual material that is explicitly release-neutral (for example platform purpose, capability → provider → instance, provider authority, committed evidence, uncertainty, and governed decision boundaries). Reuse existing article structure such as `content/getting-started/introduction.md`; do not introduce new frontmatter conventions, routes, or a parallel documentation framework.
