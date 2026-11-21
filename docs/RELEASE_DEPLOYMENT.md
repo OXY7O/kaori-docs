@@ -228,7 +228,8 @@ into documentation, tickets or CI output.
    evidence, mark Environment secret isolation **PENDING**, not PASS.
 
 This is a separately auditable operator task under
-[Docs #96](https://github.com/OXY7O/kaori-docs/issues/96);
+[Docs #108](https://github.com/OXY7O/kaori-docs/issues/108), dependent
+on [Docs #96](https://github.com/OXY7O/kaori-docs/issues/96);
 the GitHub integration available to this implementation cannot read
 or mutate repository/Environment secret or variable settings. The
 current public RC.9 service must remain unchanged.
