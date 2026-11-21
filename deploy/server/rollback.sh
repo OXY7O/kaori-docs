@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-# Both release types replace one existing Docs project/image and share the
-# SAME committed current and previous release pointers.
-[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
-  { echo 'BLOCK: rollback must target only canonical Docs project' >&2; exit 1; }
-state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
-[[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
-  { echo 'BLOCK: rollback must use canonical Docs receipt' >&2; exit 1; }
-compose_project=kaori-docs
+# Recovery must use the same configured runtime identity as deployment,
+# independently of which GitHub Environment selected it.
+compose_project="${COMPOSE_PROJECT_NAME:-kaori-docs}"
+[[ "$compose_project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
+  { echo 'BLOCK: rollback must target a validated Docs Compose project' >&2; exit 1; }
+state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/$compose_project/deploy-state}"
+[[ "$state_dir" == "/var/lib/$compose_project/deploy-state" ]] ||
+  { echo 'BLOCK: rollback receipt does not match the selected Docs runtime' >&2; exit 1; }
+loopback_port="${KAORI_DOCS_LOOPBACK_PORT:-18081}"
+[[ "$loopback_port" =~ ^[1-9][0-9]{3,4}$ ]] &&
+  (( loopback_port >= 1024 && loopback_port <= 65535 )) ||
+  { echo 'BLOCK: rollback loopback port is invalid' >&2; exit 1; }
 previous="$state_dir/previous-release.env"
 [[ -f "$previous" && ! -L "$previous" && -r "$previous" ]] || { echo 'BLOCK: reviewed previous release state unavailable' >&2; exit 1; }
 # shellcheck source=/dev/null
