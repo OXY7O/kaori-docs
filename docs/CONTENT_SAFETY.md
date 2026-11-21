@@ -17,6 +17,21 @@ Check capability maturity (Available/In progress/Planned/Future), provider autho
 
 Docs Major.Minor applicability and exact patch release notes follow #15 and #9. Local-first version-isolated search is a separate #16 gate. Public DNS/TLS/routing and host deployment remain separate infrastructure approvals.
 
+
+## Release-neutral drafting before the first stable Application release
+
+While [KAORI Application](https://github.com/OXY7O/KAORI) has no accepted stable release for the documented line, **draft only** conceptual material that is explicitly release-neutral (for example platform purpose, capability → provider → instance, provider authority, committed evidence, uncertainty, and governed decision boundaries). Reuse existing article structure such as `content/getting-started/introduction.md`; do not introduce new frontmatter conventions, routes, or a parallel documentation framework.
+
+Before proposing an article for review:
+
+1. **Authority:** Identify the governing KAORI product/architecture document and owning issue. If current accepted product documentation conflicts with a newer implementation, reconcile the authority in the Application first; do not silently choose whichever wording fits the article.
+2. **Applicability:** State whether the text is conceptual or tied to an accepted Application release. Keep `draft: true` for pre-release editorial examples and do not claim a capability is Available merely because staging code or an RC exists.
+3. **Public-source hygiene:** Treat **every tracked file in this public GitHub repository**, including `docs/`, as readable by outsiders. The fact that Docusaurus excludes `docs/` from the website build is **not** confidential storage. Never commit real secrets, sensitive network addresses, asset IDs, internal topology, customer records, operator receipts, or unapproved screenshots to any tracked path.
+4. **Rights:** First-party source is governed by `LICENSE`, approved public `content/` prose by `CONTENT_LICENSE.md`, and protected branding/third-party material by `NOTICE` and their original licenses. A reusable public example must not reproduce private operational instructions or grant access to a hosted environment.
+5. **Review:** Record the editorial owner, issue/source commit, any required accessibility/sanitization check, and reviewer decision against the existing issue/PR evidence. Use the existing Developer Check and Full Admission gates; do not invent a content-specific validation script.
+
+**Publication HOLD:** `docs/PUBLISHED_VERSIONS.json` remains `awaiting-release` with an empty `published` array, and native Docusaurus versions remain empty. Do not enable a public documentation route, version selector, local search corpus, release notes, or stable product compatibility claims until [#15](https://github.com/OXY7O/kaori-docs/issues/15) has verified an accepted stable Application tag/source/digest, a reviewed Docs snapshot and explicit publication approval. Staging editorial review and a successful build do not satisfy this gate.
+
 ## Public release process
 
 An accepted Docs release requires source SHA, version/applicability evidence, public-content isolation, QA/browser accessibility, immutable static OCI digest and signed provenance, approved staging UAT and explicit human acceptance. A green static build alone does not permit public deployment.
