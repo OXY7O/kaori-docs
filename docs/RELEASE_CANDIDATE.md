@@ -101,8 +101,12 @@ The opt-in selector reuses a single already-published, exact-source RC
 without changing its tag or OCI digest. Otherwise it selects the next
 unused `v0.3.0-rc.N`, refusing an already-stable `v0.3.0` or ambiguous
 source. A future Docs stable series needs a separate version decision.
-The existing deploy verifier also accepts an immutable Cosign identity
-from the trusted staging `quality.yml` publisher, but this is **not**
+The existing deploy verifier **and main-only stable promoter**
+both accept the same immutable Cosign identity from the trusted staging
+`quality.yml` publisher, in addition to the two manual/request publisher
+identities. Both require the selected exact identity on the RC image
+signature and its SPDX/SLSA attestations; stable retains its independent
+Human Acceptance, unchanged RC digest and main-only gates. This is **not**
 a new automatic deployment trigger: the separate digest-bound #14 public
 swap approval, same-slot host gates, Human UAT and rollback policy remain
 mandatory. See [Docs Delivery](DELIVERY.md) and
