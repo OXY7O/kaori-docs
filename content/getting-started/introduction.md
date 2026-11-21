@@ -72,6 +72,21 @@ Finding an asset does not authorize changing it. The operating model separates t
 
 A documentation example does not establish that an execution workflow is available in the application version a reader uses.
 
+## A safe way to read an operational finding
+
+Suppose an inventory view shows a resource that was last observed during an earlier collection. This example is illustrative; it is **not** a screenshot, a live system state, or evidence of a particular release.
+
+| Operator question | Evidence to examine | What it cannot prove alone |
+| --- | --- | --- |
+| Which resource is this? | The configured provider instance, resource identity, and collection scope | That the source still exposes the resource now |
+| How recent is the information? | Observation time, last completed collection, and reported freshness | That all assets were successfully collected |
+| Why is a finding shown? | Supporting committed observations, correlation inputs, and missing-data indicators | That the relationship is confirmed beyond the evidence |
+| May an action be taken? | Current authorization, supported workflow, verified target, and provider execution boundary | That viewing the record grants mutation permission |
+
+An **unknown** state is not an empty healthy state. If current provider verification is required for a change, perform it through the separately authorized operating workflow; do not infer it from historical evidence. The provider remains authoritative for execution and current source truth.
+
+These principles are version-neutral. Exact UI routes, supported providers, permissions, automation operations, and troubleshooting commands must be validated against an accepted KAORI Application release before this draft is published as a supported guide.
+
 ## Continue exploring
 
 Return to the [Documentation Home](/) for the documentation catalog and orientation. Links to Getting Started follow-ups, Core Concepts, and other articles become available only after their content and applicable **KAORI application Major.Minor** release have been accepted.
