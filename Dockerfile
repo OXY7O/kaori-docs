@@ -15,7 +15,7 @@ COPY versioned_sidebars ./versioned_sidebars
 COPY docs/PUBLISHED_VERSIONS.json ./docs/PUBLISHED_VERSIONS.json
 RUN npm run check && npm run build && test -s build/index.html
 
-FROM ghcr.io/nginx/nginx-unprivileged:1.30.6-alpine3.24-slim@sha256:016193c18ef1ce19dc2229d3305f69af1b05e0bc0e8fe6ee724a58bd305f3855 AS production
+FROM ghcr.io/nginx/nginx-unprivileged:1.30.7-alpine3.24-slim@sha256:8432c57ac86f178741af2b89948bd9087cb9df1c415bc1ab4d23735c4f0e3e61 AS production
 ARG APP_BUILD_SHA
 ARG APP_VERSION
 ARG APP_BUILD_DATE
