@@ -1,0 +1,20 @@
+KAORI Docs
+
+Copyright 2026 Lethisa (KAORI original author and rights holder; GitHub: @lethisa).
+Independent reviewer: @donibawono (review does not transfer source copyright).
+
+Only KAORI-authored software source is licensed under Apache License, Version 2.0 (LICENSE).
+Third-party code and assets retain their respective upstream licenses and notices.
+KAORI and OXY7O names, logos, trademarks and brand artwork are not licensed by
+the Apache-2.0 software source license; the license itself includes trademark
+limitations in Section 6. Seek separate permission for protected brand use.
+
+Licensing source code does not convey internal credentials, hosted-service access,
+support obligations, production deployment authority or rights to publish
+private operational records.
+
+Only KAORI-authored public documentation prose under content/ is licensed
+separately under CC BY 4.0 (see CONTENT_LICENSE.md); internal engineering
+runbooks under docs/, protected artwork under static/branding/, and third-party
+materials are excluded from that CC grant. Publication and version acceptance
+remain subject to the existing Docs delivery controls.
