@@ -81,3 +81,26 @@ test('approved legal notice files route as docs-only while unknown paths remain 
   assert.match(developer, /README\.md\|LICENSE\|NOTICE\|CONTENT_LICENSE\.md/);
   assert.match(developer, /Unrecognized change path; fail closed/);
 });
+
+test('Docs release jobs use native approval environments before privileged actions', () => {
+  const stable = job(workflow('quality'), 'stable-publication');
+  const rc = job(workflow('publish-staging-image'), 'publish');
+  const deploy = job(workflow('deploy-staging-host'), 'deploy');
+
+  assert.match(stable, /environment:\n      name: production/);
+  assert.match(stable, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(rc, /environment:\n      name: staging/);
+  assert.match(rc, /refs\/heads\/kaori\/rc-request/);
+
+  assert.match(deploy, /environment:\n      name:/);
+  assert.match(deploy, /github\.event_name == 'workflow_run'/);
+  assert.match(deploy, /github\.ref == 'refs\/heads\/main'/);
+  assert.match(deploy, /&& 'production' \|\| 'staging'/);
+  for (const name of [stable, rc, deploy]) {
+    assert.ok(name.indexOf('    environment:') > -1);
+    assert.ok(name.indexOf('    environment:') < name.indexOf('    steps:'));
+  }
+
+  assert.doesNotMatch(job(workflow('quality'), 'full-admission'), /^    environment:/m);
+  assert.doesNotMatch(job(workflow('quality'), 'container-admission'), /^    environment:/m);
+});
