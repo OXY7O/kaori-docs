@@ -5,7 +5,9 @@
 set -Eeuo pipefail
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 [[ "${1:-}" =~ ^[a-f0-9]{40}$ ]] || fail 'exact source SHA required'
-[[ "$(git rev-parse HEAD)" == "$1" ]] || fail 'Fast Smoke checkout/source mismatch'
+# Playwright container UID differs from the mounted checkout owner. Trust only
+# this exact checkout for the one SHA read; never relax global Git trust.
+[[ "$(git -c safe.directory="$(pwd -P)" rev-parse HEAD)" == "$1" ]] || fail 'Fast Smoke checkout/source mismatch'
 [[ -f package-lock.json ]] || fail 'locked dependency identity missing'
 [[ -f playwright.config.ts && -f tests/browser/docs-foundation.spec.ts ]] ||
   fail 'fresh browser smoke contract missing'
