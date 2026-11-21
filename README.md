@@ -77,6 +77,7 @@ A complete acceptance requires actual Developer Check, browser light/dark/mobile
 - [Public authoring and content safety](docs/CONTENT_SAFETY.md)
 - [Governed delivery](docs/DELIVERY.md)
 - [CI/CD and quality gates](docs/CI_CD.md)
+- [Docker Hub repository overview and image usage](docs/DOCKER_HUB_OVERVIEW.md)
 - [KAORI product authority](https://github.com/OXY7O/KAORI/blob/main/docs/product/README.md)
 - [KAORI Design System](https://github.com/OXY7O/KAORI/blob/main/docs/design/KAORI_DESIGN_SYSTEM.md)
 
