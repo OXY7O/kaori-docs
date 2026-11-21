@@ -136,14 +136,21 @@ Public single-slot UAT and eventual production approval remain separate.
 
 The `Release Deployment` workflow selects GitHub Environment `staging` for
 the exact approved RC source and `production` for accepted stable-main
-publication. Environment-level Variables/Secrets override repository-level values of
-**the same names** in the privileged job. At this checkpoint, the established
-Docs registry and SSH credentials are still **repository-scoped**: merely
-binding a job to an Environment does not move them or prove isolation. Until
-the operator completes scoped migration, the existing repository values are
-an intentional compatibility fallback. No secret values belong in Git, logs
-or issue comments. Both Environments may deliberately select identical
-values, yielding the same effective runtime.
+publication. GitHub Environment configuration variables are injected **after the job
+starts**. They do **not** overwrite a `jobs.env` value already resolved
+through `${{ vars.NAME }}` during workflow evaluation. The existing Docs
+publisher, stable promoter and deployment adapter therefore resolve the
+runner-provided `KAORI_DOCS_*` target values first, falling back to the
+existing repository-level job configuration; source validation and exact
+digest/receipt checks still apply. GitHub Environment-scoped secrets with
+the same names are separately controlled by the Environment approval
+boundary. Never print secrets or their values.
+
+At this checkpoint, host and registry credentials are still known to be
+**repository-scoped**: binding a job to an Environment does not migrate or
+isolate them. Keep the compatibility fallback until the approved
+[#108](https://github.com/OXY7O/kaori-docs/issues/108) configuration
+cutover. Both Environments may deliberately target one runtime.
 
 - `KAORI_DOCS_HOST`, `KAORI_DOCS_HOST_PORT`,
   `KAORI_DOCS_HOST_USER`: existing approved pinned SSH host identity,
