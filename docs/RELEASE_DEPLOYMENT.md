@@ -159,3 +159,19 @@ The existing signed RC publisher uses GitHub Environment `staging`. The accepted
 **Deployment review evidence:** Verify a real, separately authorized stable run is **Waiting for review** before the privileged runner starts. Confirm denied/unapproved and self-review cannot reach registry or host mutation. For an approved release, record the native `Review deployments → production → Approve and deploy` actor, accepted signed digest, current/previous host receipts, public HTTPS/shared-edge health and rollback readiness. Source CI PASS alone is not evidence of enforced Environment approval.
 
 Docs first-main broad promotion [#95](https://github.com/OXY7O/kaori-docs/pull/95), public content publication, live DNS/TLS changes and automatic production deployment remain outside this issue.
+
+## GitHub Environment credential and SSH preflight (read-only) — #108
+
+The existing `.github/workflows/environment-credential-preflight.yml` reuses **the already configured** `staging`/`production` GitHub Environment variables and five encrypted secrets. It never provisions a VM, changes a server file, restarts Docker, deploys an image, publishes a tag or updates DNS. Runtime application configuration remains authoritative on the VM; there is **no GitHub `HOST_DEPLOY_ENV_FILE` setting or topology/slot-count mode**.
+
+The first approved protected-staging merge of this workflow runs a **staging-only** preflight once (file-change-scoped push). Later runs are explicit CLI dispatches:
+
+```bash
+gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-docs --ref kaori/staging -f target_environment=staging
+# Only after reviewed main promotion and native production Environment reviewer approval:
+gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-docs --ref main -f target_environment=production
+```
+
+The job fails closed on a wrong branch, absent credentials, mismatched registry/image prefix, unsafe deploy root, missing **pinned known_hosts**, rejected SSH key/passphrase, unreachable or untrusted VM, missing existing release receipt, or unavailable target Docker daemon. Registry login is stored only in a disposable hosted-runner config. Remote checks run as the configured SSH user and perform **existence/read-only inspections only**. Production requires a protected `main` branch and the actual GitHub `production` Environment review; a staging secret cannot be used to assert production readiness. No secret values or host files are printed.
+
+A PASS proves credential transport and target access **at the time of the run**, not an accepted image digest, independent browser UAT, recovery, public-edge authority, or stable release. A failed check is an operational blocker; do not bypass it by switching to repository-level fallback secrets or running the normal deploy workflow as a test. Retain existing repository credentials until Environment-scoped preflight and required release checks are independently accepted.
