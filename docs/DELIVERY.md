@@ -25,10 +25,10 @@ Docs `#33` RC-to-public auto mode is **not** the approved production
 release model and must remain disabled pending issue #40.
 
 Application `kaori/rc-request` and `kaori/uat-request` are exact-SHA request
-triggers. Website uses approved manual `workflow_dispatch` without those
-branches. A future standardization decision on optional request branch parity
-is held under [KAORI #4201](https://github.com/OXY7O/KAORI/issues/4201);
-do not infer that all repositories already have those branches.
+triggers. Website's newer staging workflow supports a separately authorized,
+feature-flagged post-admission publisher/deployer, while Docs initially uses
+its proven `rc-request` and `uat-request` paths. KAORI #4201 governs
+cross-repository parity; do not infer these workflows are interchangeable.
 
 **Current stable production design (issue #40):** the previously admitted
 #33 RC-publisher → public auto deployment is **retired**; a signed RC from
@@ -66,6 +66,47 @@ The initial repository contains only `main`, so issue #11 first creates `kaori/s
 ## Explicit release request branches — issue #51
 
 `kaori/rc-request` is an **exact admitted staging-SHA** signal to publish the approved signed Docs RC. `kaori/uat-request` is the same SHA signal to select an existing signed prerelease and one **write-authorized issue #14 approval with both per-digest RC and public swap markers**. Those refs are not additional environments: both RC and accepted main stable replace the same `kaori-docs` Compose service on the same VPS. Normal `kaori/staging` pushes do not automatically deploy RC. `workflow_dispatch` remains a governed operator fallback; no request event grants Human Acceptance.
+
+## Optional staging RC publication — issue #102
+
+The **default** Docs release train remains `kaori/staging` Full Admission →
+exact-SHA `kaori/rc-request` → signed RC → digest-scoped issue #14 approval
+→ `kaori/uat-request` → existing one-slot public deployment. Following the
+Website pattern, `Full Admission` now defines a **separate opt-in
+`staging-rc-publish` job** that can reuse the existing Docs image publisher
+on the protected staging commit **only after all Full/Container/Browser/
+Admission Evidence gates succeed**. It is deliberately *off* when repository
+variable `KAORI_DOCS_AUTO_STAGING_ENABLED` is unset or not `true`.
+
+Turning the flag on is **not** sufficient to publish. The publisher first
+checks issue #74 has been **closed as completed** with exactly one immutable,
+owner-authored `KAORI_DOCS_PUBLICATION_GO:STANDING` line made before closure,
+and no later `KAORI_DOCS_PUBLICATION_REVOKED:STANDING` by the owner or
+reviewer. Missing, edited-after-acceptance, revoked or incompletely paginated
+rights evidence blocks before registry mutation. The approved license is
+`Apache-2.0` for the code; original public prose remains separately scoped
+under CC BY 4.0 and unreviewed content stays outside the image. This is **Docs
+rights authority**, not Website #4939 or a blanket grant. Current issue #74
+is open, so recurring public publication is **not authorized**.
+
+When rights are approved, an exact-source RC is reused without rebuild.
+Otherwise only the next unused `v0.3.0-rc.N` may be selected; a stable
+`v0.3.0` tag or a conflicting RC source/version prevents automatic selection.
+The original `scripts/release/publish-candidate.sh` remains the sole builder
+and performs registry manifest digest, Trivy, Cosign, SPDX/SLSA, source,
+licensing and stale-staging verification. A signature from the canonical
+staging `quality.yml` caller is acceptable to the existing deploy adapter
+**only** after its own exact SHA/RC/digest/issue #14 and signature/attestation
+checks; older canonical publisher identities remain valid.
+
+**No auto-deployment is implemented by #102.** A successful opt-in publisher
+does not run SSH, modify the current Docs container, accept human UAT or
+authorize a stable main release. Existing issue #14 per-digest public swap
+approval and the `uat-request`/manual recovery path remain mandatory. Issue
+#33 must separately approve a bounded staging deployment orchestration and
+standing public-swap authority before any automatic host mutation. Do not
+activate the feature flag until Docs #74 rights and a real immutable rollback
+baseline are accepted.
 
 ## Quality and operational boundaries
 
