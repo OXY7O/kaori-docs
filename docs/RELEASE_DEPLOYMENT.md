@@ -131,3 +131,21 @@ Because the deployment slot is shared, the selected RC is visible on **https://d
 After explicit acceptance, promote using `kaori/staging → main`, verify the same signed digest, publish stable under `vX.Y.Z` and select its stable release for **this same slot**. RC-only acceptance is not an automatic main promotion.
 
 **Historical evidence:** prior `v0.1.0-rc.2` private/bootstrap deployment and current signed `v0.3.0-rc.1` remain auditable. The new single-slot behavior is **not** active until its PR merges, a fresh exact-SHA Full Admission and new RC approval/deployment prove it. The old separate-runtime design is superseded, not evidence that a new swap already occurred.
+
+## GitHub Environment deployment approval — Docs #96
+Docs follows the [Website two-Environment pattern](https://github.com/OXY7O/kaori-website/issues/201) for native GitHub deployment review, while preserving the **single** existing Docs runtime slot. An Environment is a release authorization boundary, **not** a second service/host/Compose project.
+
+| Event / job | GitHub Environment | Action |
+| --- | --- | --- |
+| Signed RC publication on accepted `kaori/staging` or `kaori/rc-request` | `staging` | Signed, authorized image / release candidate |
+| `Release Deployment` RC/UAT manual staging or `kaori/uat-request` push | `staging` | Existing signed RC to the one Docs host slot |
+| `Full Admission` accepted stable publication from `main` | `production` | Same-digest stable metadata, no image rebuild |
+| `Release Deployment` successful main stable `workflow_run` or explicit main stable dispatch | `production` | Approved stable cutover/rollback on the one Docs slot |
+
+The existing deployment job selects its Environment from **GitHub's event type and immutable ref before any secrets, registry login or SSH steps**. Main stable publication has its own `production` binding. Existing issue #13 RC, #14 per-digest/public-swap, #39 stable and #40 main-only approval markers, Cosign, SPDX/SLSA, Trivy, pinned host and full shared-edge verification are mandatory *in addition* to native deployment approval.
+
+**Administrator setup (GitHub repository Settings → Environments):** Configure `staging` to allow only `kaori/staging`, `kaori/rc-request`, `kaori/uat-request`, with the Website-style staging deployment review policy. Configure `production` to allow **only `main`**, require `donibawono` as an independent reviewer, prevent self-review, and disallow bypass including administrators. Scope repository/Environment Actions secrets and variables without exposing values; confirm the production policies using the actual GitHub Settings page. The connected integration **cannot read or mutate Environment policy**. Until the administrator records real protection and negative-test evidence, treat stable publisher/production deploy as **HOLD** despite source CI PASS.
+
+**Proof before activation:** Trigger only a separately authorized, exact-release production run. Record its **Waiting for review** status *before any privileged job starts*, rejection/no-approval and self-review denial, the native `Review deployments → production → Approve and deploy` actor, and after-approval immutable digest, current/previous host receipts, HTTPS/edge checks and rollback readiness. Do not fabricate an approval or trigger an unapproved live cutover as a test.
+
+This does not authorize the previously held 250-commit Docs main promotion, any public content release, a new DNS/TLS route or a parallel Docs staging slot. Preserve the existing release request and rollback architecture.
