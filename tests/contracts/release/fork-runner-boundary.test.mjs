@@ -217,7 +217,7 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   assert.doesNotMatch(all, /docker network create|docker compose.*down -v/);
 });
 
-test('Docs configured target rejects unsafe identities before network or Docker use', () => {
+test('Docs target rejects unsafe identities before Docker or network', () => {
   const revision = spawnSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'});
   assert.equal(revision.status, 0);
   const acceptedSha = revision.stdout.trim();
@@ -263,12 +263,10 @@ test('Docs configured target rejects unsafe identities before network or Docker 
     [{DOCS_LOOPBACK_PORT: '08081'}, 'Docs loopback port must be between'],
     [{DOCS_DEPLOY_ROOT: '/opt/shared-edge'}, 'Docs deployment root is outside'],
   ];
+  const script = 'scripts/release/deploy-release.sh';
   for (const [overrides, reason] of cases) {
-    const result = spawnSync(
-      'bash',
-      ['scripts/release/deploy-release.sh', 'preflight'],
-      {encoding: 'utf8', env: {...env, ...overrides}},
-    );
+    const options = {encoding: 'utf8', env: {...env, ...overrides}};
+    const result = spawnSync('bash', [script, 'preflight'], options);
     assert.notEqual(result.status, 0, JSON.stringify(overrides));
     assert.match(result.stderr, new RegExp(reason), JSON.stringify(overrides));
     assert.doesNotMatch(result.stderr, /https:\/\/api.github.com|docker login|ssh /);
