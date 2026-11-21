@@ -107,3 +107,39 @@ test('Docs release jobs bind native approval environments before mutation', () =
     /^    environment:/m,
   );
 });
+
+test('opt-in staging publisher is admitted and rights-gated without an automatic host mutation', () => {
+  const quality = workflow('quality');
+  const publisher = job(quality, 'staging-rc-publish');
+  const source = readFileSync('scripts/release/publish-candidate.sh', 'utf8');
+  const deploy = readFileSync('scripts/release/deploy-release.sh', 'utf8');
+
+  assert.match(publisher, /name: Publish Accepted Staging RC \(Opt-in\)/);
+  assert.match(publisher, /KAORI_DOCS_AUTO_STAGING_ENABLED == 'true'/);
+  assert.match(publisher, /github\.event_name == 'push'/);
+  assert.match(publisher, /github\.ref == 'refs\/heads\/kaori\/staging'/);
+  assert.match(publisher, /needs\.admission-evidence\.result == 'success'/);
+  assert.match(publisher, /needs\.browser-evidence\.result == 'success'/);
+  assert.match(publisher, /needs\.container-admission\.result == 'success'/);
+  assert.match(publisher, /environment:\n      name: staging/);
+  assert.match(publisher, /group: kaori-docs-release-candidate/);
+  assert.match(publisher, /contents: write/);
+  assert.match(publisher, /id-token: write/);
+  assert.match(publisher, /scripts\/release\/publish-candidate\.sh rights/);
+  assert.match(publisher, /scripts\/release\/publish-candidate\.sh preflight/);
+  assert.match(publisher, /scripts\/release\/publish-candidate\.sh publish/);
+  assert.match(publisher, /stable v0\.3\.0 already exists/);
+  assert.match(publisher, /candidate tag reserved or GitHub tag lookup unavailable/);
+  assert.match(publisher, /reuse existing signed Docs RC/);
+  assert.doesNotMatch(publisher, /deploy-release\.sh|HOST_SSH|deploy-staging-host\.yml/);
+
+  assert.match(source, /KAORI_DOCS_STAGING_AUTO:-0/);
+  assert.match(source, /mode" == rights/);
+  assert.match(source, /Docs #74 standing publication rights not accepted/);
+  assert.match(source, /KAORI_DOCS_PUBLICATION_GO:STANDING/);
+  assert.match(source, /KAORI_DOCS_PUBLICATION_REVOKED:STANDING/);
+  assert.match(source, /quality\.yml@refs\/heads\/kaori\/staging/);
+  assert.match(source, /KAORI_DOCS_RC_APPROVED:\$sha:\$tag/);
+  assert.match(deploy, /quality\.yml@refs\/heads\/kaori\/staging/);
+  assert.match(deploy, /KAORI_DOCS_DEPLOY_APPROVED:\$ACCEPTED_SHA:\$RC_TAG:\$digest/);
+});
