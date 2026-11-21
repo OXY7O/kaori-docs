@@ -9,7 +9,15 @@ mode="${1:-}"
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 
 # Issue #32: reconcile only an independently published Docs site (#4196).
-# This is not an alternative Nginx/Certbot/DNS publisher.
+# Environment-scoped runtime configuration never grants ingress publication.
+# Provider-owned registration must already point to this exact project alias.
+project="${COMPOSE_PROJECT_NAME:-kaori-docs}"
+[[ "$project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
+    fail 'invalid Docs project for edge reconciliation'
+state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/$project/deploy-state}"
+[[ "$state_dir" == "/var/lib/$project/deploy-state" ]] ||
+    fail 'Docs edge receipt does not belong to configured runtime'
+upstream="$project-web"
 edge_root=/opt/shared-edge
 site="$edge_root/config/sites/kaori-docs.env"
 [[ -f "$site" && ! -L "$site" && -r "$site" ]] ||
@@ -17,7 +25,7 @@ site="$edge_root/config/sites/kaori-docs.env"
 
 required=(
     'EDGE_DOMAIN=docs.kaori.cloud'
-    'EDGE_UPSTREAM=kaori-docs-web'
+    "EDGE_UPSTREAM=$upstream"
     'EDGE_UPSTREAM_PORT=8080'
     'EDGE_HEALTH_PATH=/healthz'
     'EDGE_TLS=true'
@@ -38,7 +46,7 @@ docker network inspect edge-public >/dev/null 2>&1 ||
 command -v curl >/dev/null || fail 'curl is required for public readiness'
 
 mapfile -t containers < <(
-    docker ps --filter label=com.docker.compose.project=kaori-docs \
+    docker ps --filter label=com.docker.compose.project="$project" \
         --filter label=com.docker.compose.service=web --format '{{.ID}}'
 )
 [[ "${#containers[@]}" -eq 1 ]] || fail 'expected exactly one Docs frontend'
@@ -51,7 +59,7 @@ if [[ "$mode" == preflight ]]; then
     attached="$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$container")"
     [[ "$attached" == true ]] || fail 'current Docs frontend is not attached to public edge'
     aliases="$(docker inspect --format '{{json (index .NetworkSettings.Networks "edge-public").Aliases}}' "$container")"
-    [[ "$aliases" == *'"kaori-docs-web"'* ]] || fail 'existing Docs frontend has unexpected edge alias'
+    [[ "$aliases" == *"\"$upstream\""* ]] || fail 'existing Docs frontend has unexpected edge alias'
     [[ "$(curl -fsS --max-time 10 https://docs.kaori.cloud/healthz)" == healthy ]] ||
         fail 'existing public Docs HTTPS health is not ready'
     printf 'PASS: existing Docs-only published registration and HTTPS readiness verified\n'
@@ -60,7 +68,7 @@ fi
 
 # Reattaching after a successful release may only expose the already committed
 # immutable digest. Never attach a still-uncommitted candidate or another app.
-receipt=/var/lib/kaori-docs/deploy-state/release.env
+receipt="$state_dir/release.env"
 [[ -f "$receipt" && ! -L "$receipt" && -r "$receipt" ]] ||
     fail 'committed Docs release receipt missing'
 mapfile -t images < <(grep '^KAORI_DOCS_IMAGE=' "$receipt" || true)
@@ -75,10 +83,10 @@ actual_image="$(docker inspect --format '{{.Config.Image}}' "$container")"
 attached="$(docker inspect --format '{{if index .NetworkSettings.Networks "edge-public"}}true{{else}}false{{end}}' "$container")"
 if [[ "$attached" == true ]]; then
     aliases="$(docker inspect --format '{{json (index .NetworkSettings.Networks "edge-public").Aliases}}' "$container")"
-    [[ "$aliases" == *'"kaori-docs-web"'* ]] ||
+    [[ "$aliases" == *"\"$upstream\""* ]] ||
         fail 'Docs container already attached with conflicting edge alias'
 else
-    docker network connect --alias kaori-docs-web edge-public "$container" ||
+    docker network connect --alias "$upstream" edge-public "$container" ||
         fail 'Docs-only edge-public reattachment failed'
 fi
 
