@@ -1,12 +1,14 @@
-# KAORI Docs — single-slot signed image deployment
+# KAORI Docs — configured signed image deployment
 
 **Authorities:** [#14](https://github.com/OXY7O/kaori-docs/issues/14) (deployment and rollback), [#43](https://github.com/OXY7O/kaori-docs/issues/43) (maintainer-approved single-slot runtime), [#13](https://github.com/OXY7O/kaori-docs/issues/13) (signed RC), [#39](https://github.com/OXY7O/kaori-docs/issues/39) (stable acceptance), [#40](https://github.com/OXY7O/kaori-docs/issues/40) (stable deployment policy), and [KAORI shared-edge operations](https://github.com/OXY7O/KAORI/blob/main/docs/deployment/SHARED_EDGE_OPERATIONS.md).
 
 ## Deployment model
 
-One existing KAORI VPS hosts **one active Docs image**: either an approved RC or an accepted stable. Selecting the next signed digest **replaces** the current Docs container. The maintainer has explicitly accepted a brief service interruption during this development-phase replacement. The release engine does not create concurrent staging/production Docs instances.
+GitHub `staging` and `production` Environments select **governance and target configuration**; they do not define the number of VMs or running slots. Accepted `kaori/staging` selects staging RC/UAT, while accepted `main` selects production stable authority. The **effective** Docs runtime is the selected host/SSH identity, Compose project, deploy root, state/receipt path, loopback port and independently approved shared-edge registration. Different Environments with identical target configuration refer to the same runtime. The same host may also contain distinct Docs projects when explicitly configured and independently provisioned.
 
-| Setting                     | Single existing deployment slot                                         |
+**Current operator deployment** uses one existing shared KAORI VPS and one Docs container. An approved RC or stable selection on **that same configured runtime** replaces its selected image, and a brief Docs interruption is accepted during development. This is the current default topology, **not** a hardcoded release mode or a requirement that staging and production must share a server.
+
+| Setting                     | Current configured Docs target (default)                                |
 | --------------------------- | ----------------------------------------------------------------------- |
 | Release root                | `/opt/kaori-docs/releases/<source-SHA>/server`                          |
 | Compose                     | `kaori-docs` / `web`                                                    |
@@ -16,7 +18,7 @@ One existing KAORI VPS hosts **one active Docs image**: either an approved RC or
 | Selected image              | `docker.io/<approved-account>/kaori-docs@sha256:<64-hex>`               |
 | Existing deploy identity    | `kaori-deploy`                                                          |
 
-No second Docs Compose project, port 18082, staging directory, OS account, proxy, TLS certificate or DNS registration. Deployment may momentarily interrupt the public Docs site, **never** intentionally the KAORI Application or Website.
+The release adapter does **not** create an additional Docs project, directory, OS account, public registration, proxy, TLS certificate or DNS entry. An operator-selected alternative runtime must already have its own authorized root/state, healthy Compose/loopback and provider-owned ingress routing before release; otherwise the workflow fails closed. A public replacement may briefly interrupt Docs but must **never** intentionally interrupt the KAORI Application or Website.
 
 The container remains unprivileged, read-only with no-new-privileges, bounded memory/CPU/PIDs/logs, a restricted tmpfs, immutable image and internal `/healthz` check. Resource limits are configuration, not proof that the host has enough capacity. The remote adapter must use the pinned SSH host key and existing Docs-only credentials.
 
@@ -44,7 +46,7 @@ The existing canonical `Release Deployment` workflow offers an explicit `candida
 
 The workflow validates the current release's SHA, GitHub Release and immutable digest, explicit authorization, source admission, exact registry metadata, Cosign image signature and SPDX/SLSA attestations, then SSH host trust **before** host mutation. Existing shared-edge registration is preflighted; if absent/unhealthy, **fail closed** rather than creating it. Do not use unreviewed direct Docker commands to bypass the adapter.
 
-The host pulls the approved digest and reconciles the same `kaori-docs` Compose `web` service. Image identity, non-root readiness, port 18081, internal/host `/healthz` and root page must PASS before the receipt advances. A failed candidate attempts automatic previous-digest recovery. The existing edge adapter may reattach **only** the Docs frontend after a successful receipt and must run the original all-site shared-edge verifier; it must not rewrite DNS, Nginx/Certbot or App/Website registrations.
+The host pulls the approved digest and reconciles the selected Docs Compose `web` service. Image identity, non-root readiness, port 18081, internal/host `/healthz` and root page must PASS before the receipt advances. A failed candidate attempts automatic previous-digest recovery. The existing edge adapter may reattach **only** the Docs frontend after a successful receipt and must run the original all-site shared-edge verifier; it must not rewrite DNS, Nginx/Certbot or App/Website registrations.
 
 A public-edge reconciliation failure is **not** a successful deployment even when the container itself is healthy. Collect its error and the actual last-known-good/receipt state; do not report production or UAT PASS until the public site and rollback evidence are verified.
 
@@ -130,6 +132,46 @@ signal. Never infer a new source/tag/digest swap permission from a
 successful RC publication or the `KAORI_DOCS_AUTO_STAGING_ENABLED` flag.
 Public single-slot UAT and eventual production approval remain separate.
 
+## Environment-scoped runtime target (Docs #106 / Website #234)
+
+The `Release Deployment` workflow selects GitHub Environment `staging` for
+the exact approved RC source and `production` for accepted stable-main
+publication. Environment-level variables/secrets take precedence over
+repository defaults for the **same names**; operators may deliberately assign
+identical values to both Environments. The working current target is the safe
+fallback when the optional runtime variables are unset.
+
+| GitHub Environment variable | Default / constraint |
+| --- | --- |
+| `KAORI_DOCS_HOST`, `KAORI_DOCS_HOST_PORT`, `KAORI_DOCS_HOST_USER` | Existing approved pinned SSH host identity, per Environment |
+| `KAORI_DOCS_HOST_DEPLOY_ROOT` | `/opt/kaori-docs`, or `/opt/<configured-project>` |
+| `KAORI_DOCS_RUNTIME_PROJECT` | `kaori-docs`; optional validated `kaori-docs-<suffix>` namespace |
+| `KAORI_DOCS_RUNTIME_STATE_DIR` | `/var/lib/<configured-project>/deploy-state`; must belong to the selected project |
+| `KAORI_DOCS_RUNTIME_LOOPBACK_PORT` | `18081`; numeric 1024–65535; must not collide with another runtime |
+| `KAORI_DOCS_PUBLIC_DOMAIN` | Existing `docs.kaori.cloud`, not an arbitrary public hostname |
+
+The matching `KAORI_DOCS_HOST_SSH_PRIVATE_KEY`,
+`KAORI_DOCS_HOST_KNOWN_HOSTS`, registry secret names and approved native
+Environment protection remain mandatory. **No** `single-slot`,
+`multi-slot` or split-host mode switch exists. Runtime project, state and
+loopback are passed to the existing deploy/verify/rollback/edge adapters. A
+target directory/state must exist, be writable, nonsymlinked and prepared
+before deployment. A different project must have its separately approved
+Docs edge registration already pointing to exactly
+`EDGE_UPSTREAM=<configured-project>-web`; it is **not** silently registered,
+reconfigured or exposed by this code. The current alias remains
+`kaori-docs-web`.
+
+The same host address does not prove the same runtime, and two different
+host addresses do not create a second release policy. Receipt and Compose
+identity are operational evidence. Host migration, target-specific DNS/TLS,
+provider ingress preparation, controlled production different-target deployment,
+visual UAT and actual rollback **remain separately accepted work**. In
+particular, source-level support for a configured target is not evidence
+that stable-main already performs safe bootstrap of a fresh production
+target. See Docs [#40](https://github.com/OXY7O/kaori-docs/issues/40) and
+Website [#234](https://github.com/OXY7O/kaori-website/issues/234).
+
 ## Single previous-release rollback
 
 For a separately approved rollback, the existing adapter reads `previous-release.env` and returns the _same project_ to its previous digest. The public edge is reconciled only for the existing Docs hostname, using the same shared-edge verification:
@@ -144,7 +186,7 @@ Preserve exact run URL, digest and source, before/after image, current/previous 
 
 ## UAT and promotion
 
-Because the deployment slot is shared, the selected RC is visible on **https://docs.kaori.cloud/** and the previous Docs image is no longer running. Human UAT covers six viewports (360/390/768/1024/1280/1440), light/dark, keyboard, accessible navigation, links, source accuracy, and App/Website non-regression. This is an intentionally **non-isolated** UAT topology accepted by the maintainer.
+With the **current** shared-target configuration, the selected RC is visible on **https://docs.kaori.cloud/** and the prior Docs image is no longer running. Alternate configured runtime identities require their own independently verified ingress and acceptance. Human UAT covers six viewports (360/390/768/1024/1280/1440), light/dark, keyboard, accessible navigation, links, source accuracy, and App/Website non-regression. This is an intentionally **non-isolated** UAT topology accepted by the maintainer.
 
 After explicit acceptance, promote using `kaori/staging → main`, verify the same signed digest, publish stable under `vX.Y.Z` and select its stable release for **this same slot**. RC-only acceptance is not an automatic main promotion.
 
