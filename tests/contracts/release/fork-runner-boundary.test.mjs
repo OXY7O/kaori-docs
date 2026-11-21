@@ -179,9 +179,15 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
     assert.ok(workflowSource.includes(`vars.${key}`));
   }
   assert.match(deployAdapter, /DOCS_RUNTIME_PROJECT:-kaori-docs/);
-  assert.ok(deployAdapter.includes('DOCS_RUNTIME_STATE_DIR:-/var/lib/$runtime_project/deploy-state'));
+  assert.ok(
+    deployAdapter.includes(
+      'DOCS_RUNTIME_STATE_DIR:-/var/lib/$runtime_project/deploy-state',
+    ),
+  );
   assert.match(deployAdapter, /DOCS_RUNTIME_LOOPBACK_PORT:-18081/);
-  assert.ok(deployAdapter.includes('DOCS_DEPLOY_ROOT" == "/opt/$runtime_project"'));
+  assert.ok(
+    deployAdapter.includes('DOCS_DEPLOY_ROOT" == "/opt/$runtime_project"'),
+  );
   assert.match(deployAdapter, /compose_project=%q/);
   assert.match(deployAdapter, /state_dir=%q/);
   assert.match(deployAdapter, /loopback_port=%q/);
@@ -191,7 +197,7 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   for (const script of scripts) {
     assert.match(script, /COMPOSE_PROJECT_NAME:-kaori-docs/);
     assert.match(script, /kaori-docs\(-\[a-z0-9\]/);
-     assert.match(script, /KAORI_DOCS_LOOPBACK_PORT:-18081/);
+    assert.match(script, /KAORI_DOCS_LOOPBACK_PORT:-18081/);
     assert.match(script, /1024/);
   }
   for (const script of [scripts[0], scripts[2]]) {
@@ -205,7 +211,10 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   assert.match(edge, /upstream="\$project-web"/);
   assert.match(edge, /receipt="\$state_dir\/release.env"/);
   assert.match(edge, /docker\.compose\.project="\$project"/);
-  assert.match(edge, /Docs shared-edge registration differs from approved host\/domain contract/);
+  assert.match(
+    edge,
+    /Docs shared-edge registration differs from approved host\/domain contract/,
+  );
 
   const all = [workflowSource, deployAdapter, ...scripts, edge, compose].join('\n');
   assert.doesNotMatch(all, /KAORI_DOCS_(DEPLOYMENT_TOPOLOGY|SPLIT_HOST_ENABLED)/);
