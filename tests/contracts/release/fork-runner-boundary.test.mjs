@@ -113,6 +113,7 @@ test('opt-in staging publisher is admitted and rights-gated without an automatic
   const publisher = job(quality, 'staging-rc-publish');
   const source = readFileSync('scripts/release/publish-candidate.sh', 'utf8');
   const deploy = readFileSync('scripts/release/deploy-release.sh', 'utf8');
+  const stable = readFileSync('scripts/release/promote-stable.sh', 'utf8');
 
   assert.match(publisher, /name: Publish Accepted Staging RC \(Opt-in\)/);
   assert.match(publisher, /KAORI_DOCS_AUTO_STAGING_ENABLED == 'true'/);
@@ -142,4 +143,21 @@ test('opt-in staging publisher is admitted and rights-gated without an automatic
   assert.match(source, /KAORI_DOCS_RC_APPROVED:\$sha:\$tag/);
   assert.match(deploy, /quality\.yml@refs\/heads\/kaori\/staging/);
   assert.match(deploy, /KAORI_DOCS_DEPLOY_APPROVED:\$ACCEPTED_SHA:\$RC_TAG:\$digest/);
+  // The same accepted RC must remain usable for stable same-digest promotion.
+  // Both consumers verify signatures under the identical exact signer set.
+  const acceptedSigner = 'quality.yml@refs/heads/kaori/staging';
+  assert.ok(deploy.includes(acceptedSigner));
+  assert.ok(stable.includes(acceptedSigner));
+  for (const script of [deploy, stable]) {
+    assert.match(script, /publish-staging-image\.yml@\$allowed_ref/);
+    assert.match(script, /certificate-identity "\$identity"/);
+    assert.match(script, /refs\/heads\/kaori\/staging refs\/heads\/kaori\/rc-request/);
+  }
+  assert.match(stable, /git merge-base --is-ancestor "\$rc_sha" "\$GITHUB_SHA"/);
+  assert.match(stable, /source or runtime drift since accepted RC/);
+  assert.match(stable, /same signed.*RC|same signed|immutable RC image/);
+  assert.doesNotMatch(
+    stable,
+    /--insecure-ignore-tlog|--insecure-ignore-sct|--allow-insecure-registry/,
+  );
 });
