@@ -19,12 +19,12 @@ It is designed to make approved product knowledge easier to discover and navigat
 
 ### What belongs in Docs
 
-| Information | Editorial boundary |
-| :--- | :--- |
-| **Product introduction** | Clear, approved explanations of KAORI capabilities and operating principles. |
-| **Concepts & architecture** | Capability/domain-first, provider-second, instance-third principles and committed evidence. |
-| **User guidance** | Release-qualified, reviewed documentation when published. |
-| **Release-aware content** | Versioned articles and navigation only after their explicit approval and source-to-release mapping. |
+| Information                 | Editorial boundary                                                                                  |
+| :-------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Product introduction**    | Clear, approved explanations of KAORI capabilities and operating principles.                        |
+| **Concepts & architecture** | Capability/domain-first, provider-second, instance-third principles and committed evidence.         |
+| **User guidance**           | Release-qualified, reviewed documentation when published.                                           |
+| **Release-aware content**   | Versioned articles and navigation only after their explicit approval and source-to-release mapping. |
 
 **Publication note:** An RC container or public endpoint does not prove that all documentation, versioned guides, search features, or a stable Docs release are available. Only specifically approved content is authoritative.
 
@@ -32,14 +32,14 @@ It is designed to make approved product knowledge easier to discover and navigat
 
 This is a **static read-only documentation image**. It is not the KAORI Application or its operational API.
 
-| | |
-| :--- | :--- |
-| **Repository** | `lethisaputri/kaori-docs` |
-| **Generator** | Docusaurus with TypeScript/React |
-| **Runtime** | Unprivileged NGINX serving prebuilt static files |
-| **Internal HTTP** | Port `8080` with `/healthz` |
-| **Operational connections** | No user authentication, database, Redis or live infrastructure-provider access |
-| **Target host** | [docs.kaori.cloud](https://docs.kaori.cloud), subject to the accepted publication state |
+|                             |                                                                                         |
+| :-------------------------- | :-------------------------------------------------------------------------------------- |
+| **Repository**              | `lethisaputri/kaori-docs`                                                               |
+| **Generator**               | Docusaurus with TypeScript/React                                                        |
+| **Runtime**                 | Unprivileged NGINX serving prebuilt static files                                        |
+| **Internal HTTP**           | Port `8080` with `/healthz`                                                             |
+| **Operational connections** | No user authentication, database, Redis or live infrastructure-provider access          |
+| **Target host**             | [docs.kaori.cloud](https://docs.kaori.cloud), subject to the accepted publication state |
 
 Docs has its own isolated container/release identity and independently governed deployment. A Docs release never automatically publishes an Application or Website release.
 
@@ -53,12 +53,12 @@ docker pull lethisaputri/kaori-docs@sha256:<approved-digest>
 
 Replace `<approved-digest>` with the complete accepted SHA-256 manifest digest. Use the documented Docs release/deployment procedure; pulling an image alone does not establish a public Docs release.
 
-| Reference | Meaning |
-| :--- | :--- |
-| `vX.Y.Z-rc.N` | Signed/admitted candidate only when backed by the exact required evidence. |
-| `vX.Y.Z` | Stable Docs image only after accepted promotion. |
-| `@sha256:<digest>` | Immutable identity for a specific Docs artifact. |
-| `latest` | Not an approved release-selection contract. |
+| Reference          | Meaning                                                                    |
+| :----------------- | :------------------------------------------------------------------------- |
+| `vX.Y.Z-rc.N`      | Signed/admitted candidate only when backed by the exact required evidence. |
+| `vX.Y.Z`           | Stable Docs image only after accepted promotion.                           |
+| `@sha256:<digest>` | Immutable identity for a specific Docs artifact.                           |
+| `latest`           | Not an approved release-selection contract.                                |
 
 Docs image versions and **KAORI Application documentation versions are separate**. A container tag must never be treated as proof that its corresponding application version has a complete published documentation set.
 
