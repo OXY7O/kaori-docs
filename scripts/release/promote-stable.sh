@@ -86,9 +86,11 @@ umask 077
 trust_dir="$(mktemp -d)"
 trap 'rm -rf -- "$trust_dir"' EXIT
 printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$trust_dir" docker login "$REGISTRY_HOST"   --username "$REGISTRY_USER" --password-stdin >/dev/null
-# Stable release must accept only the two exact canonical Docs RC signer
-# identities (manual staging and the #51 exact-SHA request). The selected
-# identity is also required for BOTH signed attestations.
+# Stable release accepts exactly three canonical Docs RC signer
+# identities: manual staging, #51 exact-SHA request, and #102 protected
+# staging quality.yml after independent admission/rights. The selected
+# identity must also match BOTH signed attestations. No arbitrary workflow
+# ref, mutable release text or image tag can authorize stable promotion.
 cosign=(docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker -v "$trust_dir:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3)
 identity=''
 for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
@@ -98,6 +100,15 @@ for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
     break
   fi
 done
+# #102: an accepted staging Full Admission run may sign with the existing
+# publisher implementation using quality.yml as the canonical OIDC caller.
+# Do not weaken the subject-digest, exact identity or attestation checks.
+if [[ -z "$identity" ]]; then
+  candidate='https://github.com/OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging'
+  if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/rc-signature.json" 2>/dev/null; then
+    identity="$candidate"
+  fi
+fi
 [[ -n "$identity" && -s "$trust_dir/rc-signature.json" ]] ||
   fail 'accepted RC image signature lacks approved canonical publisher identity'
 for attestation in spdxjson slsaprovenance1; do
