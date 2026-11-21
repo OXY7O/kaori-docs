@@ -279,7 +279,10 @@ test('Docs target rejects unsafe identities before Docker or network', () => {
     [{KAORI_DOCS_COMPOSE_PROJECT: 'kaori-website'}, 'Docs runtime project must remain'],
     [{KAORI_DOCS_STATE_DIR: '/var/lib/kaori/deploy-state'}, 'Docs receipt'],
     [{KAORI_DOCS_LOOPBACK_PORT: '80'}, 'Docs loopback port must be between'],
-    [{KAORI_DOCS_HOST_DEPLOY_ROOT: '/opt/shared-edge'}, 'Docs deployment root is outside'],
+    [
+      {KAORI_DOCS_HOST_DEPLOY_ROOT: '/opt/shared-edge'},
+      'Docs deployment root is outside',
+    ],
     [{KAORI_DOCS_PUBLIC_DOMAIN: 'invalid.example'}, 'Docs domain variable'],
     [{KAORI_DOCS_DOCKER_REGISTRY_HOST: 'wrong.example'}, 'docs registry variables'],
   ];
