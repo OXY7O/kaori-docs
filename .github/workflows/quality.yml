@@ -496,7 +496,7 @@ jobs:
           while IFS= read -r used; do
             [[ -n "$used" && "$used" =~ ^v0[.]3[.]0-rc[.][1-9][0-9]*$ ]] || continue
             suffix="${used##*.}"
-            if (( 10#$suffix > highest )); then highest=$((highest+1)); fi
+            if (( 10#$suffix > highest )); then highest=$((10#$suffix)); fi
           done < <(git tag --list 'v0.3.0-rc.*' --sort=version:refname)
           candidate="v0.3.0-rc.$((highest + 1))"
           status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$candidate")"
