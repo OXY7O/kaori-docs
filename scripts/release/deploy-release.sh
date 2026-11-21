@@ -75,7 +75,21 @@ fi
 [[ "$DOCS_HOST" =~ ^[a-zA-Z0-9._-]+$ && "$DOCS_SSH_USER" =~ ^[a-zA-Z0-9._-]+$ ]] || fail 'invalid SSH host or username'
 port="${DOCS_SSH_PORT:-22}"
 [[ "$port" =~ ^[0-9]{1,5}$ ]] && (( port >= 1 && port <= 65535 )) || fail 'invalid SSH port'
-[[ "$DOCS_DEPLOY_ROOT" == /opt/kaori-docs ]] || fail 'docs release root must be /opt/kaori-docs'
+# GitHub Environment configuration selects the actual Docs runtime. A shared
+# host/IP and any number of Environments may legitimately select one project.
+# Distinct projects need their own root, state receipt and effective port.
+runtime_project="${DOCS_RUNTIME_PROJECT:-kaori-docs}"
+[[ "$runtime_project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
+  fail 'Docs runtime project must remain in the validated kaori-docs namespace'
+runtime_state_dir="${DOCS_RUNTIME_STATE_DIR:-/var/lib/$runtime_project/deploy-state}"
+[[ "$runtime_state_dir" == "/var/lib/$runtime_project/deploy-state" ]] ||
+  fail 'Docs receipt must belong to the selected runtime project'
+runtime_port="${DOCS_RUNTIME_LOOPBACK_PORT:-18081}"
+[[ "$runtime_port" =~ ^[1-9][0-9]{3,4}$ ]] &&
+  (( runtime_port >= 1024 && runtime_port <= 65535 )) ||
+  fail 'Docs loopback port must be between 1024 and 65535'
+[[ "$DOCS_DEPLOY_ROOT" == "/opt/$runtime_project" ]] ||
+  fail 'Docs deployment root must belong to the selected runtime project'
 [[ -n "${DOCS_SSH_KEY:-}" && -n "${DOCS_KNOWN_HOSTS:-}" ]] || fail 'SSH private key/known_hosts missing'
 command -v ssh-keygen >/dev/null && command -v ssh >/dev/null && command -v scp >/dev/null || fail 'SSH runner dependencies missing'
 api="https://api.github.com/repos/$GITHUB_REPOSITORY"
@@ -253,8 +267,8 @@ setsid -w ssh-add "$key_file" </dev/null >/dev/null
 target="$DOCS_SSH_USER@$DOCS_HOST"
 ssh_opts=(-p "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
 scp_opts=(-P "$port" -i "$key_file" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$known_hosts")
-# One approved VPS, one canonical Docs release root for both image slots.
-# The environment is selected by release admission, not by a filesystem root.
+# The already-selected GitHub Environment provides this runtime identity.
+# Source/ref release authority is independent of whether the host is shared.
 remote_release="$DOCS_DEPLOY_ROOT/releases/$ACCEPTED_SHA"
 remote_deploy_root="$DOCS_DEPLOY_ROOT"
 {
@@ -272,7 +286,7 @@ scp "${scp_opts[@]}" -r deploy/server "$target:$remote_release/"
   printf 'registry_host=%q\nregistry_user=%q\nregistry_pass=%q\n' "$REGISTRY_HOST" "$REGISTRY_USER" "$REGISTRY_PASSWORD"
   printf 'image_ref=%q\nsource_sha=%q\nrelease_tag=%q\n' "$image_ref" "$ACCEPTED_SHA" "$([[ "$stable_policy" == 1 ]] && printf '%s' "$KAORI_DOCS_STABLE_TAG" || printf '%s' "$RC_TAG")"
   printf 'artifact_version=%q\nstable_policy=%q\n' "$RC_TAG" "$stable_policy"
-  printf 'compose_project=kaori-docs\nstate_dir=/var/lib/kaori-docs/deploy-state\n'
+  printf 'compose_project=%q\nstate_dir=%q\nloopback_port=%q\n' "$runtime_project" "$runtime_state_dir" "$runtime_port"
   printf 'attach_existing_edge=%q\n' "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}"
   printf 'auto_policy=%q\n' "$auto_policy"
   cat <<'REMOTE_DEPLOY'
@@ -281,6 +295,13 @@ chmod 700 "$docker_config"
 cleanup_remote() { rm -rf -- "$docker_config"; }
 trap cleanup_remote EXIT
 export DOCKER_CONFIG="$docker_config"
+# Select exact validated runtime identity before any edge preflight or Docker
+# mutation. The existing public-edge registration must already match it.
+export COMPOSE_PROJECT_NAME="$compose_project"
+export KAORI_DOCS_STATE_DIR="$state_dir"
+export KAORI_DOCS_LOOPBACK_PORT="$loopback_port"
+[[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] ||
+  { echo 'BLOCK: selected Docs receipt directory is unprepared' >&2; exit 1; }
 printf '%s' "$registry_pass" | docker login "$registry_host" --username "$registry_user" --password-stdin >/dev/null
 test -s "$remote_release/server/deploy.sh"
 if [[ "$attach_existing_edge" == 1 ]]; then
@@ -291,7 +312,7 @@ if [[ "$attach_existing_edge" == 1 ]]; then
   # Event retries are idempotent: preserve the exact last-known-good receipt
   # and current container when the same accepted SHA/tag/digest is live.
   if [[ "$auto_policy" == 1 ]]; then
-    receipt=/var/lib/kaori-docs/deploy-state/release.env
+    receipt="$state_dir/release.env"
     if [[ -f "$receipt" && ! -L "$receipt" ]] &&
        grep -Fxq "KAORI_DOCS_IMAGE=$image_ref" "$receipt" &&
        grep -Fxq "KAORI_DOCS_SOURCE_SHA=$source_sha" "$receipt" &&
@@ -313,11 +334,10 @@ else
     done <<< "$existing_web"
   fi
 fi
-# RC and stable are mutually exclusive images in ONE Docs container.
-# Only the existing Docs registration may be reattached after replacement.
+# RC and stable select the configured Docs target. When both Environments
+# resolve to the same identity, they naturally replace one running container.
+# Only an independently approved matching Docs registration may be reattached.
 export KAORI_DOCS_RELEASE_LOCAL_ONLY=1
-export COMPOSE_PROJECT_NAME="$compose_project"
-export KAORI_DOCS_STATE_DIR="$state_dir"
 if [[ "$stable_policy" == 1 ]]; then
   export KAORI_DOCS_STABLE_RELEASE_CONFIRMED=1
   export KAORI_DOCS_ARTIFACT_VERSION="$artifact_version"
@@ -344,5 +364,5 @@ if [[ "$stable_policy" == 1 ]]; then
 elif [[ "${KAORI_DOCS_ATTACH_EXISTING_EDGE:-0}" == 1 ]]; then
   printf 'PASS: accepted Docs digest %s deployed and existing Docs edge reconciled; human visual acceptance PENDING.\n' "$digest"
 else
-  fail 'single-slot release did not reconcile the existing public Docs edge'
+  fail 'release did not reconcile the configured public Docs target'
 fi
