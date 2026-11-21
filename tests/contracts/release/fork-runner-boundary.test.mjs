@@ -82,7 +82,7 @@ test('approved legal notice files route as docs-only while unknown paths remain 
   assert.match(developer, /Unrecognized change path; fail closed/);
 });
 
-test('Docs release jobs use native approval environments before privileged actions', () => {
+test('Docs release jobs bind native approval environments before mutation', () => {
   const stable = job(workflow('quality'), 'stable-publication');
   const rc = job(workflow('publish-staging-image'), 'publish');
   const deploy = job(workflow('deploy-staging-host'), 'deploy');
@@ -102,5 +102,8 @@ test('Docs release jobs use native approval environments before privileged actio
   }
 
   assert.doesNotMatch(job(workflow('quality'), 'full-admission'), /^    environment:/m);
-  assert.doesNotMatch(job(workflow('quality'), 'container-admission'), /^    environment:/m);
+  assert.doesNotMatch(
+    job(workflow('quality'), 'container-admission'),
+    /^    environment:/m,
+  );
 });
