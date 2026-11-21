@@ -22,13 +22,18 @@ fi
 command -v docker >/dev/null || fail 'Docker is not available'
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_DOCS_COMPOSE_FILE:-$script_dir/compose.docs.yml}"
-# Docs has exactly one active image slot on the existing shared KAORI VPS.
-# RC/stable is a governed release identity, not an additional Compose runtime.
-[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
-    fail 'only the canonical Docs Compose project may be deployed'
-state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
-[[ "$state_dir" == /var/lib/kaori-docs/deploy-state ]] ||
-    fail 'only the canonical Docs release receipt is permitted'
+# The selected Environment configuration defines the effective runtime.
+# RC/stable are release identities, never parallel deployments by convention.
+project="${COMPOSE_PROJECT_NAME:-kaori-docs}"
+[[ "$project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
+    fail 'Docs Compose project must use an approved Docs namespace'
+state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/$project/deploy-state}"
+[[ "$state_dir" == "/var/lib/$project/deploy-state" ]] ||
+    fail 'Docs release receipt does not belong to selected project'
+loopback_port="${KAORI_DOCS_LOOPBACK_PORT:-18081}"
+[[ "$loopback_port" =~ ^[1-9][0-9]{3,4}$ ]] &&
+    (( loopback_port >= 1024 && loopback_port <= 65535 )) ||
+    fail 'invalid Docs runtime loopback port'
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'docs release state directory must be prepared and writable by deployment identity'
 docker info >/dev/null || fail 'Docker daemon unavailable'
