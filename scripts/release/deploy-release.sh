@@ -191,11 +191,15 @@ chmod 700 "$trust_dir"
 cleanup_trust() { rm -rf -- "$trust_dir"; }
 trap cleanup_trust EXIT
 printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$trust_dir" docker login "$REGISTRY_HOST" --username "$REGISTRY_USER" --password-stdin >/dev/null
-# Exact pinned source workflow identities: pre-existing staging manual RC
-# and the #51 request-branch RC. Neither arbitrary refs nor release bodies
-# may expand this signer allowlist. Every attestation uses the same identity.
+# Exact pinned source workflow identities: manual staging, #51 request-branch,
+# and the #102 admitted quality.yml staging publisher. Arbitrary refs, mutable
+# release bodies and unapproved CI jobs cannot expand this signer allowlist.
+# Every attestation must match the verified signer identity.
 cosign=(docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker -v "$trust_dir:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3)
 identity=''
+# #102: accepted staging quality.yml can independently sign an RC only
+# after all admission jobs and Docs #74 recurring rights succeed. The
+# immutable signature identity is still checked against each exact caller.
 for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
   candidate="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@$allowed_ref"
   if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" 2>/dev/null; then
@@ -203,8 +207,16 @@ for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
     break
   fi
 done
+# A staging-quality publisher uses the existing signing implementation
+# under quality.yml. Request-branch/manual publisher identities stay valid.
+if [[ -z "$identity" ]]; then
+  candidate='https://github.com/OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging'
+  if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" 2>/dev/null; then
+    identity="$candidate"
+  fi
+fi
 [[ -n "$identity" && -s "$trust_dir/signature-verification.json" ]] ||
-  fail 'RC signature does not match either approved canonical publisher identity'
+  fail 'RC signature does not match an approved canonical publisher identity'
 test -s "$trust_dir/signature-verification.json" || fail 'RC signature evidence empty'
 for kind in spdxjson slsaprovenance1; do
   "${cosign[@]}" verify-attestation --certificate-identity "$identity" --certificate-oidc-issuer https://token.actions.githubusercontent.com --type "$kind" "$image_ref" > "$trust_dir/attestation-$kind.json" || fail "RC $kind attestation verification failed"

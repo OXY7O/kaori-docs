@@ -72,6 +72,42 @@ The publisher verifies the exact marker and the comment author's repository writ
 
 A candidate is built once and uses immutable OCI SHA256 digest, checked source/revision/version/created/title/description/documentation/license metadata, offline runtime smoke, Trivy HIGH/CRITICAL scan, SPDX SBOM, source/run-linked provenance and cosign keyless digest signatures plus SBOM/provenance attestations. Signature and attestation verification must complete before Git tag and prerelease metadata creation. All identities are separate from KAORI Application version routing.
 
+## Opt-in protected staging publisher parity — issue #102
+
+The existing explicit `kaori/rc-request` and manually dispatched candidate
+remain supported. A separate `Full Admission` job may select and publish a
+signed Docs `v0.3.0-rc.N` directly after all admission jobs succeed when
+`KAORI_DOCS_AUTO_STAGING_ENABLED=true` is explicitly configured.
+The secure default is **disabled**. This is a new governed staging RC
+publication caller of the **same** `scripts/release/publish-candidate.sh`,
+not a copied signer or a release-triggered production deployment.
+
+Auto publication requires a completed Docs [rights authority #74](https://github.com/OXY7O/kaori-docs/issues/74)
+and exactly one owner-authored standing authorization line:
+
+    KAORI_DOCS_PUBLICATION_GO:STANDING
+
+It must predate the issue's completed closure. An owner/reviewer
+`KAORI_DOCS_PUBLICATION_REVOKED:STANDING` blocks future publications;
+modified-after-acceptance approvals, incomplete comments, unreviewed
+rights, wrong SHA/workflow identity, incomplete admission and stale tag
+selection all fail closed. The code checks rights before work, before
+registry push and again before GitHub tag/release creation. **No standing
+authorization exists merely because the code path or feature flag exists.**
+Current Docs #74 remains open. Explicit #13 per-SHA/tag approvals remain
+required for manual and `rc-request` publication.
+
+The opt-in selector reuses a single already-published, exact-source RC
+without changing its tag or OCI digest. Otherwise it selects the next
+unused `v0.3.0-rc.N`, refusing an already-stable `v0.3.0` or ambiguous
+source. A future Docs stable series needs a separate version decision.
+The existing deploy verifier also accepts an immutable Cosign identity
+from the trusted staging `quality.yml` publisher, but this is **not**
+a new automatic deployment trigger: the separate digest-bound #14 public
+swap approval, same-slot host gates, Human UAT and rollback policy remain
+mandatory. See [Docs Delivery](DELIVERY.md) and
+[Release Deployment](RELEASE_DEPLOYMENT.md).
+
 ## Registry digest authority and incomplete RC quarantine — issue #30
 
 The immutable digest must come from the **registry's actual manifest/index**, retrieved through the existing Docker buildx `imagetools inspect --format '{{json .Manifest}}'` contract, not from comparing Docker's local `RepoDigests` repository string byte-for-byte. Docker Hub may present a familiar name without the optional `docker.io/` prefix; a local image alias is not a reliable registry identity proof. The publisher validates the registry SHA256 format, explicitly pulls `<configured-image>@sha256:<digest>`, checks exact source/version/license labels and performs all Trivy/Cosign/SPDX/SLSA gates before creating GitHub tag/prerelease evidence. Failed digest resolution blocks publication.

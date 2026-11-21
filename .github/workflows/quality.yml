@@ -399,3 +399,129 @@ jobs:
           path: tmp/ci-artifacts/admission-evidence.json
           retention-days: 30
           if-no-files-found: error
+
+  staging-rc-publish:
+    name: Publish Accepted Staging RC (Opt-in)
+    needs:
+      [
+        promotion-source,
+        validation-profile,
+        full-admission,
+        container-admission,
+        browser-evidence,
+        admission-evidence,
+      ]
+    if: >-
+      ${{ github.event_name == 'push' &&
+          github.ref == 'refs/heads/kaori/staging' &&
+          vars.KAORI_DOCS_AUTO_STAGING_ENABLED == 'true' &&
+          needs.promotion-source.result == 'success' &&
+          needs.full-admission.result == 'success' &&
+          needs.container-admission.result == 'success' &&
+          needs.browser-evidence.result == 'success' &&
+          needs.admission-evidence.result == 'success' }}
+    runs-on: [self-hosted, linux, x64, platform-ci]
+    environment:
+      name: staging
+    concurrency:
+      group: kaori-docs-release-candidate
+      cancel-in-progress: false
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      actions: read
+      issues: read
+      id-token: write
+    env:
+      ACCEPTED_SHA: ${{ github.sha }}
+      GH_TOKEN: ${{ github.token }}
+      KAORI_DOCS_STAGING_AUTO: '1'
+      APP_LICENSE: Apache-2.0
+      RESUME_EXISTING: 'false'
+      REGISTRY_HOST: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_HOST }}
+      REGISTRY_IMAGE: ${{ vars.KAORI_DOCS_DOCKER_REGISTRY_IMAGE }}
+      REGISTRY_USER: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.KAORI_DOCS_DOCKER_REGISTRY_PASSWORD }}
+    steps:
+      - name: Checkout exact admitted source and immutable release tags
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+      - name: Require Docs-specific standing public publication rights
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] || exit 1
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || exit 1
+          bash scripts/release/publish-candidate.sh rights
+      - name: Select unused current-series RC or verify exact-source existing release
+        id: candidate
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          headers=(-H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json')
+          [[ "$GITHUB_REPOSITORY" == OXY7O/kaori-docs && "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
+            fail 'automatic RC requires protected Docs staging'
+          [[ "$GITHUB_WORKFLOW_REF" == 'OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging' ]] ||
+            fail 'automatic RC must be executed by canonical Full Admission'
+          [[ "$(git rev-parse HEAD)" == "$ACCEPTED_SHA" ]] || fail 'source drift'
+          current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
+          [[ "$current" == "$ACCEPTED_SHA" ]] || fail 'staging advanced before RC selection'
+          existing="$(git tag --points-at "$ACCEPTED_SHA" |
+            grep -E '^v[0-9]+[.][0-9]+[.][0-9]+-rc[.][1-9][0-9]*$' || true)"
+          if [[ -n "$existing" ]]; then
+            [[ "$(printf '%s\n' "$existing" | wc -l)" -eq 1 ]] || fail 'ambiguous RCs on current source'
+            [[ "$existing" =~ ^v0[.]3[.]0-rc[.][1-9][0-9]*$ ]] ||
+              fail 'existing RC belongs to a different version series'
+            release="$(curl -fsS "${headers[@]}" "$api/releases/tags/$existing")" ||
+              fail 'current-source RC not fully published'
+            jq -e --arg sha "$ACCEPTED_SHA" '
+              .draft == false and .prerelease == true and .target_commitish == $sha and
+              (.body // "" | contains("Staging source SHA: " + $sha + "\n")) and
+              (.body // "" | contains("Immutable digest: sha256:")) and
+              (.body // "" | contains("Trivy security and signed SBOM/provenance: PASS"))
+            ' <<< "$release" >/dev/null || fail 'existing RC identity/evidence not accepted'
+            printf 'tag=%s\nshould_publish=false\n' "$existing" >> "$GITHUB_OUTPUT"
+            echo "PASS: reuse existing signed Docs RC $existing; no rebuild or retag"
+            exit 0
+          fi
+          [[ -z "$(git tag --list 'v0.3.0')" ]] ||
+            fail 'stable v0.3.0 already exists; version-series authority must be reviewed'
+          highest=0
+          while IFS= read -r used; do
+            [[ -n "$used" && "$used" =~ ^v0[.]3[.]0-rc[.][1-9][0-9]*$ ]] || continue
+            suffix="${used##*.}"
+            if (( 10#$suffix > highest )); then highest=$((10#$suffix)); fi
+          done < <(git tag --list 'v0.3.0-rc.*' --sort=version:refname)
+          candidate="v0.3.0-rc.$((highest + 1))"
+          status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$candidate")"
+          [[ "$status" == 404 ]] || fail 'candidate tag reserved or GitHub tag lookup unavailable'
+          printf 'tag=%s\nshould_publish=true\n' "$candidate" >> "$GITHUB_OUTPUT"
+          echo "PASS: unique automatic Docs candidate $candidate selected from accepted $current"
+      - name: Preflight existing immutable Docs publisher
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: bash scripts/release/publish-candidate.sh preflight
+      - name: Build scan sign and publish through existing Docs release engine
+        if: ${{ steps.candidate.outputs.should_publish == 'true' }}
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: bash scripts/release/publish-candidate.sh publish
+      - name: Record acceptance boundary
+        shell: bash
+        env:
+          RC_TAG: ${{ steps.candidate.outputs.tag }}
+        run: |
+          printf 'Staging RC: %s\nSource: %s\n' "$RC_TAG" "$ACCEPTED_SHA" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Immutable signing path preserved. PUBLIC HOST DEPLOYMENT: NOT TRIGGERED. HUMAN UAT: PENDING.\n' >> "$GITHUB_STEP_SUMMARY"
+      - name: Logout of Docs registry
+        if: always()
+        shell: bash
+        run: |
+          if [[ -n "$REGISTRY_HOST" ]]; then docker logout "$REGISTRY_HOST" || true; fi

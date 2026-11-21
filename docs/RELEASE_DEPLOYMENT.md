@@ -112,6 +112,24 @@ ls -ld /opt/kaori-docs /var/lib/kaori-docs/deploy-state
 
 **STOP** if the shared VPS cannot safely replace its existing Docs container or App/Website/shared-edge is unhealthy. The directories above already belong to the existing Docs deployment; do **not** create separate staging directories or use global Docker cleanup.
 
+## Accepted RC signer identities and opt-in publication
+
+A signed candidate may originate from the existing manual/explicit-request
+`publish-staging-image.yml` workflow, or from the separately admitted,
+feature-flagged protected staging `quality.yml` publisher (issue #102).
+The same existing `deploy-release.sh` verifies the **exact expected
+Cosign workflow certificate identity and SPDX/SLSA attestations** at the
+immutable OCI digest. Adding the quality-workflow signer identity does
+not authorize an RC deployment: a unique issue #14 source/tag/digest
+public-swap approval is still required, followed by existing host/edge
+and rollback checks.
+
+Issue #102 **does not enable auto host deployment**. `kaori/uat-request`
+or governed manual release deployment remains the only RC replacement
+signal. Never infer a new source/tag/digest swap permission from a
+successful RC publication or the `KAORI_DOCS_AUTO_STAGING_ENABLED` flag.
+Public single-slot UAT and eventual production approval remain separate.
+
 ## Single previous-release rollback
 
 For a separately approved rollback, the existing adapter reads `previous-release.env` and returns the _same project_ to its previous digest. The public edge is reconciled only for the existing Docs hostname, using the same shared-edge verification:

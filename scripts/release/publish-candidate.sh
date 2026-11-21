@@ -1,20 +1,28 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-mode="${1:?expected preflight or publish or resume}"
-[[ "$mode" == preflight || "$mode" == publish || "$mode" == resume ]] || { echo 'BLOCK: invalid RC operation' >&2; exit 1; }
+mode="${1:?expected rights, preflight, publish or resume}"
+[[ "$mode" == rights || "$mode" == preflight || "$mode" == publish || "$mode" == resume ]] || { echo 'BLOCK: invalid RC operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 repo="${GITHUB_REPOSITORY:?}"
 sha="${ACCEPTED_SHA:?}"
-tag="${RC_TAG:?}"
+tag="${RC_TAG:-}"
 host="${REGISTRY_HOST:-}"
 image="${REGISTRY_IMAGE:-}"
 api="https://api.github.com/repos/$repo"
 headers=(-H "Authorization: Bearer ${GH_TOKEN:?}" -H 'Accept: application/vnd.github+json')
 [[ "$repo" == "OXY7O/kaori-docs" ]] || fail 'wrong repository authority'
-# Both entrypoints must execute the exact current admitted staging tree.
-# A request branch is only a signal; it cannot become a second source of truth.
-if [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
+# Issue #102: staging auto publication is a separate, default-disabled
+# quality.yml caller, never an alternate signing engine or host deployment.
+# Manual and request-branch release authority remains unchanged.
+auto_staging=false
+if [[ "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/kaori/staging &&
+      "${KAORI_DOCS_STAGING_AUTO:-0}" == 1 ]]; then
+  [[ "$GITHUB_WORKFLOW_REF" == "$repo/.github/workflows/quality.yml@refs/heads/kaori/staging" &&
+     "$GITHUB_SHA" == "$sha" ]] ||
+    fail 'automatic RC requires canonical admitted staging workflow identity'
+  auto_staging=true
+elif [[ "$GITHUB_EVENT_NAME" == workflow_dispatch ]]; then
   [[ "$GITHUB_REF" == refs/heads/kaori/staging ]] ||
     fail 'manual RC must be dispatched from kaori/staging'
 elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
@@ -24,7 +32,49 @@ elif [[ "$GITHUB_EVENT_NAME" == push ]]; then
 else
   fail 'RC event is neither governed request nor manual dispatch'
 fi
+
+# The existing Docs #74 rights authority is independent from Website #4939.
+# No repo variable, matching license label or successfully built page alone
+# grants permission for recurring public documentation distribution.
+verify_recurring_publication_rights() {
+  local authority issue comments closed_at count
+  authority="$api/issues/74"
+  issue="$(curl --fail-with-body -fsS "${headers[@]}" "$authority")" ||
+    fail 'Docs #74 standing rights issue unavailable'
+  jq -e '.state == "closed" and .state_reason == "completed" and
+    (.closed_at | type == "string")' <<< "$issue" >/dev/null ||
+    fail 'Docs #74 standing publication rights not accepted'
+  closed_at="$(jq -r '.closed_at' <<< "$issue")"
+  count="$(jq -r '.comments // -1' <<< "$issue")"
+  [[ "$count" =~ ^[0-9]+$ && "$count" -le 100 ]] ||
+    fail 'Docs rights comment pagination incomplete'
+  comments="$(curl --fail-with-body -fsS "${headers[@]}" "$authority/comments?per_page=100")" ||
+    fail 'Docs standing rights evidence unavailable'
+  jq -e --arg cutoff "$closed_at" --argjson expected "$count" '
+    type == "array" and length == $expected and
+    ([.[] | select(
+      .user.login == "lethisa" and
+      ((.body // "" | split("\n") | index("KAORI_DOCS_PUBLICATION_GO:STANDING")) != null) and
+      (.created_at | type == "string") and (.updated_at | type == "string") and
+      .created_at <= $cutoff and .updated_at <= $cutoff
+    )] | length == 1) and
+    ([.[] | select(
+      (.user.login == "lethisa" or .user.login == "donibawono") and
+      ((.body // "" | split("\n") | index("KAORI_DOCS_PUBLICATION_REVOKED:STANDING")) != null)
+    )] | length == 0)
+  ' <<< "$comments" >/dev/null ||
+    fail 'Docs standing rights missing, modified after acceptance or revoked'
+  echo 'PASS: authenticated Docs #74 standing publication rights'
+}
+
+if [[ "$mode" == rights ]]; then
+  [[ "$auto_staging" == true && "$sha" =~ ^[a-f0-9]{40}$ ]] ||
+    fail 'rights mode is available only to canonical staging auto publication'
+  verify_recurring_publication_rights
+  exit 0
+fi
 [[ "$(git rev-parse HEAD)" == "$sha" ]] || fail 'source mismatch'
+if [[ "$auto_staging" == true ]]; then verify_recurring_publication_rights; fi
 [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-rc\.[1-9][0-9]*$ ]] || fail 'candidate must use vX.Y.Z-rc.N'
 [[ -n "$host" && "$image" == "$host/"* && "$host" != *://* ]] || fail 'registry variables missing or inconsistent'
 [[ "$image" == */kaori-docs ]] || fail 'docs image must use dedicated /kaori-docs repository, never KAORI Application image'
@@ -34,26 +84,34 @@ fi
 [[ -f LICENSE && ! -L LICENSE && -s LICENSE ]] || fail 'approved Apache-2.0 license source file absent'
 grep -Fxq 'Apache License' LICENSE || fail 'unrecognized KAORI license authority'
 grep -Fxq 'Version 2.0, January 2004' LICENSE || fail 'invalid Apache-2.0 license version'
-[[ "${APPROVAL_REF:-}" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/13#issuecomment-([0-9]+)$ ]] || fail 'exact issue #13 approval comment URL required'
-approval_id="${BASH_REMATCH[1]}"
-approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$approval_id")" || fail 'approval inaccessible'
-[[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/13" ]] || fail 'approval must belong to issue #13'
-grep -Fxq "KAORI_DOCS_RC_APPROVED:$sha:$tag" <<< "$(jq -r '.body // ""' <<< "$approval")" || fail 'approval marker SHA/tag mismatch'
-approval_user="$(jq -r '.user.login // ""' <<< "$approval")"
-[[ "$approval_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid approval author'
-approval_permission="$(curl -fsS "${headers[@]}" "$api/collaborators/$approval_user/permission" | jq -r '.permission')" || fail 'cannot verify approver authority'
-case "$approval_permission" in admin|maintain|write) ;; *) fail 'approval author lacks write authority' ;; esac
+if [[ "$auto_staging" != true ]]; then
+  [[ "${APPROVAL_REF:-}" =~ ^https://github[.]com/OXY7O/kaori-docs/issues/13#issuecomment-([0-9]+)$ ]] || fail 'exact issue #13 approval comment URL required'
+  approval_id="${BASH_REMATCH[1]}"
+  approval="$(curl -fsS "${headers[@]}" "$api/issues/comments/$approval_id")" || fail 'approval inaccessible'
+  [[ "$(jq -r '.issue_url' <<< "$approval")" == "$api/issues/13" ]] || fail 'approval must belong to issue #13'
+  grep -Fxq "KAORI_DOCS_RC_APPROVED:$sha:$tag" <<< "$(jq -r '.body // ""' <<< "$approval")" || fail 'approval marker SHA/tag mismatch'
+  approval_user="$(jq -r '.user.login // ""' <<< "$approval")"
+  [[ "$approval_user" =~ ^[A-Za-z0-9-]+$ ]] || fail 'invalid approval author'
+  approval_permission="$(curl -fsS "${headers[@]}" "$api/collaborators/$approval_user/permission" | jq -r '.permission')" || fail 'cannot verify approver authority'
+  case "$approval_permission" in admin|maintain|write) ;; *) fail 'approval author lacks write authority' ;; esac
+fi
 
 command -v jq >/dev/null && command -v curl >/dev/null && docker info >/dev/null || fail 'runner prerequisites unavailable'
 # Fail before any image build/push if registry-manifest tooling is absent.
 docker buildx version >/dev/null || fail 'registry manifest inspection requires existing Docker buildx'
 current="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$current" == "$sha" ]] || fail 'staging source changed'
-runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
-matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
-[[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
-[[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
-echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+if [[ "$auto_staging" == true ]]; then
+  # The calling quality.yml job needs ALL admission and evidence jobs to
+  # succeed. The parent run is deliberately not yet complete while we sign.
+  echo 'PASS: canonical staging Full Admission job dependencies succeeded'
+else
+  runs="$(curl -fsS "${headers[@]}" "$api/actions/workflows/quality.yml/runs?branch=kaori%2Fstaging&event=push&per_page=100")"
+  matched="$(jq -c --arg sha "$sha" '[.workflow_runs[] | select(.head_sha==$sha)] | sort_by(.run_number) | last // empty' <<< "$runs")"
+  [[ -n "$matched" ]] || fail 'missing Full Admission run for exact staging SHA'
+  [[ "$(jq -r '.status' <<< "$matched")" == completed && "$(jq -r '.conclusion' <<< "$matched")" == success ]] || fail 'Full Admission not PASS'
+  echo "Full Admission: $(jq -r '.html_url' <<< "$matched")"
+fi
 if [[ "$mode" == preflight ]]; then
   # Private repositories use an API-authenticated lookup; checkout intentionally does
   # not persist write-capable credentials into Git configuration.
@@ -89,6 +147,7 @@ if [[ "$mode" == publish ]]; then
     -v kaori-docs-trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0 \
     image --cache-dir /root/.cache/trivy --exit-code 1 --ignore-unfixed \
     --scanners vuln --severity HIGH,CRITICAL "$image:$tag"
+  if [[ "$auto_staging" == true ]]; then verify_recurring_publication_rights; fi
   docker push "$image:$tag"
 else
   [[ "$mode" == resume ]] || fail 'invalid publishing mode'
@@ -214,6 +273,7 @@ sbom_sha="sha256:$(sha256sum docs-sbom.spdx.json | awk '{print $1}')"
 latest_sha="$(curl -fsS "${headers[@]}" "$api/git/ref/heads/kaori/staging" | jq -r '.object.sha')"
 [[ "$latest_sha" == "$sha" ]] || fail 'staging advanced during candidate publication'
 # Git tag/release are registered only after digest, scanning, signature and attestations verify.
+if [[ "$auto_staging" == true ]]; then verify_recurring_publication_rights; fi
 tag_status="$(curl -sS -o /dev/null -w '%{http_code}' "${headers[@]}" "$api/git/ref/tags/$tag")"
 case "$tag_status" in
   404)
