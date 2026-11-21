@@ -151,10 +151,19 @@ test('opt-in staging publisher is admitted and rights-gated without an automatic
   for (const script of [deploy, stable]) {
     assert.match(script, /publish-staging-image\.yml@\$allowed_ref/);
     assert.match(script, /certificate-identity "\$identity"/);
-    assert.match(script, /refs\/heads\/kaori\/staging refs\/heads\/kaori\/rc-request/);
+    assert.match(
+      script,
+      /refs\/heads\/kaori\/staging refs\/heads\/kaori\/rc-request/,
+    );
   }
-  assert.match(stable, /git merge-base --is-ancestor "\$rc_sha" "\$GITHUB_SHA"/);
+  assert.match(
+    stable,
+    /git merge-base --is-ancestor "\$rc_sha" "\$GITHUB_SHA"/,
+  );
   assert.match(stable, /source or runtime drift since accepted RC/);
   assert.match(stable, /same signed.*RC|same signed|immutable RC image/);
-  assert.doesNotMatch(stable, /--insecure-ignore-tlog|--insecure-ignore-sct|--allow-insecure-registry/);
+  assert.doesNotMatch(
+    stable,
+    /--insecure-ignore-tlog|--insecure-ignore-sct|--allow-insecure-registry/,
+  );
 });
