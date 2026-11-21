@@ -5,6 +5,11 @@ mode="${1:?expected preflight or publish}"
 [[ "$mode" == preflight || "$mode" == publish ]] || { echo 'BLOCK: unsupported stable operation' >&2; exit 1; }
 fail() { printf 'BLOCK: %s\n' "$*" >&2; exit 1; }
 
+# Resolve actual production Environment variables after job start, retaining
+# repository-level job.env fallbacks during #108 configuration migration.
+export REGISTRY_HOST="${KAORI_DOCS_DOCKER_REGISTRY_HOST:-${REGISTRY_HOST:-}}"
+export REGISTRY_IMAGE="${KAORI_DOCS_DOCKER_REGISTRY_IMAGE:-${REGISTRY_IMAGE:-}}"
+
 # Docs #39: stable publication is a metadata/identity promotion of an
 # already signed, admitted, and human-accepted RC. Never rebuild application bits.
 for required in GH_TOKEN GITHUB_REF GITHUB_SHA GITHUB_REPOSITORY STABLE_TAG ACCEPTED_RC_TAG APPROVAL_REF REGISTRY_HOST REGISTRY_IMAGE; do
