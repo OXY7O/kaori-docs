@@ -15,7 +15,7 @@ command -v npm >/dev/null || fail 'npm unavailable'
 npm run build
 test -s build/index.html || fail 'static index missing'
 test -s build/branding/kaori-logo.svg || fail 'approved logo missing'
-grep -q 'KAORI Docs' build/index.html || fail 'Docs bootstrap identity absent'
+grep -Fq 'KAORI Documentation' build/index.html || fail 'Docs bootstrap identity absent'
 for leaked in docs/ARCHITECTURE.md docs/CONTENT_SAFETY.md .github package.json package-lock.json content; do
   test ! -e "build/$leaked" || fail "private file leaked to static output: $leaked"
 done
