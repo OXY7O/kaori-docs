@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import test from 'node:test';
 
@@ -214,4 +215,62 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   const all = [workflowSource, deployAdapter, ...scripts, edge, compose].join('\n');
   assert.doesNotMatch(all, /KAORI_DOCS_(DEPLOYMENT_TOPOLOGY|SPLIT_HOST_ENABLED)/);
   assert.doesNotMatch(all, /docker network create|docker compose.*down -v/);
+});
+
+test('Docs configured target rejects unsafe identities before network or Docker use', () => {
+  const revision = spawnSync('git', ['rev-parse', 'HEAD'], {encoding: 'utf8'});
+  assert.equal(revision.status, 0);
+  const acceptedSha = revision.stdout.trim();
+  assert.match(acceptedSha, /^[a-f0-9]{40}$/);
+
+  const env = {
+    ...process.env,
+    KAORI_DOCS_AUTO_POLICY: '0',
+    KAORI_DOCS_STABLE_POLICY: '0',
+    KAORI_DOCS_STABLE_MANUAL: '0',
+    KAORI_DOCS_STAGING_UAT: '1',
+    KAORI_DOCS_ATTACH_EXISTING_EDGE: '1',
+    GITHUB_EVENT_NAME: 'workflow_dispatch',
+    GITHUB_REF: 'refs/heads/kaori/staging',
+    GITHUB_REPOSITORY: 'OXY7O/kaori-docs',
+    ACCEPTED_SHA: acceptedSha,
+    RC_TAG: 'v0.3.0-rc.9',
+    APPROVAL_REF: 'https://github.com/OXY7O/kaori-docs/issues/14#issuecomment-1',
+    DOCS_PUBLIC_DOMAIN: 'docs.kaori.cloud',
+    REGISTRY_HOST: 'docker.io',
+    REGISTRY_IMAGE: 'docker.io/lethisaputri/kaori-docs',
+    REGISTRY_USER: 'contract-fixture',
+    REGISTRY_PASSWORD: 'contract-fixture',
+    DOCS_HOST: 'localhost',
+    DOCS_SSH_USER: 'kaori-deploy',
+    DOCS_SSH_PORT: '22',
+    DOCS_DEPLOY_ROOT: '/opt/kaori-docs',
+    DOCS_SSH_KEY: 'contract-fixture',
+    DOCS_KNOWN_HOSTS: 'contract-fixture',
+    GH_TOKEN: 'contract-fixture',
+    DOCS_COMPOSE_PROJECT: 'kaori-docs',
+    DOCS_STATE_DIR: '/var/lib/kaori-docs/deploy-state',
+    DOCS_LOOPBACK_PORT: '18081',
+  };
+  const cases = [
+    [{DOCS_COMPOSE_PROJECT: 'kaori-website'}, 'Docs runtime project must remain'],
+    [
+      {DOCS_COMPOSE_PROJECT: 'kaori-docs-uat'},
+      'Docs receipt must belong to the selected runtime project',
+    ],
+    [{DOCS_STATE_DIR: '/var/lib/kaori-docs/../kaori/deploy-state'}, 'Docs receipt'],
+    [{DOCS_LOOPBACK_PORT: '80'}, 'Docs loopback port must be between'],
+    [{DOCS_LOOPBACK_PORT: '08081'}, 'Docs loopback port must be between'],
+    [{DOCS_DEPLOY_ROOT: '/opt/shared-edge'}, 'Docs deployment root is outside'],
+  ];
+  for (const [overrides, reason] of cases) {
+    const result = spawnSync(
+      'bash',
+      ['scripts/release/deploy-release.sh', 'preflight'],
+      {encoding: 'utf8', env: {...env, ...overrides}},
+    );
+    assert.notEqual(result.status, 0, JSON.stringify(overrides));
+    assert.match(result.stderr, new RegExp(reason), JSON.stringify(overrides));
+    assert.doesNotMatch(result.stderr, /https:\/\/api.github.com|docker login|ssh /);
+  }
 });
