@@ -141,14 +141,19 @@ repository defaults for the **same names**; operators may deliberately assign
 identical values to both Environments. The working current target is the safe
 fallback when the optional runtime variables are unset.
 
-| GitHub Environment variable | Default / constraint |
-| --- | --- |
-| `KAORI_DOCS_HOST`, `KAORI_DOCS_HOST_PORT`, `KAORI_DOCS_HOST_USER` | Existing approved pinned SSH host identity, per Environment |
-| `KAORI_DOCS_HOST_DEPLOY_ROOT` | `/opt/kaori-docs`, or `/opt/<configured-project>` |
-| `KAORI_DOCS_RUNTIME_PROJECT` | `kaori-docs`; optional validated `kaori-docs-<suffix>` namespace |
-| `KAORI_DOCS_RUNTIME_STATE_DIR` | `/var/lib/<configured-project>/deploy-state`; must belong to the selected project |
-| `KAORI_DOCS_RUNTIME_LOOPBACK_PORT` | `18081`; numeric 1024–65535; must not collide with another runtime |
-| `KAORI_DOCS_PUBLIC_DOMAIN` | Existing `docs.kaori.cloud`, not an arbitrary public hostname |
+- `KAORI_DOCS_HOST`, `KAORI_DOCS_HOST_PORT`,
+  `KAORI_DOCS_HOST_USER`: existing approved pinned SSH host identity,
+  selected from the GitHub Environment.
+- `KAORI_DOCS_HOST_DEPLOY_ROOT`: current `/opt/kaori-docs`, or an
+  operator-prepared `/opt/<configured-project>` matching the runtime.
+- `KAORI_DOCS_RUNTIME_PROJECT`: defaults to `kaori-docs`; a distinct
+  runtime uses a validated `kaori-docs-<suffix>` namespace.
+- `KAORI_DOCS_RUNTIME_STATE_DIR`: defaults to
+  `/var/lib/<configured-project>/deploy-state` and must match the project.
+- `KAORI_DOCS_RUNTIME_LOOPBACK_PORT`: defaults to `18081`; choose an
+  available numeric port 1024–65535 for each separate runtime.
+- `KAORI_DOCS_PUBLIC_DOMAIN`: remains the approved
+  `docs.kaori.cloud` public hostname; no arbitrary new hostnames.
 
 The matching `KAORI_DOCS_HOST_SSH_PRIVATE_KEY`,
 `KAORI_DOCS_HOST_KNOWN_HOSTS`, registry secret names and approved native
