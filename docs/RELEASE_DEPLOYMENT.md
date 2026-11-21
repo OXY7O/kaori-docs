@@ -133,14 +133,15 @@ After explicit acceptance, promote using `kaori/staging → main`, verify the sa
 **Historical evidence:** prior `v0.1.0-rc.2` private/bootstrap deployment and current signed `v0.3.0-rc.1` remain auditable. The new single-slot behavior is **not** active until its PR merges, a fresh exact-SHA Full Admission and new RC approval/deployment prove it. The old separate-runtime design is superseded, not evidence that a new swap already occurred.
 
 ## GitHub Environment deployment approval — Docs #96
+
 Docs follows the [Website two-Environment pattern](https://github.com/OXY7O/kaori-website/issues/201) for native GitHub deployment review, while preserving the **single** existing Docs runtime slot. An Environment is a release authorization boundary, **not** a second service/host/Compose project.
 
-| Event / job | GitHub Environment | Action |
-| --- | --- | --- |
-| Signed RC publication on accepted `kaori/staging` or `kaori/rc-request` | `staging` | Signed, authorized image / release candidate |
-| `Release Deployment` RC/UAT manual staging or `kaori/uat-request` push | `staging` | Existing signed RC to the one Docs host slot |
-| `Full Admission` accepted stable publication from `main` | `production` | Same-digest stable metadata, no image rebuild |
-| `Release Deployment` successful main stable `workflow_run` or explicit main stable dispatch | `production` | Approved stable cutover/rollback on the one Docs slot |
+| Event / job                                                                                 | GitHub Environment | Action                                                |
+| ------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------- |
+| Signed RC publication on accepted `kaori/staging` or `kaori/rc-request`                     | `staging`          | Signed, authorized image / release candidate          |
+| `Release Deployment` RC/UAT manual staging or `kaori/uat-request` push                      | `staging`          | Existing signed RC to the one Docs host slot          |
+| `Full Admission` accepted stable publication from `main`                                    | `production`       | Same-digest stable metadata, no image rebuild         |
+| `Release Deployment` successful main stable `workflow_run` or explicit main stable dispatch | `production`       | Approved stable cutover/rollback on the one Docs slot |
 
 The existing deployment job selects its Environment from **GitHub's event type and immutable ref before any secrets, registry login or SSH steps**. Main stable publication has its own `production` binding. Existing issue #13 RC, #14 per-digest/public-swap, #39 stable and #40 main-only approval markers, Cosign, SPDX/SLSA, Trivy, pinned host and full shared-edge verification are mandatory *in addition* to native deployment approval.
 
