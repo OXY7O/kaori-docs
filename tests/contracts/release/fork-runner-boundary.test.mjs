@@ -60,3 +60,24 @@ test('Docs promotion fails untrusted PRs before allocating privileged jobs', () 
     /needs: \[promotion-source, validation-profile\]/,
   );
 });
+
+test('Docs publisher requires approved Apache-2.0 source licensing without weakening RC gates', () => {
+  const script = readFileSync('scripts/release/publish-candidate.sh', 'utf8');
+  const publisher = workflow('publish-staging-image');
+  const rootLicense = readFileSync('LICENSE', 'utf8');
+  const contentLicense = readFileSync('CONTENT_LICENSE.md', 'utf8');
+  assert.match(rootLicense, /^Apache License\nVersion 2\.0, January 2004/);
+  assert.match(script, /\$\{APP_LICENSE:-\}" == Apache-2\.0/);
+  assert.match(script, /grep -Fxq 'Apache License' LICENSE/);
+  assert.match(script, /SPDXRef-KAORI-Docs-Source/);
+  assert.match(script, /SPDX project source license unverified/);
+  assert.match(script, /KAORI_DOCS_RC_APPROVED:\$sha:\$tag/);
+  assert.match(publisher, /APP_LICENSE=Apache-2\.0/);
+  assert.match(contentLicense, /creativecommons\.org\/licenses\/by\/4\.0\/legalcode\.en/);
+});
+
+test('approved legal notice files route as docs-only while unknown paths remain blocked', () => {
+  const developer = workflow('developer-check');
+  assert.match(developer, /README\.md\|LICENSE\|NOTICE\|CONTENT_LICENSE\.md/);
+  assert.match(developer, /Unrecognized change path; fail closed/);
+});

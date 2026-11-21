@@ -8,15 +8,20 @@ The multi-stage Dockerfile builds Docusaurus using locked Node 22 dependencies, 
 
 ## License authority
 
-The rights holder selected **the same proprietary KAORI Internal Use License**
-as the Application (the Website has no separate open-source grant). The exact
-root [LICENSE](../LICENSE) is copied from the approved KAORI source; do not
-substitute MIT or Apache-2.0. The OCI license identifier for KAORI-owned
-material is `LicenseRef-KAORI-Internal-Use`, a valid SPDX custom reference,
-**not** an entry in the SPDX License List. The signed SPDX document must
-contain a `hasExtractedLicensingInfos` record with the complete license
-text. Never replace licenses of third-party packages. The label and signed SBOM
-are not authorization to publish internal KAORI source or sensitive docs.
+KAORI-authored Docs application/tooling code uses the
+[Apache License 2.0](../LICENSE); public original prose under
+`content/` is separately [CC BY 4.0](../CONTENT_LICENSE.md). Protected
+KAORI/OXY7O brand assets, internal engineering documents and independent
+third-party content are excluded from these project-owned grants.
+
+The OCI `org.opencontainers.image.licenses` value is the standard SPDX
+identifier `Apache-2.0`, replacing the historical
+`LicenseRef-KAORI-Internal-Use` custom reference. The signed SPDX SBOM
+includes an explicit `kaori-docs-source` package declaration, preserves
+third-party package licenses, and does **not** require a custom extracted
+licensing record for the standard Apache-2.0 license. Existing SHA/tag
+approval, image scan, digest, signatures and attestation remain unchanged.
+This license migration does not approve any release or public Docs content.
 
 ## Staging-only RC activation — temporary issue #24
 
