@@ -3,10 +3,16 @@ set -Eeuo pipefail
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 compose_file="${KAORI_DOCS_COMPOSE_FILE:-$script_dir/compose.docs.yml}"
-# One active Docs runtime for signed RC or stable; never a stage-only port.
-[[ "${COMPOSE_PROJECT_NAME:-kaori-docs}" == kaori-docs ]] ||
-    { echo 'BLOCK: Docs must use canonical single Compose project' >&2; exit 1; }
-loopback=127.0.0.1:18081
+# Match the selected Environment project and loopback, not the
+# Environment name or the number of host addresses.
+project="${COMPOSE_PROJECT_NAME:-kaori-docs}"
+[[ "$project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
+    { echo 'BLOCK: invalid configured Docs Compose project' >&2; exit 1; }
+loopback_port="${KAORI_DOCS_LOOPBACK_PORT:-18081}"
+[[ "$loopback_port" =~ ^[1-9][0-9]{3,4}$ ]] &&
+    (( loopback_port >= 1024 && loopback_port <= 65535 )) ||
+    { echo 'BLOCK: invalid configured Docs loopback port' >&2; exit 1; }
+loopback="127.0.0.1:$loopback_port"
 expected_image="${KAORI_DOCS_IMAGE:?Set KAORI_DOCS_IMAGE to the accepted digest-qualified image}"
 [[ "$expected_image" =~ @sha256:[a-f0-9]{64}$ ]] || { echo 'BLOCK: digest-qualified image required' >&2; exit 1; }
 command -v docker >/dev/null || { echo 'BLOCK: Docker is not available' >&2; exit 1; }
