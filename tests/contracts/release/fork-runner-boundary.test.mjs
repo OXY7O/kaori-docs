@@ -188,7 +188,7 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
     ['KAORI_DOCS_HOST', 'DOCS_HOST'],
     ['KAORI_DOCS_DOCKER_REGISTRY_HOST', 'REGISTRY_HOST'],
   ]) {
-    assert.ok(deployAdapter.includes(scope + ':-${' + fallback + ':-}'));
+    assert.ok(deployAdapter.includes(scope + ':-${' + fallback + ':-'));
   }
   for (const name of ['publish-candidate.sh', 'promote-stable.sh']) {
     const publisher = readFileSync('scripts/release/' + name, 'utf8');
