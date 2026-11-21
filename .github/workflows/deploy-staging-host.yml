@@ -56,8 +56,9 @@ jobs:
         )
       }}
     runs-on: [self-hosted, linux, x64, kaori-ci]
-    # The same single-slot host job serves RC/UAT and accepted stable events;
-    # GitHub Environment selection happens before any SSH or registry secret use.
+    # Governed staging/production sources choose their Environment first.
+    # Its variables and secrets select the effective runtime; these scopes
+    # do not imply separate VMs or Compose projects.
     environment:
       name: ${{ (github.event_name == 'workflow_run' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) && 'production' || 'staging' }}
       url: https://docs.kaori.cloud
@@ -83,6 +84,11 @@ jobs:
       DOCS_SSH_PORT: ${{ vars.KAORI_DOCS_HOST_PORT }}
       DOCS_SSH_USER: ${{ vars.KAORI_DOCS_HOST_USER }}
       DOCS_DEPLOY_ROOT: ${{ vars.KAORI_DOCS_HOST_DEPLOY_ROOT }}
+      # Environment-scoped runtime identity; unset preserves current public Docs target.
+      # Environment count and host/IP alone never determine runtime count.
+      DOCS_RUNTIME_PROJECT: ${{ vars.KAORI_DOCS_RUNTIME_PROJECT }}
+      DOCS_RUNTIME_STATE_DIR: ${{ vars.KAORI_DOCS_RUNTIME_STATE_DIR }}
+      DOCS_RUNTIME_LOOPBACK_PORT: ${{ vars.KAORI_DOCS_RUNTIME_LOOPBACK_PORT }}
       DOCS_PUBLIC_DOMAIN: ${{ vars.KAORI_DOCS_PUBLIC_DOMAIN }}
       DOCS_SSH_KEY: ${{ secrets.KAORI_DOCS_HOST_SSH_PRIVATE_KEY }}
       DOCS_SSH_PASSPHRASE: ${{ secrets.KAORI_DOCS_HOST_SSH_PASSPHRASE }}
