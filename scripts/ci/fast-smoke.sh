@@ -23,6 +23,6 @@ done
 # Admission retains all 12 viewport/theme and accessibility checks on any
 # changed source/tree or validation authority.
 npx playwright test tests/browser/docs-foundation.spec.ts \
-  --project=desktop-light --grep 'tab focus and public version/search absence' \
+  --project=desktop-light --grep 'same-page discovery and unpublished features stay honest' \
   --workers=1 --retries=0
 echo "PASS: fresh Docs Fast Smoke on $1 (not Human UAT)"
