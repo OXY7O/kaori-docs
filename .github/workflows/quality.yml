@@ -311,6 +311,9 @@ jobs:
     if: >-
       ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.stable_version != '' }}
     runs-on: [self-hosted, linux, x64, platform-ci]
+    # Stable GitHub Releases require independent native deployment approval.
+    environment:
+      name: production
     timeout-minutes: 35
     permissions:
       contents: write
