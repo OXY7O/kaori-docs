@@ -112,7 +112,7 @@ jobs:
           {
             printf 'RC_TAG=%s\n' "$tag"
             printf 'APPROVAL_REF=%s\n' "$approval_ref"
-            printf 'APP_LICENSE=LicenseRef-KAORI-Internal-Use\n'
+            printf 'APP_LICENSE=Apache-2.0\n'
             printf 'RESUME_EXISTING=false\n'
           } >> "$GITHUB_ENV"
           echo 'PASS: exact-SHA RC request matched unique maintainer authorization; complete publisher preflight still mandatory'
