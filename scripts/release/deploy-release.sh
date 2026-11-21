@@ -196,6 +196,9 @@ printf '%s' "$REGISTRY_PASSWORD" | DOCKER_CONFIG="$trust_dir" docker login "$REG
 # may expand this signer allowlist. Every attestation uses the same identity.
 cosign=(docker run --rm --user 0:0 -e DOCKER_CONFIG=/root/.docker -v "$trust_dir:/root/.docker:ro" ghcr.io/sigstore/cosign/cosign:v3.1.3)
 identity=''
+# #102: accepted staging quality.yml can independently sign an RC only
+# after all admission jobs and Docs #74 recurring rights succeed. The
+# immutable signature identity is still checked against each exact caller.
 for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
   candidate="https://github.com/OXY7O/kaori-docs/.github/workflows/publish-staging-image.yml@$allowed_ref"
   if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" 2>/dev/null; then
@@ -203,6 +206,14 @@ for allowed_ref in refs/heads/kaori/staging refs/heads/kaori/rc-request; do
     break
   fi
 done
+# A staging-quality publisher uses the existing signing implementation
+# under quality.yml. Request-branch/manual publisher identities stay valid.
+if [[ -z "$identity" ]]; then
+  candidate='https://github.com/OXY7O/kaori-docs/.github/workflows/quality.yml@refs/heads/kaori/staging'
+  if "${cosign[@]}" verify --certificate-identity "$candidate" --certificate-oidc-issuer https://token.actions.githubusercontent.com "$image_ref" > "$trust_dir/signature-verification.json" 2>/dev/null; then
+    identity="$candidate"
+  fi
+fi
 [[ -n "$identity" && -s "$trust_dir/signature-verification.json" ]] ||
   fail 'RC signature does not match either approved canonical publisher identity'
 test -s "$trust_dir/signature-verification.json" || fail 'RC signature evidence empty'
