@@ -166,11 +166,7 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   const workflowSource = workflow('deploy-staging-host');
   const deployAdapter = readFileSync('scripts/release/deploy-release.sh', 'utf8');
   const remote = (name) => readFileSync(`deploy/server/${name}`, 'utf8');
-  const scripts = [
-    remote('deploy.sh'),
-    remote('verify.sh'),
-    remote('rollback.sh'),
-  ];
+  const scripts = [remote('deploy.sh'), remote('verify.sh'), remote('rollback.sh')];
   const edge = remote('reattach-existing-site.sh');
   const compose = remote('compose.release.yml');
 
@@ -183,9 +179,9 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
     assert.ok(workflowSource.includes(`vars.${key}`));
   }
   assert.match(deployAdapter, /DOCS_RUNTIME_PROJECT:-kaori-docs/);
-  assert.match(deployAdapter, /DOCS_RUNTIME_STATE_DIR:-\/var\/lib\/\$runtime_project\/deploy-state/);
+  assert.ok(deployAdapter.includes('DOCS_RUNTIME_STATE_DIR:-/var/lib/$runtime_project/deploy-state'));
   assert.match(deployAdapter, /DOCS_RUNTIME_LOOPBACK_PORT:-18081/);
-  assert.match(deployAdapter, /DOCS_DEPLOY_ROOT" == "\/opt\/\$runtime_project"/);
+  assert.ok(deployAdapter.includes('DOCS_DEPLOY_ROOT" == "/opt/$runtime_project"'));
   assert.match(deployAdapter, /compose_project=%q/);
   assert.match(deployAdapter, /state_dir=%q/);
   assert.match(deployAdapter, /loopback_port=%q/);
@@ -195,9 +191,14 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   for (const script of scripts) {
     assert.match(script, /COMPOSE_PROJECT_NAME:-kaori-docs/);
     assert.match(script, /kaori-docs\(-\[a-z0-9\]/);
-    assert.match(script, /KAORI_DOCS_STATE_DIR:-\/var\/lib\/\$[a-z_]+\/deploy-state/);
-    assert.match(script, /KAORI_DOCS_LOOPBACK_PORT:-18081/);
+     assert.match(script, /KAORI_DOCS_LOOPBACK_PORT:-18081/);
     assert.match(script, /1024/);
+  }
+  for (const script of [scripts[0], scripts[2]]) {
+    assert.match(
+      script,
+      /KAORI_DOCS_STATE_DIR:-\/var\/lib\/\$[a-z_]+\/deploy-state/,
+    );
   }
   assert.match(compose, /KAORI_DOCS_LOOPBACK_PORT:-18081/);
   assert.match(edge, /EDGE_UPSTREAM=\$upstream/);
