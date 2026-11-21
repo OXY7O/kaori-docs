@@ -78,18 +78,22 @@ port="${DOCS_SSH_PORT:-22}"
 # GitHub Environment configuration selects the actual Docs runtime. A shared
 # host/IP and any number of Environments may legitimately select one project.
 # Distinct projects need their own root, state receipt and effective port.
-runtime_project="${DOCS_RUNTIME_PROJECT:-kaori-docs}"
+runtime_project="${DOCS_COMPOSE_PROJECT:-kaori-docs}"
 [[ "$runtime_project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
   fail 'Docs runtime project must remain in the validated kaori-docs namespace'
-runtime_state_dir="${DOCS_RUNTIME_STATE_DIR:-/var/lib/$runtime_project/deploy-state}"
+runtime_state_dir="${DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
 [[ "$runtime_state_dir" == "/var/lib/$runtime_project/deploy-state" ]] ||
   fail 'Docs receipt must belong to the selected runtime project'
-runtime_port="${DOCS_RUNTIME_LOOPBACK_PORT:-18081}"
+runtime_port="${DOCS_LOOPBACK_PORT:-18081}"
 [[ "$runtime_port" =~ ^[1-9][0-9]{3,4}$ ]] &&
   (( runtime_port >= 1024 && runtime_port <= 65535 )) ||
   fail 'Docs loopback port must be between 1024 and 65535'
-[[ "$DOCS_DEPLOY_ROOT" == "/opt/$runtime_project" ]] ||
-  fail 'Docs deployment root must belong to the selected runtime project'
+# Match Website's shared deployment-script root while isolating runtime receipts.
+# An operator may alternatively pre-provision a project-specific Docs root;
+# neither path may escape the approved /opt/kaori-docs namespace.
+[[ "$DOCS_DEPLOY_ROOT" == /opt/kaori-docs ||
+   "$DOCS_DEPLOY_ROOT" == "/opt/$runtime_project" ]] ||
+  fail 'Docs deployment root is outside the approved Docs namespace'
 [[ -n "${DOCS_SSH_KEY:-}" && -n "${DOCS_KNOWN_HOSTS:-}" ]] || fail 'SSH private key/known_hosts missing'
 command -v ssh-keygen >/dev/null && command -v ssh >/dev/null && command -v scp >/dev/null || fail 'SSH runner dependencies missing'
 api="https://api.github.com/repos/$GITHUB_REPOSITORY"
