@@ -77,7 +77,8 @@ port="${DOCS_SSH_PORT:-22}"
 [[ "$port" =~ ^[0-9]{1,5}$ ]] && (( port >= 1 && port <= 65535 )) || fail 'invalid SSH port'
 # GitHub Environment configuration selects the actual Docs runtime. A shared
 # host/IP and any number of Environments may legitimately select one project.
-# Distinct projects need their own root, state receipt and effective port.
+# Distinct projects require separate state receipts and effective ports;
+# the existing Docs code root may be shared as in Website #237.
 runtime_project="${DOCS_COMPOSE_PROJECT:-kaori-docs}"
 [[ "$runtime_project" =~ ^kaori-docs(-[a-z0-9]+(-[a-z0-9]+)*)?$ ]] ||
   fail 'Docs runtime project must remain in the validated kaori-docs namespace'
