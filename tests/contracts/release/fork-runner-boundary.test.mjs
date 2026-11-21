@@ -75,3 +75,9 @@ test('Docs publisher requires approved Apache-2.0 source licensing without weake
   assert.match(publisher, /APP_LICENSE=Apache-2\.0/);
   assert.match(contentLicense, /creativecommons\.org\/licenses\/by\/4\.0\/legalcode\.en/);
 });
+
+test('approved legal notice files route as docs-only while unknown paths remain blocked', () => {
+  const developer = workflow('developer-check');
+  assert.match(developer, /README\.md\|LICENSE\|NOTICE\|CONTENT_LICENSE\.md/);
+  assert.match(developer, /Unrecognized change path; fail closed/);
+});
