@@ -183,11 +183,7 @@ test('Docs Environment selects validated runtime identity, not a topology mode',
   assert.match(deployAdapter, /KAORI_DOCS_STATE_DIR/);
   assert.match(deployAdapter, /KAORI_DOCS_LOOPBACK_PORT/);
   assert.match(deployAdapter, /KAORI_DOCS_DOCKER_REGISTRY_HOST/);
-  assert.ok(
-    deployAdapter.includes(
-      'DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state',
-    ),
-  );
+  assert.ok(deployAdapter.includes('DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state'));
   assert.match(deployAdapter, /DOCS_LOOPBACK_PORT:-18081/);
   assert.ok(deployAdapter.includes('DOCS_DEPLOY_ROOT" == /opt/kaori-docs'));
   assert.match(deployAdapter, /compose_project=%q/);
