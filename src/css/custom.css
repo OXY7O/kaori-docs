@@ -393,6 +393,13 @@ html[data-theme='dark'] {
   line-height: 1.6;
 }
 
+/* Links inside explanatory prose need a non-color cue in both themes. */
+.kaori-docs-home__section-heading > p:last-child a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
 .kaori-docs-home__steps,
 .kaori-docs-home__catalog {
   display: grid;
