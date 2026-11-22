@@ -31,6 +31,41 @@ Before proposing an article for review:
 
 **Publication HOLD:** `docs/PUBLISHED_VERSIONS.json` remains `awaiting-release` with an empty `published` array, and native Docusaurus versions remain empty. Do not enable a public documentation route, version selector, local search corpus, release notes, or stable product compatibility claims until [#15](https://github.com/OXY7O/kaori-docs/issues/15) has verified an accepted stable Application tag/source/digest, a reviewed Docs snapshot and explicit publication approval. Staging editorial review and a successful build do not satisfy this gate.
 
+## Release-neutral conceptual walkthrough for public RC review — #125
+
+The existing Documentation Home may link to one explicitly reviewed, **public-safe,
+version-neutral conceptual** static walkthrough at `/rc-review` for Human
+Visual/Editorial UAT on the already approved public one-slot Docs RC site.
+This is a carefully bounded extension of the existing Home's conceptual
+orientation, **not** a new published product article source or versioned
+documentation publication mechanism. It is separate from the draft
+`content/getting-started/introduction.md` and may not copy an unreviewed
+draft into `src/pages/`.
+
+The walkthrough may explain only accepted platform-level **Sources → Context →
+Evidence → Governance** principles, why committed evidence matters, and a
+clearly fictional read-only investigation example. It must explicitly state
+that no product release applicability, active provider, permission, runtime,
+coverage or operational result is verified by the illustration. Use the
+existing Docusaurus page layout and inherited Website/KAORI Violet styling;
+it is a public page, so first-party authoring, rights and safety review apply.
+
+**All existing publication safeguards remain:** the 15 `content/` articles
+retain `draft: true`; `docs/PUBLISHED_VERSIONS.json` stays
+`awaiting-release` with no published version; native `/v0.3/` product
+guides, exact patch release notes and local search remain withheld until
+their separate #15/#9/#16 and accepted KAORI Application stable release
+evidence. The new page is for **conceptual RC feedback only**, not permission
+to show full draft guides or treat the current Docs RC as stable.
+
+Release of the updated page to `https://docs.kaori.cloud/rc-review`
+requires accepted #125 source and copyright/safety review, merged-SHA Full
+Admission, Browser Quality Evidence, a newly signed immutable Docs RC from
+the exact admitted staging SHA, and new #14 source/tag/digest public swap
+authorization. The active single Docs slot must pass strict HTTPS/edge,
+rollback and human browser UAT. Normal Git pushes and this document alone
+cannot authorize a host change.
+
 ## Public release process
 
 An accepted Docs release requires source SHA, version/applicability evidence, public-content isolation, QA/browser accessibility, immutable static OCI digest and signed provenance, approved staging UAT and explicit human acceptance. A green static build alone does not permit public deployment.
