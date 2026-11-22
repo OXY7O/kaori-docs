@@ -4,6 +4,78 @@
 
 **Release qualification:** the KAORI Application has no verified first stable `v0.3.0` release manifest at this checkpoint. Docs artifact `v0.3.0-rc.7` is independently signed, but proves only the Docs image identity. **Implemented source paths** below mean a route/contract exists in the inspected staging repository, _not_ observed live UAT, accessible permission for every account, complete data coverage, or accepted product GA status. This register is internal (`docs/`) and excluded from the static website and search.
 
+## Current RC content checkpoint — 2026-11-22
+
+This checkpoint **updates the current work status** without rewriting the dated
+2026-11-03 source review or treating the older SHA as current Application
+authority. The matrix below is a historical source-reviewed scope snapshot;
+its route and permission claims must be reconciled against the **accepted**
+Application source and actual browser UAT before any product guide is enabled.
+
+### Verified repository and release observations
+
+- **Application source head observed:** `OXY7O/KAORI` `kaori/staging@197a7f7e598c111592a8ae36388865cd3aacf541`. This is a branch-head observation, **not** a fresh domain-by-domain capability audit or a production release.
+- **Docs source head observed before this change:** `OXY7O/kaori-docs` `kaori/staging@269c12b6d747a9888d43a31a15446cdc2b3c5ed8`.
+- **Independent prerelease records:** GitHub Releases lists KAORI Application `v0.3.0-rc.3` (2026-11-22) and KAORI Docs `v0.3.0-rc.9` (2026-11-21). The check did not independently attest their signatures, immutable runtime digests, deployed state or Human Acceptance. No `v0.3.0` stable GitHub Release appeared in the inspected Application releases.
+- **Published documentation:** `docs/PUBLISHED_VERSIONS.json` still declares `publication_state: awaiting-release` and an empty `published` list; `versioned_docs/` contains only `.gitkeep`. There is **no approved published Application version line** or stable guide route to expose.
+- **Source promotion is not release:** Docs [promotion PR #95](https://github.com/OXY7O/kaori-docs/pull/95) already merged source to `main`; this does not publish accepted product guides, request a host deployment or establish a Docs stable artifact.
+- **Rights/deployment gate:** Docs [#74](https://github.com/OXY7O/kaori-docs/issues/74) is still open. The standing publication guard described in [DELIVERY.md](DELIVERY.md) therefore remains a separate blocker for any opt-in automatic RC publication. Do not enable auto-publication or public-edge mutation through this content workstream.
+
+### Existing editorial inventory (source checked on staging)
+
+All **15** existing product articles below retain `draft: true` and are intentionally excluded from public versioned navigation and search:
+
+- **#2 — Getting Started (1):** `content/getting-started/introduction.md`.
+- **#3 — Core Concepts (5):** capability/provider/instance model, external authority, committed evidence, cross-domain correlation and governed workflows.
+- **#4 — Product Guides (1):** Registry overview.
+- **#5 — Integrations (2):** integration catalog and Harbor Registry provider guide.
+- **#6 — Tutorials and How-to (2):** first inventory snapshot and refresh-evidence verification.
+- **#7 — Administration and Security (2):** overview and roles/permissions.
+- **#8 — Troubleshooting (2):** overview and outdated inventory evidence.
+
+This counts **review drafts**, not fifteen verified or release-qualified guides.
+Do not infer feature readiness from an article's existence. Source control,
+security, operational mutation, compatibility and release-note behavior must
+follow the current authoritative KAORI contracts, not the November 3 content
+matrix.
+
+### Corrected provenance and next editorial acceptance
+
+The older handoff table below lists PR #53 and #66–#71 as pending integration,
+which was accurate **when that handoff was written**. GitHub now confirms
+[#53](https://github.com/OXY7O/kaori-docs/pull/53),
+[#66](https://github.com/OXY7O/kaori-docs/pull/66),
+[#67](https://github.com/OXY7O/kaori-docs/pull/67) through
+[#71](https://github.com/OXY7O/kaori-docs/pull/71) **merged to
+`kaori/staging` on 2026-11-04**. They are not outstanding open PRs. Historical
+Developer Check links in that table remain tied to their old exact heads,
+not proof of current release qualification.
+
+1. **Revalidate product wording:** use the current
+   [KAORI Platform Direction](https://github.com/OXY7O/KAORI/blob/kaori/staging/docs/product/README.md)
+   and domain-owned documentation against an accepted Application RC/UAT
+   source. Confirm capability maturity, per-domain permissions, committed
+   evidence, freshness/partial scope and provider-vs-KAORI execution boundary.
+   New source head alone is not evidence of working UI.
+2. **Review issue-owned articles:** #2–#8 retain separate implementation
+   authority. Confirm actual UI steps, roles, expected outcome, unknown and
+   failure states, safe conceptual illustrations, accessibility, and release
+   applicability. Record accepted issue/PR/SHA and sanitized browser evidence
+   before changing any `draft: true`.
+3. **Keep version gates separate:** #15 owns native `/v0.3/` mapping; #9
+   owns exact `/releases/v0.3.0/` notes; #16 owns published-version-only local
+   search. A Docs `v0.3.0-rc.N` artifact is **not** evidence that the
+   Application `v0.3.0` is stable.
+4. **Review an RC safely:** use the existing local editorial preview and
+   governed Docs release/admission flow. Any signed RC publication, single-slot
+   deployment, shared-edge change and real browser/Human UAT require their
+   own existing approvals and receipts. A content-only staging merge must
+   **not** trigger publication or deployment.
+5. **Stable HOLD:** only after accepted KAORI Application `v0.3.0` release
+   identity, reviewed content/version map, signed Docs artifact, actual
+   accessibility/browser UAT, Human Acceptance and separately approved
+   Docs stable promotion may public product guides be described as stable.
+
 ## Source-reviewed coverage matrix
 
 | Capability / scoped workflow    | Source-reviewed entry / permission                                                                    | KAORI staging authority                                               | Docs issue | Source state             | Acceptance gap                                                  |
