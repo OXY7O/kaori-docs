@@ -20,6 +20,39 @@ KAORI is an extensible **infrastructure operations platform** that brings visibi
 
 This Introduction explains the platform's design principles, **not** a guaranteed feature list for a particular release.
 
+## Four questions behind KAORI's operating model
+
+The [KAORI Website](https://kaori.cloud/) introduces four connected ideas:
+**Sources, Context, Evidence, and Governance**. They help explain how to
+interpret an operational situation; they are **not** a fixed, synchronous
+execution pipeline or a promise that every integration is enabled.
+
+1. **Sources — What system is authoritative?** Identify the external tool,
+   configured instance, resource and collection scope. The provider still
+   owns its data and executes its own supported operations.
+2. **Context — What can be connected?** Use normalized identities and
+   supported relationships across domains. Similar names, timestamps or
+   labels alone do not establish a dependency.
+3. **Evidence — What was actually observed?** Inspect committed observations,
+   provenance, collection time, completeness and unknown states before
+   treating a finding as current or reliable.
+4. **Governance — What decision is permitted?** Separate a read-only finding
+   from a recommendation or authorized workflow. Any supported change needs
+   explicit target and impact validation, permissions, provider execution
+   and an auditable result.
+
+**Illustrative example:** A monitoring signal may suggest that a workload
+needs investigation, while another tool records an artifact or infrastructure
+asset. Those records only form a trustworthy relationship if an accepted
+identity or binding connects them. A signal does not prove root cause, a
+matching name does not prove dependency, and seeing a possible action does
+not grant permission to execute it.
+
+This way of reading KAORI applies across capabilities. The actual pages,
+supported sources, permissions and workflows must be verified for an
+**accepted KAORI Application release** before any version-specific guide
+is published.
+
 ## The capability-first model
 
 KAORI organizes its architecture from capability to provider to instance.
