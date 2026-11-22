@@ -69,6 +69,25 @@ The four canonical workflow names remain **Developer Check**, **Full Admission**
 
 CI PASS on either hosted or self-hosted staging runners is **not staging VPS UAT**, browser Human Acceptance, stable main promotion or deployment verification.
 
+## Retired one-time Environment credential diagnostic (#123)
+
+The former `environment-credential-preflight.yml` workflow has been retired
+after successful protected `staging` [run #44943864676](https://github.com/OXY7O/kaori-docs/actions/runs/44943864676)
+and independently reviewed protected `production` [run #44949213342](https://github.com/OXY7O/kaori-docs/actions/runs/44949213342).
+Both verified registry login, pinned SSH and the existing prepared target/receipt
+**read-only**. Their historical logs and approval remain audit evidence, not
+current CI or release gating. The diagnostic shell
+`scripts/environment-credential-preflight.sh` is retained for explicitly
+authorized troubleshooting, not an active GitHub Actions workflow.
+
+The four enduring workflows above still enforce source admission and
+signed release/deployment safety independently. Do not remove existing
+repository-secret fallback or claim credential isolation fully complete:
+[Docs #108](https://github.com/OXY7O/kaori-docs/issues/108) remains open
+for separate deny/reject, scoped-secret retirement and associated acceptance.
+No release, image publication, deployment or runtime mutation results from
+retiring the diagnostic.
+
 ## Gate failure/recovery
 
 1. Pin failing run URL, exact SHA, failing job, dependency and action versions.
