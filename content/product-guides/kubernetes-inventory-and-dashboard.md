@@ -1,192 +1,162 @@
 ---
 id: kubernetes-inventory-and-dashboard
 title: Kubernetes Inventory and Dashboard
-description: Understand the permission-scoped KAORI Kubernetes workspace, committed inventory, dashboard evidence, and safe read-only investigation.
+description: Read committed Kubernetes inventory and dashboard evidence with source, scope, and permission awareness.
 draft: true
 sidebar_position: 2
 ---
 
-> **Editorial status:** Unpublished, source-reviewed operator guide under
-> Docs #138. The names and behavior described here were read from KAORI
-> Application staging source, not verified in a live deployment or against
-> a stable product release. Actual menus, configured clusters and data
-> availability depend on permissions and the accepted Application candidate.
+> **Editorial status:** Unpublished source-reviewed draft for Docs #138.
+> Application staging source was inspected, but real role-scoped browser
+> UAT and stable-release applicability have not been accepted.
 
-## Purpose and audience
+## What this workspace provides
 
-The **Kubernetes** workspace combines operational overview, inventory,
-operations, governance, tenant and analytics capabilities in one
-domain-oriented navigation family. This guide covers only the
-**read-only Operational Dashboard and committed Inventory views**.
+The **Kubernetes** workspace groups Overview, Inventory, Operations,
+Governance, Tenant and Analytics capabilities. Each may have
+different permissions and data readiness. This guide describes
+the **read-only Dashboard and Inventory** workflows only.
 
-It is intended for authorized infrastructure operators and observers
-who need to identify assets, investigate workload relationships and
-interpret the age and completeness of collected evidence. It does not
-grant permission to change a cluster or expose Kubernetes Secrets.
+Kubernetes remains authoritative for its own cluster resources.
+KAORI stores normalized inventory generations and presents
+source-qualified evidence. A web request does not automatically
+refresh a cluster, execute Kubernetes API calls or obtain
+up-to-date metrics from an external monitoring service.
 
-### Before you begin
+## Audience and access
 
-- Your KAORI account must be authorized to view the relevant capability
-  and selected cluster. The source catalog labels Kubernetes Overview
-  with `dashboard.view` and Inventory with `inventory.view`. Those
-  navigation permissions do **not** bypass route, resource-scope or
-  integration validation checks.
-- The cluster must be registered through its owning Kubernetes
-  integration and have collected inventory evidence. A registration
-  record alone does not prove that a current snapshot exists.
-- Source-derived visibility and usability must be confirmed with a
-  permitted account during candidate browser UAT. No real cluster,
-  namespace or provider endpoint is assumed in this example.
+- **Overview:** The navigation catalog lists `dashboard.view`.
+- **Inventory:** The navigation catalog lists `inventory.view`.
 
-## Workspace navigation at a glance
+These are **navigation** permission indicators, not blanket
+authorization to inspect every cluster or change a workload.
+An authorized account and a registered Kubernetes integration
+are prerequisites. Provider readiness, selected cluster scope
+and current committed collection status must be verified
+separately.
 
-The source-defined Kubernetes top-level capability tabs are
-**Overview**, **Inventory**, **Operations**, **Governance**,
-**Tenant** and **Analytics**. Some require distinct permissions and
-may not appear for every account.
+## Inventory menu reference
 
-From **Kubernetes → Inventory**, the source catalog declares these
-nested views:
+The source-defined **Kubernetes → Inventory** workspace
+includes these nested views:
 
-- **Overview:** Inventory assets, multi-cluster scope and last collection context.
-- **Topology:** Recorded resource relationships and cluster/namespace boundaries.
-- **Nodes:** Node identity, readiness and reported capacity.
-- **Namespaces:** Namespace identity and resource controls.
-- **Workloads:** Workload identity, desired/runtime posture and available Pod
-  template evidence.
-- **Pods:** Pod readiness, phase and cumulative restart counts.
-- **Services:** Service identity and configured exposure.
-- **Ingresses:** Recorded ingress rules and relationships.
-- **Storage:** Persistent volumes, claims and source-backed relationships.
-- **Configuration:** ConfigMaps and other collected configuration evidence where
-  supported.
+- **Overview:** Fleet inventory, coverage and snapshot context.
+- **Topology:** Recorded resource identities and relationships.
+- **Nodes:** Node identity, state and capacity metadata.
+- **Namespaces:** Namespaces and resource controls.
+- **Workloads:** Workload ownership and reported Pod templates.
+- **Pods:** Pod phase, readiness and restart evidence.
+- **Services:** Service identity and exposure configuration.
+- **Ingresses:** Recorded ingress routing and references.
+- **Storage:** Persistent storage resources and associations.
+- **Configuration:** Collected configuration records.
 
-## Read-only workflow: review a cluster inventory
+The user-visible menu may be filtered by role and feature
+readiness. These source entries do not prove that every tab
+is accessible or populated in a given environment.
 
-1. Sign in with an account granted the applicable Inventory access.
-   Open **Kubernetes → Inventory** in the workspace navigation.
-2. Select the desired cluster or authorized all-cluster scope when
-   that option is available to the account. Inspect the collection
-   timestamp and evidence scope before using totals as current facts.
-3. Review **Inventory Overview** for asset counts and collection
-   context. A missing or partial collection must not be described as
-   an empty or healthy cluster.
-4. Choose **Nodes**, **Workloads** or **Pods** according to the
-   investigation. Narrow the available cluster, namespace, state or
-   other resource-specific filters as appropriate.
-5. Inspect the visible records. The established KAORI inventory
-   tables default to **5 rows per page**, with 5/10/25/50 page-size
-   options. Filter changes update the scope-aware summary and
-   dependent options; pagination changes the visible rows.
-6. Open a permitted resource detail when offered. Compare the
-   object's recorded identity, namespace, status and related
-   resources with the collection context. Do not infer a workload
-   Pod template from observed Pods if the authoritative template
-   was not collected.
-7. Open **Topology** to examine source-supported relationships.
-   Matching names alone do not prove a dependency. Avoid mixing
-   resources from different clusters or superseded inventory
-   generations when interpreting a visual relationship.
+## Task: review an inventory snapshot
 
-**Expected outcome:** you can describe which resources were
-**observed in a specific committed inventory generation**, the
-selected scope, and what data was missing or uncertain. No provider
-mutation should occur during this workflow.
+1. Sign in with the required Inventory authorization and open
+   **Kubernetes → Inventory**.
+2. Select the relevant cluster or permitted all-cluster scope.
+   Inspect the collection timestamp before trusting totals.
+3. Review **Overview** to understand the asset coverage. A
+   pending or incomplete collection is not evidence of an
+   empty cluster.
+4. Open **Nodes**, **Workloads** or **Pods**, as needed, and
+   apply the available cluster, namespace or status filters.
+5. Inspect a permitted resource detail and compare its
+   identity, reported state and related objects against
+   the selected snapshot.
+6. Open **Topology** to inspect source-supported relations
+   without inferring a connection from identical names.
 
-### Reading health and status without overclaiming
+**Expected result:** a scoped list of assets and relationships
+observed in one committed inventory generation. This is
+a read-only investigation, not an operation on the cluster.
 
-- **Inventory freshness:** the cluster's `ClusterInventory.collected_at`
-  value identifies the committed generation marker. List rows,
-  summaries, dependent filters, details and topology should read the
-  same current generation rather than mixing old and incomplete
-  observations.
-- **Pod readiness versus phase:** Ready, Starting, Not Ready, Failed,
-  Completed and Unknown convey distinct operational evidence.
-  A Pod restart count is cumulative unless its time window is
-  explicitly known.
-- **Capacity:** Kubernetes object capacity metadata and metrics
-  utilization represent different sources and timestamps.
-  A resource's configured limits or requests are not automatically
-  its observed utilization.
-- **Unknown does not mean healthy:** absent certificate, image,
-  topology, runtime or policy evidence must not silently become a
-  passing compliance posture.
+Tables use canonical KAORI pagination, defaulting to
+**5 records per page**, with 5/10/25/50 options. Filter
+changes refresh the scope-dependent workspace context,
+while pagination changes only the visible records.
 
-## Read-only workflow: interpret the dashboard
+### How to interpret inventory correctly
 
-The source catalog exposes the operational dashboard at
-**Kubernetes → Overview**, which is permission-scoped under
-`dashboard.view`. The dashboard uses committed KAORI data rather
-than calling Kubernetes, Metrics Source or Alertmanager synchronously
-on a normal web request.
+The source contract uses
+`ClusterInventory.collected_at` as the committed generation
+marker. Summaries, filters, detail views and topology must
+not silently combine new and superseded generations.
 
-1. Open **Kubernetes → Overview** and confirm the selected cluster
-   scope and timestamp context.
-2. Read **Operations Overview** for Cluster Health, Inventory
-   Snapshot and Data Freshness. These are committed projections;
-   a successful page load alone cannot prove every source is ready.
-3. Inspect **Capacity & Demand** for capacity, Top Consumers and
-   forecast only when the corresponding worker evidence exists.
-   A forecast is a model output—not a measured future utilization.
-4. Review **Signals & Actions** for source-qualified alerts and
-   recommendations. Verify the signal source and available
-   evidence; a recommendation is not approval to execute remediation.
-5. Use **Reporting** for reported results when authorized and
-   available. A queued report or missing worker result must not be
-   represented as a completed report.
+- **Ready and phase are distinct:** a Pod's Ready state
+  cannot be inferred solely from its phase.
+- **Restart counts are cumulative:** a time-windowed
+  restart rate requires separate time-qualified evidence.
+- **Pod template details are source-owned:** do not infer
+  workload configuration from existing Pods when the
+  authoritative collected template is missing.
+- **Unknown remains unknown:** missing conditions or
+  relationships are not a clean bill of health.
 
-**Expected outcome:** a read-only, evidence-limited view of
-current *committed* operational posture. Missing, stale, pending,
-expired or failed worker data must remain distinguishable.
+## Task: interpret the operational dashboard
 
-## When data does not look right
+The source-defined **Kubernetes → Overview** page reads
+committed KAORI projections, with `dashboard.view`
+navigation permission. It does not directly query
+Kubernetes, Metrics Source or Alertmanager during
+normal page GET requests.
 
-- **Cluster missing from scope:** Check account scope and the owning Kubernetes
-  integration; do not bypass RBAC or add a cluster as a workaround.
-- **Empty table but source expected:** Inspect the last committed collection,
-  source/binding and applied filters before concluding there are no resources.
-- **Totals and records appear inconsistent:** Compare selected cluster/namespace
-  filters and generation timestamp; record the discrepancy for the owning
-  inventory workflow.
-- **Topology has missing edges:** Confirm both endpoints and their source-supported
-  identity/binding; do not draw a dependency from matching labels.
-- **Dashboard analytics are stale or unavailable:** Check evidence age, Metrics
-  Source/Alertmanager configuration and owning worker/job outcome through
-  authorized views.
-- **Action is unavailable or disabled:** Confirm role permissions, resource scope and
-  owning workflow maturity; viewing the dashboard does not grant execution rights.
+1. Open **Kubernetes → Overview** with a permitted cluster
+   scope and review **Operations Overview**.
+2. Read Cluster Health, Inventory Snapshot and Data
+   Freshness before interpreting operational summaries.
+3. Inspect **Capacity & Demand** for committed metrics,
+   Top Consumers and available forecast results.
+4. Review **Signals & Actions** for qualified alert
+   and recommendation evidence. A recommendation is
+   not permission to execute remediation.
+5. Review **Reporting** only when its source and worker
+   evidence are available to your account.
 
-Do not restart a cluster, delete inventory, reset persistent storage
-or mutate external providers solely because a dashboard looks stale.
-Escalate with sanitized source, selected scope, collection timestamp,
-job status and a reproducible UI navigation path.
+**Expected result:** a read-only explanation of the
+last committed operational posture. Missing, stale,
+expired or failed worker data must be shown as such.
+A forecast is model output, not a verified future state.
 
-## Related workflows and current limits
+## Troubleshooting and limitations
 
-**Operations** (including ConfigMaps and Secrets), **Governance**
-(certificates), **Tenant** (resource profiles and namespace
-provisioning), and **Analytics** each have their own permission and
-potential mutation or sensitive-data contracts. They need separate
-guides and UAT; the read-only Inventory permission does **not**
-authorize those actions.
+- If a cluster is missing, check permitted scope and
+  integration registration before assuming deletion.
+- If rows are empty, verify filters, collection outcome,
+  generation timestamp and available provider evidence.
+- If data conflicts across pages, compare source scope,
+  current generation and the relevant worker result.
+- If topology edges are missing, verify actual source
+  identities and bindings, not merely matching labels.
+- If analytics are stale, review the owning Metrics Source
+  or Alertmanager binding and the committed worker state.
+- If an action is unavailable, check the actual
+  permission and the owning workflow maturity.
 
-No specific Kubernetes distribution, cluster, observability
-provider, alert source or production deployment is claimed
-configured by this documentation. All examples are conceptual.
+Do not restart a cluster or delete inventory to resolve
+a stale dashboard without separate evidence and change
+authorization. Kubernetes Operations, Governance, Tenant
+and other mutating workflows require their own guide
+and action-specific UAT.
 
-## Source and release applicability
+## Source and acceptance
 
-Source reviewed: KAORI Application
+This draft reflects KAORI Application
 `app/common/workspace_navigation_catalog.py`,
 `app/common/workspace_navigation.py`,
 `app/kubernetes/inventory/README.md`,
-`app/kubernetes/dashboard/README.md`, and
-`app/dashboards/README.md` on
-`kaori/staging@197a7f7e598c111592a8ae36388865cd3aacf541`.
+`app/kubernetes/dashboard/README.md` and
+`app/dashboards/README.md` at source revision
+`197a7f7e598c111592a8ae36388865cd3aacf541`.
 
-**Remaining acceptance:** verify every named menu and link against
-real role-scoped browser UAT; capture evidence for normal/empty/stale
-and partial cases; validate applicable Application candidate
-tag/SHA, provider readiness, rights/sanitization and reviewer
-decisions. This article remains `draft: true` and is **not** a
-stable product guide or part of the current public Docs RC.
+Before acceptance, verify real menus, permissions and
+data states on an admitted application candidate;
+capture sanitized normal, empty, stale and partial
+browser evidence; and obtain an independent content
+review. This article remains `draft: true` and
+is not published in the current Docs RC.
