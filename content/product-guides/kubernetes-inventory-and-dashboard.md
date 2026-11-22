@@ -48,18 +48,18 @@ may not appear for every account.
 From **Kubernetes → Inventory**, the source catalog declares these
 nested views:
 
-| View | What to inspect |
-| --- | --- |
-| Overview | Inventory assets, multi-cluster scope and last collection context |
-| Topology | Recorded resource relationships and cluster/namespace boundaries |
-| Nodes | Node identity, readiness and reported capacity |
-| Namespaces | Namespace identity and resource controls |
-| Workloads | Workload identity, desired/runtime posture and available Pod template evidence |
-| Pods | Pod readiness, phase and cumulative restart counts |
-| Services | Service identity and configured exposure |
-| Ingresses | Recorded ingress rules and relationships |
-| Storage | Persistent volumes, claims and source-backed relationships |
-| Configuration | ConfigMaps and other collected configuration evidence where supported |
+| View          | What to inspect                                                                |
+| ------------- | ------------------------------------------------------------------------------ |
+| Overview      | Inventory assets, multi-cluster scope and last collection context              |
+| Topology      | Recorded resource relationships and cluster/namespace boundaries               |
+| Nodes         | Node identity, readiness and reported capacity                                 |
+| Namespaces    | Namespace identity and resource controls                                       |
+| Workloads     | Workload identity, desired/runtime posture and available Pod template evidence |
+| Pods          | Pod readiness, phase and cumulative restart counts                             |
+| Services      | Service identity and configured exposure                                       |
+| Ingresses     | Recorded ingress rules and relationships                                       |
+| Storage       | Persistent volumes, claims and source-backed relationships                     |
+| Configuration | ConfigMaps and other collected configuration evidence where supported          |
 
 All views describe **recorded data**, not an immediate query to the
 Kubernetes API. Some resource details can be unknown because the
@@ -146,14 +146,14 @@ expired or failed worker data must remain distinguishable.
 
 ## When data does not look right
 
-| Observation | Safe investigation |
-| --- | --- |
-| Cluster missing from scope | Check account scope and the owning Kubernetes integration; do not bypass RBAC or add a cluster as a workaround |
-| Empty table but source expected | Inspect the last committed collection, source/binding and applied filters before concluding there are no resources |
-| Totals and records appear inconsistent | Compare selected cluster/namespace filters and generation timestamp; record the discrepancy for the owning inventory workflow |
-| Topology has missing edges | Confirm both endpoints and their source-supported identity/binding; do not draw a dependency from matching labels |
-| Dashboard analytics are stale or unavailable | Check the evidence age, Metrics Source/Alertmanager configuration and owning worker/job outcome through authorized views |
-| Action is unavailable or disabled | Confirm role permissions, resource scope and the owning workflow's current maturity; viewing the dashboard does not grant execution rights |
+| Observation                                  | Safe investigation                                                                                                                         |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Cluster missing from scope                   | Check account scope and the owning Kubernetes integration; do not bypass RBAC or add a cluster as a workaround                             |
+| Empty table but source expected              | Inspect the last committed collection, source/binding and applied filters before concluding there are no resources                         |
+| Totals and records appear inconsistent       | Compare selected cluster/namespace filters and generation timestamp; record the discrepancy for the owning inventory workflow              |
+| Topology has missing edges                   | Confirm both endpoints and their source-supported identity/binding; do not draw a dependency from matching labels                          |
+| Dashboard analytics are stale or unavailable | Check the evidence age, Metrics Source/Alertmanager configuration and owning worker/job outcome through authorized views                   |
+| Action is unavailable or disabled            | Confirm role permissions, resource scope and the owning workflow's current maturity; viewing the dashboard does not grant execution rights |
 
 Do not restart a cluster, delete inventory, reset persistent storage
 or mutate external providers solely because a dashboard looks stale.
