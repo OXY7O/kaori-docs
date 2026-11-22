@@ -1,80 +1,73 @@
 ---
 id: security-posture-overview-and-findings
 title: Security Posture Overview and Findings
-description: Safely investigate source-qualified CVE findings and runtime evidence without mistaking missing coverage for security.
+description: Investigate qualified CVE evidence and runtime correlation without mistaking unobserved assets for clean posture.
 draft: true
 sidebar_position: 6
 ---
 
-> **Editorial status:** Unpublished read-only draft for Docs
-> #148. Product behavior is based on KAORI Application
-> staging source, not an accepted live deployment or
-> stable-release security assessment.
+> **Editorial status:** Unpublished source-reviewed draft for Docs #148.
+> Staging source is not an accepted live scanner assessment or stable release.
 
-## Purpose and evidence ownership
+## Purpose and source authority
 
-**Security** is an Assurance workspace for interpreting cross-domain committed security evidence. It does **not** replace external scanners, the Artifact Registry source workspace, a SIEM or an automated remediation engine.
+**Security** is a cross-domain Assurance workspace that consumes committed observations rather than operating a scanner, SIEM or remediation engine. **Artifact Registry** remains authoritative for artifact digests, scan generations, affected packages and CVEs. Kubernetes and runtime owners independently supply observed workload bindings.
 
-In the current source design, **Artifact Registry** owns artifact digests, packages, scanner CVEs, scan generations and source evidence. Kubernetes and runtime owners provide separately committed workload binding evidence. Security correlates only those facts it can qualify without inventing application ownership or runtime exposure.
+Security can correlate evidence only when the relevant source and permission boundaries have been qualified. A finding is not proof of exploitability, complete coverage, ownership of an application or a running workload with that immutable digest.
 
-A finding is useful only when its source, scan freshness, affected artifacts, observed runtime binding and relevant permission boundaries are understood.
+## Permissions and navigation
 
-## Access and product navigation
+- **Security → Overview:** Read-only Security Snapshot, Exposure Analysis and qualified source context.
+- **Security → Findings:** Detailed grouped CVE investigation, filters, pagination and source-qualified impact links.
 
-The source-declared Assurance workspace contains two entries:
+Both routes require `security_posture.view`. Reading source-specific Artifact Registry Security details requires the additional `artifact_registry.view` permission. An Assurance reader cannot inherit access to Registry data solely from the aggregate Security role.
 
-- **Security → Overview:** A read-only security summary and source/evidence perspective.
-- **Security → Findings:** The detailed, source-qualified CVE investigation registry.
+Source catalog visibility and actual runtime access must be verified with an accepted application candidate. Intelligence, Reports and Integration links also retain their independent permissions.
 
-Both routes require `security_posture.view` in the source-owned route layer. Viewing **Artifact Registry → Security** or opening an exact-CVE source impact link also requires the independent `artifact_registry.view` permission. An aggregate Security view does not grant source-domain read permission.
+## Task: inspect Security Overview
 
-Other cross-links, including Intelligence, Reports and Integrations, are separately permission-filtered.
+1. Open **Security → Overview** with an authorized account.
+2. Review the source readiness and scanner freshness before interpreting severity totals.
+3. Inspect **Finding Highlights** for up to three qualified, severity-ordered CVEs and accompanying source-wide counters.
+4. Examine **Assets & Impact**, **Findings & Investigation**, and **Evidence & Sources** for observed digest, runtime and source context.
+5. Use **Open Findings** to reach the full investigation registry when you need search or pagination.
 
-## Task: review the Security overview
-
-1. Sign in with Security Posture viewing permission and open **Security → Overview**.
-2. Inspect the Security Snapshot and source readiness before interpreting severity counts as a fleet-wide answer.
-3. Review the **Exposure Analysis** summary. Its **Finding Highlights** display only the first three qualified severity-ordered CVEs and source-wide counters.
-4. Use the other perspectives—**Assets & Impact**, **Findings & Investigation**, and **Evidence & Sources**—to examine available digests, observed runtime bindings and their evidence limitations.
-5. Select **Open Findings** to move into the full investigation workspace. This is the authoritative Security page for detailed filtering and pagination.
-
-**Expected result:** an explicitly qualified view of collected scanner and runtime evidence. An absent highlight is not proof that no vulnerable artifacts exist.
-
-### What freshness and coverage mean
-
-- **Scanner freshness:** An unchanged CVE count does not prove that a rescanning event did or did not take place. Scanner evidence may be current, stale or incomplete.
-- **Partial coverage:** Assets not covered by a usable scan cannot be counted as secure, remediated or absent.
-- **Runtime correlation:** The presence of a CVE against an artifact digest does not automatically prove a workload is running that same immutable digest.
-- **Unknown runtime scope:** When correlation is not Ready, runtime binding totals must remain **Unknown**, not zero.
-- **Distinct CVEs:** Overview counts aggregate qualified latest usable scanner CVEs and are independent of the three visible highlights.
-
-A scanner refresh, a Security source view refresh, and a runtime correlation worker are different operations with different outcomes. Normal Security GET requests must not silently trigger them.
+**Expected result:** a source-backed explanation of the latest usable security and runtime observations. Three highlighted findings are not the complete Registry finding set, and an empty highlight is not an all-clear.
 
 ## Task: investigate the Findings registry
 
-1. Open **Security → Findings**.
-2. Review the Provider Authority, committed Evidence Qualification, scanner freshness and runtime correlation readiness in the page's source context.
-3. Apply **Search CVE** or **Severity** filters to narrow the list.
-4. Inspect the grouped CVE record, affected digest/source count and known observed bindings.
-5. Use the canonical table pagination, defaulting to **5 rows** and offering 5/10/25/50 page sizes.
-6. Select a permitted exact-CVE impact link to Artifact Registry only if your account holds that independent source-domain permission.
-7. Use **Refresh View** to refresh the *committed UI projection*, not to launch a scanner or provider call.
+1. Open **Security → Findings** and read the Evidence Qualification information.
+2. Inspect source freshness separately from runtime-correlation readiness.
+3. Apply the available **Search CVE** and **Severity** filters.
+4. Review the grouped CVE, affected digest count and available observed runtime binding evidence.
+5. Page through records with the canonical default **5-row** pagination and 5/10/25/50 size options.
+6. Follow a permitted exact-CVE impact link into Artifact Registry only if you hold its separate source permission.
+7. Use **Refresh View** to refresh the committed page projection, not to request a provider scan.
 
-**Expected result:** a reproducible, source-backed and permission-scoped finding investigation. The result does not assert actual exploitability, full fleet coverage, successful patching or verified remediation.
+**Expected result:** a bounded read-only investigation of current committed evidence. Normal GET requests do not launch scans, synchronize sources or mutate workloads.
 
-## Interpreting empty and degraded views
+## Interpret missing and stale evidence
 
-- **No Registry source:** The Assurance page cannot invent scan evidence.
-- **Source registered but uncollected:** Inventory readiness remains unknown until a usable committed observation.
-- **Failed later refresh:** Last-good scanner evidence may remain visible with explicit age and stale status.
-- **Newer usable scan:** The newer accepted scan supersedes older artifact findings in normal reads.
-- **Runtime correlation unavailable:** Scope counts and links must remain qualified instead of implying observed non-exposure.
-- **Permission denied:** The Security page may be available even when Artifact Registry detail is not. Do not treat access denial as missing CVE evidence.
+- **No eligible Registry integration:** Security cannot invent a scan or assert absence of vulnerabilities.
+- **Inventory not collected:** Findings and affected-asset coverage remain unknown.
+- **Failed refresh:** Last-good scanner evidence may be retained with explicit age and stale status.
+- **New successful scan:** The latest usable source generation supersedes older scanner observations.
+- **Partial assessment:** Unscanned or unsupported artifacts cannot be counted as remediated or secure.
+- **Runtime correlation unavailable:** Binding totals and impact must remain **Unknown**, not zero.
+- **Source permission denied:** The user may see an authorized aggregate but not Registry impact details.
 
-Do not run active scans, delete artifact records or deploy patches just to force a healthy-looking Security dashboard. Those actions have separate domain, job and change-approval controls.
+A successful Security page response is not a live provider request or validation of current container runtime. Scanner freshness, Registry synchronization, Security View refresh and runtime correlation represent different operations.
 
-## Source and candidate applicability
+## Troubleshooting and safety
 
-Reviewed Application authority: `app/security_posture/README.md`, `app/security_posture/routes.py`, `app/common/workspace_navigation_catalog.py`, and committed Artifact Registry security/runtime evidence contracts from KAORI staging source `197a7f7e598c111592a8ae36388865cd3aacf541`.
+If a finding appears inconsistent, compare the scanner generation, artifact digest, source selection, collection timestamp and runtime-correlation status. If records disappear, check source coverage, filters, access and the accepted generation before interpreting it as remediation.
 
-Before RC publication, confirm the admitted App candidate, real permission-scoped browser behavior, scanner generation and freshness states, partial/unknown inputs, Registry source-link 403 boundaries, rightful sanitized visuals, and Human Acceptance. This article remains `draft: true` and does not represent a stable security guarantee.
+Do not run a scanner, delete artifacts, restart workloads or change security controls merely to make an empty or stale dashboard appear healthy. Such actions require separate authorized operational workflows and evidence.
+
+Use sanitized illustrations only. Real artifact identifiers, customer applications, private CVE exposure reports, internal endpoints, provider credentials and incident evidence are not suitable for this public documentation source.
+
+## Source and release qualification
+
+Reviewed Application sources: `app/security_posture/README.md`, `app/security_posture/routes.py`, `app/common/workspace_navigation_catalog.py` and authoritative Artifact Registry security/runtime contracts at revision `197a7f7e598c111592a8ae36388865cd3aacf541`.
+
+Before publication, verify an admitted application candidate, actual role-scoped browser navigation, scanner stale/partial states, correlation-denied/unknown paths, Registry link authorization, accessibility and independent Human Acceptance. The article remains `draft: true` and is not a stable security guarantee.
