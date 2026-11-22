@@ -160,18 +160,35 @@ The existing signed RC publisher uses GitHub Environment `staging`. The accepted
 
 Docs first-main broad promotion [#95](https://github.com/OXY7O/kaori-docs/pull/95), public content publication, live DNS/TLS changes and automatic production deployment remain outside this issue.
 
-## GitHub Environment credential and SSH preflight (read-only) — #108
+## Retired one-time Environment credential preflight — #108 / #123
 
-The existing `.github/workflows/environment-credential-preflight.yml` reuses **the already configured** `staging`/`production` GitHub Environment variables and five encrypted secrets. It never provisions a VM, changes a server file, restarts Docker, deploys an image, publishes a tag or updates DNS. Runtime application configuration remains authoritative on the VM; there is **no GitHub `HOST_DEPLOY_ENV_FILE` setting or topology/slot-count mode**.
+The standalone GitHub Actions `Environment Credential Preflight` workflow
+was a **one-time read-only diagnostic**, and has been retired under [Docs #123](https://github.com/OXY7O/kaori-docs/issues/123), following the approved [Website #260](https://github.com/OXY7O/kaori-website/issues/260) cleanup pattern.
+Its GitHub Actions source `.github/workflows/environment-credential-preflight.yml`
+is no longer an active release workflow after the reviewed changes reach the
+protected branch. **Historical runs remain audit evidence**; deleting the YAML
+does not necessarily remove the old Actions sidebar entry.
 
-The first approved protected-staging merge of this workflow runs a **staging-only** preflight once (file-change-scoped push). Later runs are explicit CLI dispatches:
+- [Staging preflight #44943864676](https://github.com/OXY7O/kaori-docs/actions/runs/44943864676):
+  **COMPLETED/SUCCESS** after staging Environment binding.
+- [Production preflight #44949213342](https://github.com/OXY7O/kaori-docs/actions/runs/44949213342):
+  **COMPLETED/SUCCESS** after independent native GitHub `production`
+  Environment approval by `donibawono`.
 
-```bash
-gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-docs --ref kaori/staging -f target_environment=staging
-# Only after reviewed main promotion and native production Environment reviewer approval:
-gh workflow run environment-credential-preflight.yml -R OXY7O/kaori-docs --ref main -f target_environment=production
-```
+Those runs validated registry credential transport, pinned SSH identity, and
+the existing Docs deployment root/receipt/Docker access **without mutation**.
+They did **not** approve an image, deploy an RC, prove live browser acceptance,
+authorize rollback, demonstrate production deny/reject, or release stable Docs.
+Issue [#108](https://github.com/OXY7O/kaori-docs/issues/108) remains **OPEN**
+for its separate credential-isolation governance: repository-level secret
+fallback must not be removed until independently accepted proof and rollback
+readiness. The standalone `scripts/environment-credential-preflight.sh`
+remains available as historical read-only operator diagnostic code; it does
+not run automatically and may only be executed under separately authorized,
+safely provided Environment inputs.
 
-The job fails closed on a wrong branch, absent credentials, mismatched registry/image prefix, unsafe deploy root, missing **pinned known_hosts**, rejected SSH key/passphrase, unreachable or untrusted VM, missing existing release receipt, or unavailable target Docker daemon. Registry login is stored only in a disposable hosted-runner config. Remote checks run as the configured SSH user and perform **existence/read-only inspections only**. Production requires a protected `main` branch and the actual GitHub `production` Environment review; a staging secret cannot be used to assert production readiness. No secret values or host files are printed.
-
-A PASS proves credential transport and target access **at the time of the run**, not an accepted image digest, independent browser UAT, recovery, public-edge authority, or stable release. A failed check is an operational blocker; do not bypass it by switching to repository-level fallback secrets or running the normal deploy workflow as a test. Retain existing repository credentials until Environment-scoped preflight and required release checks are independently accepted.
+**Current continuing authority** is the existing `Developer Check`,
+`Full Admission`, `Release Candidate` and `Release Deployment` workflows,
+and their signed digest, Environment approval, pinned SSH, committed receipt,
+public-edge verification, rollback and Human Acceptance gates. The diagnostic
+retirement does not weaken those checks or request a production release.
