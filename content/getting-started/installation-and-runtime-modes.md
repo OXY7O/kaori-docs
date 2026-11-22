@@ -17,11 +17,11 @@ sidebar_position: 2
 KAORI currently documents three **different execution purposes**.
 Choose one before editing configuration or starting containers.
 
-| Mode | Intended use | What runs | Important boundary |
-| --- | --- | --- | --- |
-| Local Dev Container | Source development and debugging | Source checkout, Flask debug, PostgreSQL, Redis, workers, Beat and frontend tooling | Development credentials and bind-mounted source are **not** production isolation |
-| Local standalone RC | Disposable candidate evaluation without a Dev Container | An accepted immutable candidate image and separate local PostgreSQL/Redis/worker/Beat stack | Not editable-source development and not a stable customer release |
-| Governed server | Authorized UAT or release deployment | Accepted signed image, controlled configuration, migrations, workers, health and recovery | Requires separate approval and host/operator procedures; **not** a copy of local development |
+| Mode                | Intended use                                            | What runs                                                                                   | Important boundary                                                                           |
+| ------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Local Dev Container | Source development and debugging                        | Source checkout, Flask debug, PostgreSQL, Redis, workers, Beat and frontend tooling         | Development credentials and bind-mounted source are **not** production isolation             |
+| Local standalone RC | Disposable candidate evaluation without a Dev Container | An accepted immutable candidate image and separate local PostgreSQL/Redis/worker/Beat stack | Not editable-source development and not a stable customer release                            |
+| Governed server     | Authorized UAT or release deployment                    | Accepted signed image, controlled configuration, migrations, workers, health and recovery   | Requires separate approval and host/operator procedures; **not** a copy of local development |
 
 The root `.env`, the standalone `example/kaori/.env`,
 and governed server environment are **separate authorities**. Do not
