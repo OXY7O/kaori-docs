@@ -100,15 +100,21 @@ export default function RcReview(): React.JSX.Element {
                   </tr>
                   <tr>
                     <td>Is the asset the same?</td>
-                    <td>Authoritative identity and supported relationship evidence.</td>
+                    <td>
+                      Authoritative identity and supported relationship evidence.
+                    </td>
                   </tr>
                   <tr>
                     <td>Is the explanation complete?</td>
-                    <td>Unknown, unavailable, stale or partial observations.</td>
+                    <td>
+                      Unknown, unavailable, stale or partial observations.
+                    </td>
                   </tr>
                   <tr>
                     <td>Can an action be taken?</td>
-                    <td>Supported workflow, explicit target, permissions and audit.</td>
+                    <td>
+                      Supported workflow, explicit target, permissions and audit.
+                    </td>
                   </tr>
                 </tbody>
               </table>
