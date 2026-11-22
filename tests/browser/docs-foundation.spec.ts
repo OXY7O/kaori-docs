@@ -156,8 +156,13 @@ test('release-neutral RC review is reachable while versioned guides remain withh
       name: 'Four questions for every investigation',
     }),
   ).toBeVisible();
-  await expect(page.locator('article li')).toHaveCount(4);
-  await expect(page.getByRole('table')).toBeVisible();
+  await expect(page.locator('ol > li')).toHaveCount(4);
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'Example: interpreting a monitoring signal',
+    }),
+  ).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(0);
   await expect(page.getByRole('link', {name: /KAORI v0\.3/i})).toHaveCount(0);
   await page.getByRole('link', {name: 'Return to Documentation Home'}).click();
