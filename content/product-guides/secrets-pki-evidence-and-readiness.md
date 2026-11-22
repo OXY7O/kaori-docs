@@ -1,108 +1,85 @@
 ---
 id: secrets-pki-evidence-and-readiness
 title: Secrets & PKI Evidence and Readiness
-description: Safely interpret source-qualified secret metadata, public PKI observations, blocked prerequisites, and cross-domain evidence.
+description: Interpret safe metadata-only Secrets and PKI evidence without claiming verified delivery or exposing secrets.
 draft: true
 sidebar_position: 5
 ---
 
-> **Editorial status:** Unpublished, source-reviewed operator draft for
-> Docs #146. This is not an approved production Vault integration guide,
-> secret-reveal procedure, certificate rotation playbook or stable
-> product claim. All examples are conceptual and contain no real data.
+> **Editorial status:** Unpublished source-reviewed draft for Docs #146.
+> Source navigation is not proof of a live Vault deployment or accepted stable release.
 
-## What Secrets & PKI does
+## Purpose
 
-**Secrets & PKI** is KAORI's provider-neutral infrastructure capability for understanding the readiness of secret metadata collection and qualified public-certificate evidence.
+**Secrets & PKI** is KAORI's provider-neutral operational workspace for committed, safe Secret metadata and public-certificate evidence. Vault remains authoritative for authentication, Secret material, engines and PKI issuance. KAORI does not store or reveal raw Secret values in the ordinary dashboard and Inventory views.
 
-A provider such as Vault remains authoritative for credentials, secret engines, PKI issuance and material. KAORI does not replace Vault or expose raw secret values in its ordinary Inventory, Overview or Lifecycle read models.
+Provider registration and approved mounts are managed separately under **Integrations → Secrets Management → Secrets & PKI → Vault**. A configured connection, verified provider API and completed metadata collection are different readiness states.
 
-The operational workspace is separate from provider setup:
+The source-defined workspace contains **Overview**, **Inventory**, and **Lifecycle & Assurance**. Each evidence category has independent maturity and source requirements. A visible tab is not a guarantee that every PKI lifecycle capability has been admitted.
 
-- **Secrets & PKI → Overview:** Read-only operational dashboard and collection prerequisites.
-- **Secrets & PKI → Inventory:** Safe aggregate KV v2 metadata, coverage and supported public PKI posture.
-- **Secrets & PKI → Lifecycle & Assurance:** Source-qualified lifecycle/assurance interpretation.
-- **Integrations → Secrets Management → Secrets & PKI → Vault:** Provider instance, credentials, eligible source and approved mount configuration.
+## Permissions and prerequisites
 
-A source-declared tab does not establish all PKI lifecycle, consumer or historical analytics functionality as generally available. Each evidence category is qualified separately.
+- **Read-only views:** The source routes require `secrets_pki.view`.
+- **Provider setup:** Registering an instance and approving mounts requires `integrations.manage`.
+- **Manual collection:** The registered inventory Job requires `secrets_pki.sync` and `jobs.execute`.
+- **Public certificate overlap:** Cross-domain Kubernetes TLS evidence additionally requires `tls_certificates.view`.
 
-## Audience, authorization and prerequisites
+Read permission does not authorize raw Secret access, revealing credentials, starting collection, issuing a certificate, or rotating a key. Scope and role controls must be verified for the accepted application candidate.
 
-Ordinary read-only Overview/Inventory access is guarded by `secrets_pki.view` in the source-owned routes. Provider connection and approved mount configuration require the separate `integrations.manage` permission.
+## Task: inspect Vault inventory readiness
 
-Manual inventory collection is a governed registered Job whose owning contract requires `secrets_pki.sync` and `jobs.execute` authorization. Being able to view an Inventory summary does not authorize initiating collection or modifying a Vault instance.
+1. Open **Secrets & PKI → Overview** with a permitted viewer account.
+2. Check whether an active and enabled Vault source exists for the selected scope.
+3. If the source exists, inspect whether an authorized KV v2 mount has been approved.
+4. Review the inventory collection prerequisite and its last committed observation.
+5. Open **Secrets & PKI → Inventory** and assess qualified aggregate counts, source coverage and evidence freshness.
+6. Use the owning integration and Job views for authorized troubleshooting, without inspecting Secret values or exposing provider credentials.
 
-The current metadata inventory depends on an active, enabled Vault provider instance and explicitly approved KV v2 mounts. Connection validation, mount approval, job completion and committed Inventory readiness are **different facts**.
+**Expected result:** an honest view of source eligibility, metadata collection and readiness. A normal page load never performs a live Vault API read or launches a Job.
 
-The source enforces collection scope limits. Over-budget source/mount scope must remain **Blocked** rather than producing an incomplete yet apparently healthy count.
+## Interpret the evidence state
 
-## Task: inspect collection readiness safely
+- **No eligible source:** No active and enabled provider instance is bound to the selected scope.
+- **Mount approval needed:** A source exists but no permitted KV v2 metadata mount was approved.
+- **Collection Required:** The approved source is eligible, but no usable inventory commit exists.
+- **Collection Failed:** An attempted first collection failed and current counts remain unknown.
+- **Stale:** Previously committed evidence remains after a later failed attempt and must retain its old timestamp.
+- **Partial:** Some approved source/mount scopes have usable evidence while others are unknown.
+- **Scope blocked:** A configured source/mount budget is exceeded; the workspace must not show a falsely complete count.
+- **Observed empty:** A qualified successful collection really reported zero records; missing observations are not zero.
 
-1. Sign in with the appropriate viewing role and open **Secrets & PKI → Overview**.
-2. Inspect the source and collection prerequisites. Distinguish a missing eligible Vault source from a registered instance without an approved KV v2 mount.
-3. If a mount is configured but not collected, read the **Collection Required** state. An authorized operator handles the registered collection Job separately; the dashboard does not dispatch jobs on GET.
-4. Open **Secrets & PKI → Inventory** and review the committed coverage and observation timestamp.
-5. Compare the displayed evidence state with the actual permitted source and mount scope. A connection probe alone is not KV v2 inventory proof.
-6. If the result is blocked, partial, stale or failed, use the sanctioned integration or job workflow to investigate without exposing Secret paths or credential material.
+Secret version state and public PKI evidence have separate readiness semantics. Soft deletion, scheduled deletion or destroyed KV versions do not prove revocation, certificate rotation or consumer adoption.
 
-**Expected result:** a safe understanding of what aggregate metadata was committed, which prerequisites are missing, and why a readiness state was assigned.
+## Public PKI observations
 
-Normal viewing never needs to enumerate Vault secret values, log AppRole credentials or reveal private keys.
+The source design supports separate, approved public PKI issuer and optional stored-public-certificate collections. These provide bounded, per-mount evidence and public X.509 fingerprint or validity posture. They do not establish complete issued-certificate inventory, secret material custody or current endpoint TLS serving.
 
-## Interpret blocked, empty and stale states
+Where qualified and independently authorized, the read-only certificate-overlap projection compares public certificate fingerprints from committed Vault stored-certificate evidence with Kubernetes TLS Governance records. A matching fingerprint indicates identical observed public certificate bytes only. It does not establish Vault issuance origin, delivery by a controller, workload adoption, a successful rotation or current Ingress endpoint presentation.
 
-- **No eligible source:** No qualifying active and enabled Vault connection for the selected scope.
-- **Mount approval needed:** A Vault connection exists without an explicitly approved KV v2 metadata mount.
-- **Collection Required:** The relevant source/mount is configured, but no accepted inventory commit exists.
-- **Inventory Collection Failed:** A first attempted collection failed; there is no qualifying committed snapshot. The observed counts remain unknown.
-- **Stale previous evidence:** A previous successful collection was retained after a later failure. It is historical evidence, not a fresh source claim.
-- **Partial:** Only some authorized source/mount observations were qualified; totals must not imply complete coverage.
-- **Scope limit exceeded:** The source budget prevented a qualified collection; counts remain withheld instead of being silently truncated.
-- **Observed empty:** A genuinely successful complete collection can record a qualified zero. Missing or failed collection cannot.
+The overlap requires `secrets_pki.view` and `tls_certificates.view`. Source rights, freshness and collection coverage are independently evaluated. A no-match, unavailable or stale observation cannot be treated as a security verdict.
 
-A secret version that is soft deleted, scheduled for deletion or destroyed is a source-owned lifecycle observation. None of those states establishes revocation, certificate rotation or consumer adoption.
+## Task: inspect Lifecycle and Assurance
 
-## Public PKI evidence and its limitations
+1. Open **Secrets & PKI → Lifecycle & Assurance** if the view is permitted in the accepted application candidate.
+2. Review each available KV v2 or public PKI evidence category separately.
+3. Check the committed generation, observation timestamp and source/mount coverage.
+4. If certificate overlap is displayed, verify permissions and evidence readiness for both Vault and Kubernetes.
+5. Record observed facts and unknown boundaries without suggesting secret rotation or endpoint delivery is proved.
 
-Some reviewed source slices can summarize approved Vault **public issuer** and optionally enumerated **stored public certificate** observations. These are different collection contracts from KV v2 metadata inventory and may be disabled or unqualified.
+**Expected result:** a safe interpretation of committed lifecycle and correlation evidence, not a change to Vault or Kubernetes.
 
-The source model preserves per-mount timestamps and public X.509 fingerprints/validity evidence. Ordinary summary views do **not** reveal KV secret names, paths, credential hashes, private key material, certificate subject/SAN or raw provider responses.
+## Troubleshooting and safety
 
-The dedicated read-only **certificate overlap** projection can compare approved stored public certificate fingerprints from Vault with committed Kubernetes TLS Governance fingerprints. This requires independent visibility rights: both `secrets_pki.view` and `tls_certificates.view`.
+- **Blocked after provider setup:** Review mount approval, source scope and the registered inventory Job outcome.
+- **Unknown instead of zero:** Check whether a complete successful collection was committed.
+- **Stale evidence:** Distinguish the last accepted snapshot from the most recent failed attempt.
+- **PKI evidence absent:** Check the separate PKI mount and optional public-certificate collection scope.
+- **Certificate overlap unavailable:** Confirm both source permissions and qualified collection states.
 
-An exact public-certificate fingerprint match proves only **matching public certificate bytes** in the observed sources. It does not prove:
+Never publish Secret paths, values, hashes, private keys, AppRole credentials, certificate subjects or raw provider responses. Do not start an unapproved mutation just to make a readiness indicator appear healthy.
 
-- That Vault originally issued the certificate.
-- That a controller deployed it to a running workload.
-- That an Ingress controller actually loaded it.
-- That an endpoint is currently serving the certificate.
-- That automated renewal or rotation succeeded.
+## Source and release qualification
 
-Where available, Ingress-reference qualification describes *recorded* Kubernetes references and declared host coverage, not live TLS serving. Unknown, stale, partially collected or denied source evidence must remain qualified as such.
+Reviewed sources: `app/secrets_pki/README.md`, `app/secrets_pki/CERTIFICATE_DELIVERY_CORRELATION.md`, `app/common/workspace_navigation_catalog.py` and provider integration contracts at KAORI Application revision `197a7f7e598c111592a8ae36388865cd3aacf541`.
 
-## Task: interpret lifecycle or certificate posture
-
-1. Confirm the role and source prerequisites for **Secrets & PKI → Lifecycle & Assurance**.
-2. Review the source-qualified readiness for each relevant KV v2 or public PKI evidence category.
-3. Check the collection time, approved source/mount scope and coverage before treating aggregate lifecycle counts as meaningful.
-4. For a permitted cross-domain certificate-overlap section, verify both independent source permissions and collection freshness.
-5. Treat a match as a correlation hypothesis grounded in public fingerprint identity, **not** authorization to rotate a Secret or a verified endpoint-delivery audit.
-
-**Expected result:** a read-only evidence assessment that states exactly which sources were observed and what remains unverified.
-
-## Troubleshooting without secret disclosure
-
-- If the Overview remains blocked after connection setup, check approved mount scope and last committed Job outcome, not the provider password.
-- If Inventory shows unknown instead of zero, confirm whether a qualified complete observation was committed for the current generation.
-- If counts look stale, distinguish a new failed attempt from the last accepted snapshot.
-- If an optional PKI section is missing, check the relevant approved PKI mount, opt-in and separate collection authority.
-- If certificate overlap is missing, verify permission and evidence for **both** Vault and Kubernetes TLS Governance.
-- If Lifecycle returns an error, collect a sanitized route/error record for the owner rather than attempting to dump raw Vault responses or secret values.
-
-Do not add an unapproved mount, reveal private material, restart provider services or trigger secret rotation merely to make the dashboard appear Ready. Those actions require their own governed workflow and evidence.
-
-## Source and applicability
-
-Source-reviewed against KAORI Application `app/secrets_pki/README.md`, `app/secrets_pki/CERTIFICATE_DELIVERY_CORRELATION.md`, `app/common/workspace_navigation_catalog.py` and provider-owned Secrets & PKI integration contracts, with source reference `197a7f7e598c111592a8ae36388865cd3aacf541`.
-
-Before any RC publication, verify the exact admitted App candidate, source-specific Vault read-only permissions, source/mount limitation, PKI optional-feature readiness, denied/failed and partial data, safe browser output, rights and independent Human Acceptance. This article remains `draft: true` and is absent from the current public KAORI Docs build.
+The article still requires source-specific Vault and permission UAT, negative/failed/partial scenarios, sanitized browser review, exact application candidate evidence and independent human acceptance. It remains `draft: true` and is not a stable product guide.
