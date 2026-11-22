@@ -134,7 +134,6 @@ test('documentation home is accurate and accessible at six viewports and two the
   });
 });
 
-
 test('release-neutral RC review is reachable while versioned guides remain withheld', async ({
   page,
 }) => {
@@ -160,7 +159,7 @@ test('release-neutral RC review is reachable while versioned guides remain withh
   await expect(page.locator('article li')).toHaveCount(4);
   await expect(page.getByRole('table')).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(0);
-  await expect(page.getByRole('link', {name: /KAORI v0\\.3/i})).toHaveCount(0);
+  await expect(page.getByRole('link', {name: /KAORI v0\.3/i})).toHaveCount(0);
   await page.getByRole('link', {name: 'Return to Documentation Home'}).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(
