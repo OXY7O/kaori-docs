@@ -134,6 +134,44 @@ test('documentation home is accurate and accessible at six viewports and two the
   });
 });
 
+test('release-neutral RC review is reachable while versioned guides remain withheld', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const preview = page.getByRole('link', {
+    name: 'Read the RC conceptual walkthrough',
+  });
+  await expect(preview).toBeVisible();
+  await preview.click();
+  await expect(page).toHaveURL(/\/rc-review$/);
+  await expect(page.getByRole('heading', {level: 1})).toHaveText(
+    'How KAORI connects operational evidence',
+  );
+  await expect(
+    page.getByText('Pre-release editorial preview.', {exact: false}),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'Four questions for every investigation',
+    }),
+  ).toBeVisible();
+  await expect(page.locator('ol > li')).toHaveCount(4);
+  await expect(
+    page.getByRole('heading', {
+      level: 2,
+      name: 'Example: interpreting a monitoring signal',
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
+  await expect(page.getByRole('link', {name: /KAORI v0\.3/i})).toHaveCount(0);
+  await page.getByRole('link', {name: 'Return to Documentation Home'}).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole('heading', {level: 1, name: 'KAORI Documentation'}),
+  ).toBeVisible();
+});
+
 test('same-page discovery and unpublished features stay honest', async ({page}) => {
   await page.goto('/');
   await page.keyboard.press('Tab');

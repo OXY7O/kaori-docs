@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import Heading from '@theme/Heading';
 import DocsIcon, {type DocsIconName} from '../components/DocsIcon';
@@ -177,7 +178,10 @@ export default function DocumentationHome(): React.JSX.Element {
               <Heading as="h2" id="getting-started-heading">
                 Getting Started
               </Heading>
-              <p>Learn the model, follow source authority, and verify context.</p>
+              <p>
+                Learn the model, follow source authority, and verify context.{' '}
+                <Link to="/rc-review">Read the RC conceptual walkthrough</Link>.
+              </p>
             </div>
             <div className="kaori-docs-home__steps">
               {firstSteps.map((step) => (
