@@ -16,16 +16,16 @@ This register enumerates **12 top-level workspaces, 54 primary capability entrie
 
 ## Authoring ownership
 
-| Domain family | Existing/new owning issue | Current editorial status |
-| --- | --- | --- |
-| Kubernetes operations, inventory, governance, tenant and analytics | #6 and missing-domain breakdown under #130 | Source indexed; domain user guides/UAT pending |
-| Object Storage overview, inventory and analytics | #4/#6 and missing-domain breakdown under #130 | Source indexed; provider instance and user guide UAT pending |
-| Artifact Registry | [#4](https://github.com/OXY7O/kaori-docs/issues/4), [#5](https://github.com/OXY7O/kaori-docs/issues/5) | Registry/Harbor drafts only; complete views missing |
-| Source Control and Secrets & PKI | #5/#7 and dedicated #130 follow-up issues | Provider/access-specific and sensitive-action guides pending |
-| Security findings, Intelligence, Reports | #4/#7 and #130 follow-up issues | Domain guides and permission/evidence acceptance missing |
-| Operations Center | #6/#7/#8 and #130 follow-up issues | Jobs, data lifecycle, Kubernetes admin UAT pending |
-| Integrations | [#5](https://github.com/OXY7O/kaori-docs/issues/5) | Integration/Harbor drafts only; provider-neutral guide expansion needed |
-| Access and Settings | [#7](https://github.com/OXY7O/kaori-docs/issues/7) | Roles/permissions drafts; other submenus and UAT pending |
+| Domain family                                                      | Existing/new owning issue                                                                              | Current editorial status                                                |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| Kubernetes operations, inventory, governance, tenant and analytics | #6 and missing-domain breakdown under #130                                                             | Source indexed; domain user guides/UAT pending                          |
+| Object Storage overview, inventory and analytics                   | #4/#6 and missing-domain breakdown under #130                                                          | Source indexed; provider instance and user guide UAT pending            |
+| Artifact Registry                                                  | [#4](https://github.com/OXY7O/kaori-docs/issues/4), [#5](https://github.com/OXY7O/kaori-docs/issues/5) | Registry/Harbor drafts only; complete views missing                     |
+| Source Control and Secrets & PKI                                   | #5/#7 and dedicated #130 follow-up issues                                                              | Provider/access-specific and sensitive-action guides pending            |
+| Security findings, Intelligence, Reports                           | #4/#7 and #130 follow-up issues                                                                        | Domain guides and permission/evidence acceptance missing                |
+| Operations Center                                                  | #6/#7/#8 and #130 follow-up issues                                                                     | Jobs, data lifecycle, Kubernetes admin UAT pending                      |
+| Integrations                                                       | [#5](https://github.com/OXY7O/kaori-docs/issues/5)                                                     | Integration/Harbor drafts only; provider-neutral guide expansion needed |
+| Access and Settings                                                | [#7](https://github.com/OXY7O/kaori-docs/issues/7)                                                     | Roles/permissions drafts; other submenus and UAT pending                |
 
 ## Complete source-defined menu inventory
 
