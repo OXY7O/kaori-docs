@@ -3,6 +3,13 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import DocsIcon from '../../components/DocsIcon';
 
+const analyticsNotice = [
+  'Optional Umami analytics measures page paths, referring sites, devices, languages and selected clicks.',
+  'Network metadata supports session and location statistics.',
+  'No query strings, fragments, identities, search terms or replay.',
+  'Privacy signals are respected; your choice stays in this browser.',
+].join(' ');
+
 interface FooterLink {
   label: string;
   to?: string;
@@ -97,10 +104,7 @@ export default function Footer(): React.JSX.Element | null {
                 <DocsIcon name="shield-check" size={18} />
               </span>
               <div>
-                <p>Optional Umami analytics measures pages, referrers and clicks.</p>
-                <p>Device and network data support session and location statistics.</p>
-                <p>No query strings, fragments, identities, searches or replay.</p>
-                <p>Privacy signals are respected. Your choice stays in this browser.</p>
+                <p>{analyticsNotice}</p>
               </div>
             </div>
             <div className="kaori-docs-footer-privacy-controls">
