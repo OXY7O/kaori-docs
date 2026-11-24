@@ -799,3 +799,88 @@ html[data-theme='dark'] {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* Analytics preference is a footer utility, not a navigation-column feature. */
+.kaori-docs-footer-privacy {
+  padding-bottom: 16px;
+  color: var(--kaori-docs-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.kaori-docs-footer-privacy-disclosure {
+  min-width: 0;
+}
+.kaori-docs-footer-privacy-disclosure > summary {
+  width: fit-content;
+  max-width: 100%;
+  padding-block: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+}
+.kaori-docs-footer-privacy-disclosure > summary:hover {
+  color: var(--kaori-docs-accent);
+}
+.kaori-docs-footer-privacy-disclosure > summary:focus-visible {
+  outline: 3px solid var(--kaori-docs-accent);
+  outline-offset: 3px;
+}
+.kaori-docs-footer-privacy-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+  gap: 16px 24px;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid var(--kaori-docs-outline);
+  border-radius: 12px;
+  background: var(--kaori-docs-card);
+}
+.kaori-docs-footer-privacy-copy {
+  max-width: 70ch;
+  overflow-wrap: anywhere;
+}
+.kaori-docs-footer-privacy-copy p,
+.kaori-docs-footer-privacy-controls p {
+  margin: 0;
+  color: var(--kaori-docs-secondary);
+  font-size: inherit;
+  line-height: inherit;
+}
+.kaori-docs-footer-privacy-copy p + p {
+  margin-top: 8px;
+}
+.kaori-docs-footer-privacy-controls {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.kaori-docs-footer-privacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.kaori-docs-footer-privacy-actions .button {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+  border-color: var(--kaori-docs-outline-strong);
+}
+.kaori-docs-footer-privacy-controls [role="status"] {
+  color: var(--kaori-docs-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.kaori-docs-footer-privacy-controls [role="status"]:empty {
+  display: none;
+}
+@media (max-width: 700px) {
+  .kaori-docs-footer-privacy-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+}
