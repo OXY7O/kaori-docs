@@ -22,7 +22,7 @@ async function mockProvider(
   let configRequests = 0;
   // Every browser request is intercepted. The canonical host serves local
   // build bytes; the provider is always a mock, never production Umami.
-  await page.context().route('**/*', async route => {
+  await page.context().route('**/*', async (route) => {
     const url = new URL(route.request().url());
     if (url.href === trackerUrl) {
       trackerRequests += 1;
@@ -64,7 +64,7 @@ const events = (page: Page) =>
 async function clickApplication(page: Page) {
   // Prevent navigation in the fixture, not in the production analytics loader.
   await page.locator('a[href="https://app.kaori.cloud"]').first().evaluate(link => {
-    link.addEventListener('click', event => event.preventDefault(), {once: true});
+    link.addEventListener('click', (event) => event.preventDefault(), {once: true});
     (link as HTMLAnchorElement).click();
   });
 }
@@ -163,5 +163,5 @@ test('tracker outage does not block the public page', async ({page, request, bas
   await page.goto(origin + '/');
   await expect.poll(() => mock.trackerRequests()).toBe(1);
   await expect(page.getByRole('heading', {level: 1})).toBeVisible();
-  await expect(page.locator('a[href="https://app.kaori.cloud"]').first()).toBeVisible();
+  await expect(page.locator('a[href="https://app.kaori.cloud"]:visible').first()).toBeVisible();
 });
