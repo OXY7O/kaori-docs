@@ -142,7 +142,7 @@
     return initialization;
   };
 
-  const track = name => {
+  const track = (name) => {
     if (!ready || !canSend()) {
       if (permitted()) void initialize().catch(() => {});
       return;
@@ -186,8 +186,9 @@
       const status = document.querySelector('[data-kaori-analytics-status]');
       if (value !== 'allow' && value !== 'deny') return;
       try {
+        const previous = localStorage.getItem(preference);
         localStorage.setItem(preference, value);
-        lastPath = undefined;
+        if (previous !== value) lastPath = undefined;
         if (status) {
           status.textContent =
             value === 'allow' && !browserOptOut()
@@ -206,7 +207,7 @@
   });
 
   window.addEventListener('kaori:analytics-route', () => void pageview());
-  window.addEventListener('pageshow', event => {
+  window.addEventListener('pageshow', (event) => {
     if (event.persisted) lastPath = undefined;
     void pageview();
   });
