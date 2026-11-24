@@ -89,12 +89,7 @@ export default function Footer(): React.JSX.Element | null {
         <details className="kaori-docs-footer-privacy-disclosure">
           <summary>
             <span>Analytics privacy</span>
-            <span
-              className="kaori-docs-footer-privacy-state"
-              data-kaori-analytics-preference
-            >
-              Off by default
-            </span>
+            <span data-kaori-analytics-preference>Off by default</span>
           </summary>
           <div className="kaori-docs-footer-privacy-panel">
             <div className="kaori-docs-footer-privacy-copy">
@@ -124,7 +119,7 @@ export default function Footer(): React.JSX.Element | null {
                 </button>
               </div>
               <p role="status" data-kaori-analytics-status />
-              <p className="kaori-docs-footer-privacy-hint">Runs only if enabled by the operator.</p>
+              <p className="kaori-docs-footer-privacy-hint">Operator activation required.</p>
             </div>
           </div>
         </details>
