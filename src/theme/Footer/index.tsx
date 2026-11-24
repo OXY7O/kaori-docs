@@ -90,31 +90,30 @@ export default function Footer(): React.JSX.Element | null {
           <summary>Analytics privacy</summary>
           <div className="kaori-docs-footer-privacy-panel">
             <div className="kaori-docs-footer-privacy-copy">
-              <p>Analytics is optional and runs only with your permission.</p>
+              <p>Analytics is optional and requires your consent.</p>
               <p>
-                Self-hosted Umami measures page paths, referring sites, device and language
-                information, and selected link clicks. Network metadata supports session and location
-                statistics.
+                Umami measures page paths, referring sites, device and language information, and
+                selected clicks. Network metadata supports session and location statistics.
               </p>
               <p>
                 No query strings, fragments, custom identities, search terms or session recordings.
-                Browser privacy signals are respected. Change your preference at any time.
+                Privacy signals are respected. Your choice is stored locally.
               </p>
             </div>
             <div className="kaori-docs-footer-privacy-controls">
               <div className="kaori-docs-footer-privacy-actions">
                 <button
-                className="button button--secondary"
-                type="button"
-                data-kaori-analytics-choice="allow"
-              >
+                  className="button button--secondary"
+                  type="button"
+                  data-kaori-analytics-choice="allow"
+                >
                   Allow analytics
                 </button>
                 <button
-                className="button button--secondary"
-                type="button"
-                data-kaori-analytics-choice="deny"
-              >
+                  className="button button--secondary"
+                  type="button"
+                  data-kaori-analytics-choice="deny"
+                >
                   Disable analytics
                 </button>
               </div>
