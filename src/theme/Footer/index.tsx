@@ -95,7 +95,7 @@ export default function Footer(): React.JSX.Element | null {
             <div className="kaori-docs-footer-privacy-copy">
               <p className="kaori-docs-footer-privacy-heading">Your privacy</p>
               <p>Optional analytics requires your consent.</p>
-              <p>Umami measures page paths, referring sites, devices, language and clicks.</p>
+              <p>Umami measures pages, referring sites, devices, language and clicks.</p>
               <p>Network metadata supports session and location statistics.</p>
               <p>No query strings, fragments, identities, searches or replay.</p>
               <p>Privacy signals are respected. Your choice stays in this browser.</p>
@@ -119,7 +119,7 @@ export default function Footer(): React.JSX.Element | null {
                 </button>
               </div>
               <p role="status" data-kaori-analytics-status />
-              <p className="kaori-docs-footer-privacy-hint">Operator activation required.</p>
+              <p className="kaori-docs-footer-privacy-hint">Operator activation needed.</p>
             </div>
           </div>
         </details>
