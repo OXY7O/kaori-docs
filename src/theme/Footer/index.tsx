@@ -87,21 +87,25 @@ export default function Footer(): React.JSX.Element | null {
       </div>
       <div className="container kaori-docs-footer-privacy">
         <details className="kaori-docs-footer-privacy-disclosure">
-          <summary>Analytics privacy</summary>
+          <summary>
+            <span>Analytics privacy</span>
+            <span className="kaori-docs-footer-privacy-state" data-kaori-analytics-preference>
+              Off by default
+            </span>
+          </summary>
           <div className="kaori-docs-footer-privacy-panel">
             <div className="kaori-docs-footer-privacy-copy">
-              <p>Analytics is optional and requires your consent.</p>
-              <p>
-                Umami measures page paths, referring sites, devices, language and clicks.
-              </p>
+              <p className="kaori-docs-footer-privacy-heading">Your privacy, your choice.</p>
+              <p>Umami measures page paths, referring sites, devices, language and clicks.</p>
               <p>Network metadata supports session and location statistics.</p>
               <p>No query strings, fragments, identities, searches or replay.</p>
-              <p>Privacy signals are respected. Your choice is stored locally.</p>
+              <p>Privacy signals are respected. Your choice stays in this browser.</p>
             </div>
             <div className="kaori-docs-footer-privacy-controls">
+              <p className="kaori-docs-footer-privacy-heading">Your preference</p>
               <div className="kaori-docs-footer-privacy-actions">
                 <button
-                  className="button button--secondary"
+                  className="button button--primary"
                   type="button"
                   data-kaori-analytics-choice="allow"
                 >
@@ -116,6 +120,7 @@ export default function Footer(): React.JSX.Element | null {
                 </button>
               </div>
               <p role="status" data-kaori-analytics-status />
+              <p className="kaori-docs-footer-privacy-hint">Runs only when enabled by the operator.</p>
             </div>
           </div>
         </details>
