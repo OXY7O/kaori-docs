@@ -31,6 +31,15 @@ state_dir="${KAORI_DOCS_STATE_DIR:-/var/lib/kaori-docs/deploy-state}"
     fail 'only the canonical Docs release receipt is permitted'
 [[ -f "$compose_file" && ! -L "$compose_file" ]] || fail 'compose file missing or symlinked'
 [[ -d "$state_dir" && ! -L "$state_dir" && -w "$state_dir" ]] || fail 'docs release state directory must be prepared and writable by deployment identity'
+# Public analytics configuration is independent of private release receipts.
+# An empty directory is intentional: no tracking until operator activation.
+analytics_dir="$state_dir/analytics-public"
+[[ ! -L "$analytics_dir" ]] || fail 'analytics-public directory must not be a symlink'
+if [[ ! -d "$analytics_dir" ]]; then
+    mkdir -m 0755 -- "$analytics_dir" || fail 'analytics-public directory cannot be prepared'
+fi
+[[ -d "$analytics_dir" && ! -L "$analytics_dir" ]] || fail 'analytics-public path is not a directory'
+export KAORI_DOCS_ANALYTICS_DIR="$analytics_dir"
 docker info >/dev/null || fail 'Docker daemon unavailable'
 compose_args=(-f "$compose_file")
 if [[ "${KAORI_DOCS_RELEASE_LOCAL_ONLY:-}" == 1 ]]; then
