@@ -874,9 +874,6 @@ html[data-theme='dark'] {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-.kaori-docs-footer-privacy-controls [role="status"]:empty {
-  display: none;
-}
 @media (max-width: 700px) {
   .kaori-docs-footer-privacy-panel {
     grid-template-columns: minmax(0, 1fr);
