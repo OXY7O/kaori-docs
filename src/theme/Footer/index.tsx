@@ -85,10 +85,10 @@ export default function Footer(): React.JSX.Element | null {
                 <details>
                   <summary>Analytics privacy</summary>
                   <p>Analytics runs only with your permission and operator activation.</p>
-                  <p>Umami records page paths, referrer origins, devices and selected clicks.</p>
-                  <p>Network metadata is processed for session and location statistics.</p>
-                  <p>No query strings, fragments, custom identities, search terms or replay.</p>
-                  <p>Browser privacy signals are honored. Your choice is stored locally.</p>
+                  <p>Umami records page paths, referrer origins, devices and clicks.</p>
+                  <p>Network metadata supports session and location statistics.</p>
+                  <p>No query strings, fragments, identities, searches or replay.</p>
+                  <p>Privacy signals are honored. Your choice is stored locally.</p>
                   <button
                     className="button button--secondary"
                     type="button"
