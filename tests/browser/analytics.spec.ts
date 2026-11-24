@@ -86,7 +86,8 @@ test('consent and sanitized events', async ({page, request, baseURL}) => {
   await disclosure.press('Enter');
   const panel = page.locator('.kaori-docs-footer-privacy-panel');
   await expect(panel).toBeVisible();
-  const fits = () => panel.evaluate((element) => element.scrollWidth <= element.clientWidth);
+  const fits = () =>
+    panel.evaluate((element) => element.scrollWidth <= element.clientWidth);
   await expect.poll(fits).toBe(true);
   await page.getByRole('button', {name: 'Allow analytics'}).click();
   await expect.poll(() => events(page)).toHaveLength(1);
