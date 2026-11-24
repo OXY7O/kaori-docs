@@ -35,3 +35,33 @@ Reuse the approved KAORI logo, Inter and Violet design tokens through native Doc
 Docs repository artifact SemVer, KAORI Application Major.Minor documentation applicability and exact application patch release notes are different identities. They are not interchangeable. Until #15 verifies the accepted application release and Docs SHA mapping, **do not display a version selector, search index or application-version documentation route**.
 
 Runtime Docker, release signing, shared VPS deployment and public Host/SNI/DNS/TLS work are separately owned by #13/#14/#10. No development build deploys anything to `/opt/kaori`, `/opt/kaori-website`, `/opt/shared-edge` or public domains.
+
+## Public analytics
+
+Umami is an independent, self-hosted provider at
+`https://analytics.kaori.cloud` (KAORI #5190, #5191; consumer #163).
+The Docusaurus static build remains immutable; no application
+credential, public Website ID, or enablement flag is embedded in the image.
+The host-owned read-only `/.well-known/kaori-analytics/config.json` projection
+is separate from release receipts and defaults to disabled when absent,
+malformed, or explicitly off. Its schema requires the canonical HTTPS host,
+exact provider script URL, UUIDv4, and explicit enablement.
+
+The browser never loads the provider until the visitor explicitly allows
+analytics using the footer privacy disclosure and the runtime config is valid.
+DNT, Global Privacy Control, blocked storage and explicit opt-out fail closed.
+Umami automatic pageview and click handling are disabled; the native Docusaurus route lifecycle sends one manual
+pageview per pathname and bounded approved outbound CTA events without
+preventing navigation. Query strings, fragments, referrer paths, custom
+identities, event data, error/performance capture and session replay are
+excluded. The loader sends only the canonical host, pathname, page title,
+referring origin, language, screen dimensions and approved event name.
+The provider processes network metadata; the authenticated application is
+excluded. Local development and real CI traffic are excluded by exact
+canonical origin; browser tests intercept all requests with local mocks.
+Editorial, candidate full-manual review, and search routes are excluded. The change does not enable any unpublished documentation or stable version.
+
+No analytics provider failure may block rendering or navigation. Runtime
+authorization is cached for at most 60 seconds in an open tab; expiry or
+invalid config blocks sending until revalidated. Changing a Website ID
+requires a fresh page load, not a rebuilt image.
