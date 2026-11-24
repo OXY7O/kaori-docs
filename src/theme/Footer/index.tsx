@@ -3,6 +3,13 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import DocsIcon from '../../components/DocsIcon';
 
+const analyticsNotice = [
+  'Optional Umami analytics measures page paths, referring sites, devices, languages and selected clicks.',
+  'Network metadata supports session and location statistics.',
+  'No query strings, fragments, identities, search terms or replay.',
+  'Privacy signals are respected; your choice stays in this browser.',
+].join(' ');
+
 interface FooterLink {
   label: string;
   to?: string;
@@ -93,15 +100,18 @@ export default function Footer(): React.JSX.Element | null {
           </summary>
           <div className="kaori-docs-footer-privacy-panel">
             <div className="kaori-docs-footer-privacy-copy">
-              <p className="kaori-docs-footer-privacy-heading">Your privacy</p>
-              <p>Optional analytics requires your consent.</p>
-              <p>Umami measures pages, referring sites, devices, language and clicks.</p>
-              <p>Network metadata supports session and location statistics.</p>
-              <p>No query strings, fragments, identities, searches or replay.</p>
-              <p>Privacy signals are respected. Your choice stays in this browser.</p>
+              <span className="kaori-docs-footer-privacy-icon">
+                <DocsIcon name="shield-check" size={18} />
+              </span>
+              <div>
+                <p>{analyticsNotice}</p>
+              </div>
             </div>
             <div className="kaori-docs-footer-privacy-controls">
-              <p className="kaori-docs-footer-privacy-heading">Your preference</p>
+              <div className="kaori-docs-footer-privacy-feedback">
+                <p>Operator must enable.</p>
+                <p role="status" data-kaori-analytics-status />
+              </div>
               <div className="kaori-docs-footer-privacy-actions">
                 <button
                   className="button button--primary"
@@ -118,8 +128,6 @@ export default function Footer(): React.JSX.Element | null {
                   Disable analytics
                 </button>
               </div>
-              <p role="status" data-kaori-analytics-status />
-              <p className="kaori-docs-footer-privacy-hint">Operator must enable.</p>
             </div>
           </div>
         </details>
