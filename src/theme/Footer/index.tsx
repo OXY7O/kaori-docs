@@ -81,34 +81,48 @@ export default function Footer(): React.JSX.Element | null {
               {group.items.map((item) => (
                 <FooterNavLink item={item} key={item.label} />
               ))}
-              {group.title === 'Contact' && (
-                <details>
-                  <summary>Analytics privacy</summary>
-                  <p>Analytics runs only with your permission and operator activation.</p>
-                  <p>Umami records page paths, referrer origins, devices and clicks.</p>
-                  <p>Network metadata supports session and location statistics.</p>
-                  <p>No query strings, fragments, identities, searches or replay.</p>
-                  <p>Privacy signals are honored. Your choice is stored locally.</p>
-                  <button
-                    className="button button--secondary"
-                    type="button"
-                    data-kaori-analytics-choice="allow"
-                  >
-                    Allow analytics
-                  </button>{' '}
-                  <button
-                    className="button button--secondary"
-                    type="button"
-                    data-kaori-analytics-choice="deny"
-                  >
-                    Disable analytics
-                  </button>
-                  <p role="status" data-kaori-analytics-status />
-                </details>
-              )}
             </div>
           ))}
         </nav>
+      </div>
+      <div className="container kaori-docs-footer-privacy">
+        <details className="kaori-docs-footer-privacy-disclosure">
+          <summary>
+            <span>Analytics privacy</span>
+            <span data-kaori-analytics-preference>Off by default</span>
+          </summary>
+          <div className="kaori-docs-footer-privacy-panel">
+            <div className="kaori-docs-footer-privacy-copy">
+              <p className="kaori-docs-footer-privacy-heading">Your privacy</p>
+              <p>Optional analytics requires your consent.</p>
+              <p>Umami measures pages, referring sites, devices, language and clicks.</p>
+              <p>Network metadata supports session and location statistics.</p>
+              <p>No query strings, fragments, identities, searches or replay.</p>
+              <p>Privacy signals are respected. Your choice stays in this browser.</p>
+            </div>
+            <div className="kaori-docs-footer-privacy-controls">
+              <p className="kaori-docs-footer-privacy-heading">Your preference</p>
+              <div className="kaori-docs-footer-privacy-actions">
+                <button
+                  className="button button--primary"
+                  type="button"
+                  data-kaori-analytics-choice="allow"
+                >
+                  Allow analytics
+                </button>
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  data-kaori-analytics-choice="deny"
+                >
+                  Disable analytics
+                </button>
+              </div>
+              <p role="status" data-kaori-analytics-status />
+              <p className="kaori-docs-footer-privacy-hint">Operator must enable.</p>
+            </div>
+          </div>
+        </details>
       </div>
       <div className="container kaori-docs-footer__bottom">
         <span>{footer.copyright}</span>
