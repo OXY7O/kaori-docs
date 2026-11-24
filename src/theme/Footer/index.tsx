@@ -95,7 +95,7 @@ export default function Footer(): React.JSX.Element | null {
                 Umami measures page paths, referring sites, devices, language and clicks.
               </p>
               <p>Network metadata supports session and location statistics.</p>
-              <p>No query strings, fragments, identities, searches or session recordings.</p>
+              <p>No query strings, fragments, identities, searches or replay.</p>
               <p>Privacy signals are respected. Your choice is stored locally.</p>
             </div>
             <div className="kaori-docs-footer-privacy-controls">
