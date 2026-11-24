@@ -59,11 +59,13 @@ async function mockProvider(
   };
 }
 
-const events = (page: Page) => page.evaluate(() => Reflect.get(window, 'kaoriMockEvents') ?? []);
+const events = (page: Page) =>
+  page.evaluate(() => Reflect.get(window, 'kaoriMockEvents') ?? []);
 
 async function clickApplication(page: Page) {
   // Prevent navigation in the fixture, not in the production analytics loader.
-  await page.locator('a[href="https://app.kaori.cloud"]').first().evaluate(link => {
+  const application = page.locator('a[href="https://app.kaori.cloud"]').first();
+  await application.evaluate((link) => {
     link.addEventListener('click', (event) => event.preventDefault(), {once: true});
     (link as HTMLAnchorElement).click();
   });
@@ -127,12 +129,16 @@ for (const [label, runtimeConfig] of [
 ] as const) {
   test(`fails closed for ${label} config`, async ({page, request, baseURL}) => {
     const mock = await mockProvider(page, request, baseURL!, runtimeConfig);
-    await page.addInitScript(() => localStorage.setItem('kaori-analytics-consent', 'allow'));
+    await page.addInitScript(() => {
+      localStorage.setItem('kaori-analytics-consent', 'allow');
+    });
     await page.goto(origin + '/');
     await expect.poll(() => mock.configRequests()).toBe(1);
-    await page.evaluate(
-      () => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))),
-    );
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      });
+    });
     expect(mock.trackerRequests()).toBe(0);
     await expect(page.locator(`script[src='${trackerUrl}']`)).toHaveCount(0);
   });
@@ -152,7 +158,9 @@ test('GPC prevents tracking', async ({page, request, baseURL}) => {
 
 test('tracker outage preserves UX', async ({page, request, baseURL}) => {
   const mock = await mockProvider(page, request, baseURL!, config, true);
-  await page.addInitScript(() => localStorage.setItem('kaori-analytics-consent', 'allow'));
+  await page.addInitScript(() => {
+    localStorage.setItem('kaori-analytics-consent', 'allow');
+  });
   await page.goto(origin + '/');
   await expect.poll(() => mock.trackerRequests()).toBe(1);
   await expect(page.getByRole('heading', {level: 1})).toBeVisible();
