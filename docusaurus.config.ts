@@ -136,8 +136,11 @@ const config: Config = {
         },
         {
           title: 'Contact',
-          items: [{label: 'Contact owner', href: 'mailto:lethisaputri@gmail.com'},
-            {html: '<details><summary>Analytics privacy</summary><p>If you allow analytics and the operator enables it, self-hosted Umami measures page paths, referring sites, device and language information, and selected link clicks. Network metadata is processed to derive session and location statistics. Query strings, URL fragments, custom identities, search terms and session recordings are excluded. Browser privacy signals are respected. Your preference is stored in this browser; disable analytics at any time.</p><button class="button button--secondary" type="button" data-kaori-analytics-choice="allow">Allow analytics</button> <button class="button button--secondary" type="button" data-kaori-analytics-choice="deny">Disable analytics</button><p role="status" data-kaori-analytics-status></p></details>'},
+          items: [
+            {label: 'Contact owner', href: 'mailto:lethisaputri@gmail.com'},
+            {
+              html: '<details><summary>Analytics privacy</summary><p>If you allow analytics and the operator enables it, self-hosted Umami measures page paths, referring sites, device and language information, and selected link clicks. Network metadata is processed to derive session and location statistics. Query strings, URL fragments, custom identities, search terms and session recordings are excluded. Browser privacy signals are respected. Your preference is stored in this browser; disable analytics at any time.</p><button class="button button--secondary" type="button" data-kaori-analytics-choice="allow">Allow analytics</button> <button class="button button--secondary" type="button" data-kaori-analytics-choice="deny">Disable analytics</button><p role="status" data-kaori-analytics-status></p></details>',
+            },
           ],
         },
       ],
