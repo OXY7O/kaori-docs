@@ -800,7 +800,10 @@ html[data-theme='dark'] {
   }
 }
 
-/* Analytics preference is a footer utility, not a navigation-column feature. */
+/* Analytics preference: compact footer utility, outside navigation. */
+.kaori-docs-footer__main {
+  padding-bottom: 28px;
+}
 .kaori-docs-footer-privacy {
   padding-bottom: 16px;
   color: var(--kaori-docs-secondary);
@@ -808,15 +811,37 @@ html[data-theme='dark'] {
   line-height: 1.55;
 }
 .kaori-docs-footer-privacy-disclosure {
+  width: 100%;
+  max-width: 760px;
   min-width: 0;
 }
 .kaori-docs-footer-privacy-disclosure > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   width: fit-content;
   max-width: 100%;
-  padding-block: 6px;
+  min-height: 36px;
   cursor: pointer;
+  list-style: none;
   font-size: 13px;
   font-weight: 600;
+}
+.kaori-docs-footer-privacy-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+.kaori-docs-footer-privacy-disclosure > summary::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+}
+.kaori-docs-footer-privacy-disclosure[open] > summary::before {
+  transform: rotate(45deg);
 }
 .kaori-docs-footer-privacy-disclosure > summary:hover {
   color: var(--kaori-docs-accent);
@@ -825,18 +850,28 @@ html[data-theme='dark'] {
   outline: 3px solid var(--kaori-docs-accent);
   outline-offset: 3px;
 }
+.kaori-docs-footer-privacy-state {
+  padding: 2px 8px;
+  border: 1px solid var(--kaori-docs-outline);
+  border-radius: 999px;
+  background: var(--kaori-docs-muted-surface);
+  color: var(--kaori-docs-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
 .kaori-docs-footer-privacy-panel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 280px);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 236px);
+  align-items: start;
   gap: 16px 24px;
-  margin-top: 8px;
-  padding: 16px;
+  margin-top: 6px;
+  padding: 16px 18px;
   border: 1px solid var(--kaori-docs-outline);
   border-radius: 12px;
   background: var(--kaori-docs-card);
 }
 .kaori-docs-footer-privacy-copy {
-  max-width: 70ch;
+  min-width: 0;
   overflow-wrap: anywhere;
 }
 .kaori-docs-footer-privacy-copy p,
@@ -847,14 +882,19 @@ html[data-theme='dark'] {
   line-height: inherit;
 }
 .kaori-docs-footer-privacy-copy p + p {
-  margin-top: 8px;
+  margin-top: 6px;
+}
+.kaori-docs-footer-privacy-panel .kaori-docs-footer-privacy-heading {
+  color: var(--ifm-font-color-base);
+  font-weight: 650;
 }
 .kaori-docs-footer-privacy-controls {
   display: flex;
   min-width: 0;
   flex-direction: column;
   gap: 8px;
-  align-items: flex-start;
+  padding-inline-start: 16px;
+  border-inline-start: 1px solid var(--kaori-docs-outline);
 }
 .kaori-docs-footer-privacy-actions {
   display: flex;
@@ -867,17 +907,26 @@ html[data-theme='dark'] {
   font-size: 12px;
   line-height: 1.35;
   white-space: normal;
+}
+.kaori-docs-footer-privacy-actions .button--secondary {
   border-color: var(--kaori-docs-outline-strong);
 }
-.kaori-docs-footer-privacy-controls [role='status'] {
-  color: var(--kaori-docs-muted);
+.kaori-docs-footer-privacy-controls [role='status'],
+.kaori-docs-footer-privacy-controls .kaori-docs-footer-privacy-hint {
+  color: var(--kaori-docs-secondary);
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-@media (max-width: 700px) {
+@media (max-width: 600px) {
   .kaori-docs-footer-privacy-panel {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
     padding: 12px;
+  }
+  .kaori-docs-footer-privacy-controls {
+    padding-inline-start: 0;
+    padding-top: 12px;
+    border-inline-start: 0;
+    border-top: 1px solid var(--kaori-docs-outline);
   }
 }
