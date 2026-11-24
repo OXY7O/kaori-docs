@@ -77,7 +77,7 @@
       return validConfig(config) ? config : null;
     })()
       .catch(() => null)
-      .then(config => {
+      .then((config) => {
         runtimeConfig = config;
         expiresAt = Date.now() + 60000;
         return config;
@@ -125,7 +125,7 @@
           };
         },
       };
-      initialization = new Promise(resolve => {
+      initialization = new Promise((resolve) => {
         const script = document.createElement('script');
         script.src = trackerUrl;
         script.async = true;
@@ -133,7 +133,7 @@
         script.onload = () => resolve(typeof window.umami?.track === 'function');
         script.onerror = () => resolve(false);
         document.head.append(script);
-      }).then(loaded => {
+      }).then((loaded) => {
         ready = loaded;
         return loaded;
       });
