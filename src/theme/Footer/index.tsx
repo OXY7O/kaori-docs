@@ -108,7 +108,9 @@ export default function Footer(): React.JSX.Element | null {
             </div>
             <div className="kaori-docs-footer-privacy-controls">
               <div className="kaori-docs-footer-privacy-feedback">
-                <p role="status" data-kaori-analytics-status>Analytics is off.</p>
+                <p role="status" data-kaori-analytics-status>
+                  Analytics is off.
+                </p>
               </div>
               <div className="kaori-docs-footer-privacy-actions">
                 <button
