@@ -81,6 +81,31 @@ export default function Footer(): React.JSX.Element | null {
               {group.items.map((item) => (
                 <FooterNavLink item={item} key={item.label} />
               ))}
+              {group.title === 'Contact' && (
+                <details>
+                  <summary>Analytics privacy</summary>
+                  <p>Analytics runs only with your permission and operator activation.</p>
+                  <p>Umami records page paths, referrer origins, devices and clicks.</p>
+                  <p>Network metadata supports session and location statistics.</p>
+                  <p>No query strings, fragments, identities, searches or replay.</p>
+                  <p>Privacy signals are honored. Your choice is stored locally.</p>
+                  <button
+                    className="button button--secondary"
+                    type="button"
+                    data-kaori-analytics-choice="allow"
+                  >
+                    Allow analytics
+                  </button>{' '}
+                  <button
+                    className="button button--secondary"
+                    type="button"
+                    data-kaori-analytics-choice="deny"
+                  >
+                    Disable analytics
+                  </button>
+                  <p role="status" data-kaori-analytics-status />
+                </details>
+              )}
             </div>
           ))}
         </nav>
