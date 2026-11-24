@@ -49,7 +49,8 @@ async function mockProvider(
       if (runtimeConfig === null) return route.fulfill({status: 404});
       return route.fulfill({json: runtimeConfig});
     }
-    const response = await request.get(new URL(url.pathname + url.search, localOrigin).href);
+    const localUrl = new URL(url.pathname + url.search, localOrigin).href;
+    const response = await request.get(localUrl);
     return route.fulfill({response});
   });
   return {
@@ -58,8 +59,7 @@ async function mockProvider(
   };
 }
 
-const events = (page: Page) =>
-  page.evaluate(() => Reflect.get(window, 'kaoriMockEvents') ?? []);
+const events = (page: Page) => page.evaluate(() => Reflect.get(window, 'kaoriMockEvents') ?? []);
 
 async function clickApplication(page: Page) {
   // Prevent navigation in the fixture, not in the production analytics loader.
@@ -69,11 +69,7 @@ async function clickApplication(page: Page) {
   });
 }
 
-test('explicit consent, sanitized events, deduplication and opt-out', async ({
-  page,
-  request,
-  baseURL,
-}) => {
+test('consent and sanitized events', async ({page, request, baseURL}) => {
   const mock = await mockProvider(page, request, baseURL!, config);
   await page.goto(origin + '/?token=private-value#private-fragment', {
     referer: 'https://referrer.example/private-path?token=secret',
@@ -92,8 +88,9 @@ test('explicit consent, sanitized events, deduplication and opt-out', async ({
     hostname: config.hostname,
     url: '/',
   });
-  expect(JSON.stringify(initial)).not.toMatch(/private-value|private-fragment|private-path|secret-data/);
-  expect(initial.referrer === '' || initial.referrer === 'https://referrer.example').toBe(true);
+  const sensitive = /private-value|private-fragment|private-path|secret-data/;
+  expect(JSON.stringify(initial)).not.toMatch(sensitive);
+  expect(['', 'https://referrer.example']).toContain(initial.referrer);
 
   await page.evaluate(() => window.dispatchEvent(new Event('kaori:analytics-route')));
   await expect.poll(() => events(page)).toHaveLength(1);
@@ -141,11 +138,7 @@ for (const [label, runtimeConfig] of [
   });
 }
 
-test('browser privacy signal prevents config and tracker requests', async ({
-  page,
-  request,
-  baseURL,
-}) => {
+test('GPC prevents tracking', async ({page, request, baseURL}) => {
   const mock = await mockProvider(page, request, baseURL!, config);
   await page.addInitScript(() => {
     localStorage.setItem('kaori-analytics-consent', 'allow');
@@ -157,11 +150,12 @@ test('browser privacy signal prevents config and tracker requests', async ({
   expect(mock.trackerRequests()).toBe(0);
 });
 
-test('tracker outage does not block the public page', async ({page, request, baseURL}) => {
+test('tracker outage preserves UX', async ({page, request, baseURL}) => {
   const mock = await mockProvider(page, request, baseURL!, config, true);
   await page.addInitScript(() => localStorage.setItem('kaori-analytics-consent', 'allow'));
   await page.goto(origin + '/');
   await expect.poll(() => mock.trackerRequests()).toBe(1);
   await expect(page.getByRole('heading', {level: 1})).toBeVisible();
-  await expect(page.locator('a[href="https://app.kaori.cloud"]:visible').first()).toBeVisible();
+  const link = page.locator('a[href="https://app.kaori.cloud"]:visible').first();
+  await expect(link).toBeVisible();
 });
