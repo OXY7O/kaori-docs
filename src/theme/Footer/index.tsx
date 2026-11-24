@@ -119,7 +119,7 @@ export default function Footer(): React.JSX.Element | null {
                 </button>
               </div>
               <p role="status" data-kaori-analytics-status />
-              <p className="kaori-docs-footer-privacy-hint">Operator activation needed.</p>
+              <p className="kaori-docs-footer-privacy-hint">Operator must enable.</p>
             </div>
           </div>
         </details>
