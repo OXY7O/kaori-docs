@@ -92,13 +92,11 @@ export default function Footer(): React.JSX.Element | null {
             <div className="kaori-docs-footer-privacy-copy">
               <p>Analytics is optional and requires your consent.</p>
               <p>
-                Umami measures page paths, referring sites, device and language information, and
-                selected clicks. Network metadata supports session and location statistics.
+                Umami measures page paths, referring sites, devices, language and clicks.
               </p>
-              <p>
-                No query strings, fragments, custom identities, search terms or session recordings.
-                Privacy signals are respected. Your choice is stored locally.
-              </p>
+              <p>Network metadata supports session and location statistics.</p>
+              <p>No query strings, fragments, identities, searches or session recordings.</p>
+              <p>Privacy signals are respected. Your choice is stored locally.</p>
             </div>
             <div className="kaori-docs-footer-privacy-controls">
               <div className="kaori-docs-footer-privacy-actions">
