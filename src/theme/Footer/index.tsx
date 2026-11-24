@@ -4,10 +4,9 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import DocsIcon from '../../components/DocsIcon';
 
 const analyticsNotice = [
-  'Optional Umami analytics measures page paths, referring sites, devices, languages and selected clicks.',
-  'Network metadata supports session and location statistics.',
-  'No query strings, fragments, identities, search terms or replay.',
-  'Privacy signals are respected; your choice stays in this browser.',
+  'We use optional, privacy-friendly analytics to understand website usage.',
+  'No custom identifiers or session recordings.',
+  'You can change your preference anytime.',
 ].join(' ');
 
 interface FooterLink {
@@ -96,7 +95,7 @@ export default function Footer(): React.JSX.Element | null {
         <details className="kaori-docs-footer-privacy-disclosure">
           <summary>
             <span>Analytics privacy</span>
-            <span data-kaori-analytics-preference>Off by default</span>
+            <span data-kaori-analytics-preference>Optional</span>
           </summary>
           <div className="kaori-docs-footer-privacy-panel">
             <div className="kaori-docs-footer-privacy-copy">
@@ -109,8 +108,9 @@ export default function Footer(): React.JSX.Element | null {
             </div>
             <div className="kaori-docs-footer-privacy-controls">
               <div className="kaori-docs-footer-privacy-feedback">
-                <p>Operator must enable.</p>
-                <p role="status" data-kaori-analytics-status />
+                <p role="status" data-kaori-analytics-status>
+                  Analytics is off.
+                </p>
               </div>
               <div className="kaori-docs-footer-privacy-actions">
                 <button
