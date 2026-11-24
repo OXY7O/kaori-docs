@@ -89,13 +89,17 @@ export default function Footer(): React.JSX.Element | null {
         <details className="kaori-docs-footer-privacy-disclosure">
           <summary>
             <span>Analytics privacy</span>
-            <span className="kaori-docs-footer-privacy-state" data-kaori-analytics-preference>
+            <span
+              className="kaori-docs-footer-privacy-state"
+              data-kaori-analytics-preference
+            >
               Off by default
             </span>
           </summary>
           <div className="kaori-docs-footer-privacy-panel">
             <div className="kaori-docs-footer-privacy-copy">
-              <p className="kaori-docs-footer-privacy-heading">Your privacy, your choice.</p>
+              <p className="kaori-docs-footer-privacy-heading">Your privacy</p>
+              <p>Optional analytics requires your consent.</p>
               <p>Umami measures page paths, referring sites, devices, language and clicks.</p>
               <p>Network metadata supports session and location statistics.</p>
               <p>No query strings, fragments, identities, searches or replay.</p>
@@ -120,7 +124,7 @@ export default function Footer(): React.JSX.Element | null {
                 </button>
               </div>
               <p role="status" data-kaori-analytics-status />
-              <p className="kaori-docs-footer-privacy-hint">Runs only when enabled by the operator.</p>
+              <p className="kaori-docs-footer-privacy-hint">Runs only if enabled by the operator.</p>
             </div>
           </div>
         </details>
