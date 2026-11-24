@@ -869,7 +869,7 @@ html[data-theme='dark'] {
   white-space: normal;
   border-color: var(--kaori-docs-outline-strong);
 }
-.kaori-docs-footer-privacy-controls [role="status"] {
+.kaori-docs-footer-privacy-controls [role='status'] {
   color: var(--kaori-docs-muted);
   font-size: 12px;
   overflow-wrap: anywhere;
