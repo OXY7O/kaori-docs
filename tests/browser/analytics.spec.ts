@@ -107,7 +107,8 @@ test('consent and sanitized events', async ({page, request, baseURL}) => {
       sameType: getComputedStyle(copy).fontSize === linkStyle.fontSize,
       buttonTypography: buttons.every((button) => {
         const style = getComputedStyle(button);
-        return style.fontFamily === linkStyle.fontFamily && style.fontSize === linkStyle.fontSize;
+        const sameFamily = style.fontFamily === linkStyle.fontFamily;
+        return sameFamily && style.fontSize === linkStyle.fontSize;
       }),
       buttonPalette: buttons.every((button, index) => {
         const style = getComputedStyle(button);
