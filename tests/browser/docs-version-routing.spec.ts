@@ -36,7 +36,8 @@ test('footer identifies the immutable Docs build', async ({page}) => {
   await expect(build).toBeVisible();
   await expect(build).toHaveText('Docs build ' + expected);
   await expect(build).toHaveAttribute('data-docs-build-version', expected);
-  await expect(build).toHaveAttribute('data-docs-build-sha', process.env.KAORI_DOCS_BUILD_SHA ?? '');
+  const expectedSha = process.env.KAORI_DOCS_BUILD_SHA ?? '';
+  await expect(build).toHaveAttribute('data-docs-build-sha', expectedSha);
   const fits = await build.evaluate((element) => {
     const footer = element.closest('footer')!;
     return footer.scrollWidth <= footer.clientWidth + 1;

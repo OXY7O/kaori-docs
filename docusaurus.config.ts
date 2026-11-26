@@ -46,7 +46,7 @@ const buildSha = process.env.KAORI_DOCS_BUILD_SHA ?? '';
 const validVersion = /^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(buildVersion);
 const validSha = /^[a-f0-9]{40}$/.test(buildSha);
 if ((buildVersion || buildSha) && (!validVersion || !validSha)) {
-  throw new Error('Invalid Docs build identity: exact RC version and source SHA required');
+  throw new Error('Docs build identity requires exact RC version and SHA');
 }
 
 const config: Config = {
