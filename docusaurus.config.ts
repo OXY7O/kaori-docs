@@ -43,10 +43,9 @@ const publishedDocsOptions: Preset.Options['docs'] =
 
 const buildVersion = process.env.KAORI_DOCS_BUILD_VERSION ?? '';
 const buildSha = process.env.KAORI_DOCS_BUILD_SHA ?? '';
-if (
-  (buildVersion || buildSha) &&
-  (!/^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(buildVersion) || !/^[a-f0-9]{40}$/.test(buildSha))
-) {
+const validVersion = /^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(buildVersion);
+const validSha = /^[a-f0-9]{40}$/.test(buildSha);
+if ((buildVersion || buildSha) && (!validVersion || !validSha)) {
   throw new Error('Invalid Docs build identity: exact RC version and source SHA required');
 }
 

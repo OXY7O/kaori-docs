@@ -28,9 +28,7 @@ test('opt-in native version route preview remains clearly unreleased', async ({p
   await expect(page.getByText(/Unreleased/i).first()).toBeVisible();
 });
 
-test('footer identifies the immutable Docs build without claiming product applicability', async ({
-  page,
-}) => {
+test('footer identifies the immutable Docs build', async ({page}) => {
   await page.goto('/');
   const version = process.env.KAORI_DOCS_BUILD_VERSION;
   const expected = version ? 'v' + version : 'development';
