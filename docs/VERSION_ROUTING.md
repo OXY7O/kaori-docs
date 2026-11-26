@@ -13,6 +13,18 @@ guide line. Thus the internal `docs/PUBLISHED_VERSIONS.json` intentionally
 has an empty `published` array, `versions.json` is `[]`, public Docs routing
 is disabled, and no published version selector or search appears.
 
+## Immutable Docs build identity (#172)
+
+The footer displays `Docs build vX.Y.Z-rc.N` from the same
+`APP_VERSION` and `APP_BUILD_SHA` that feed OCI image metadata.
+Unversioned local and CI builds display `Docs build development`.
+The existing container smoke checks the served HTML; the publisher checks
+the exact pulled digest's static footer against its source and tag before
+signing. This label identifies the immutable Docs build, not the stable
+release receipt or KAORI Application compatibility. Stable promotion reuses
+the accepted RC digest and does not rewrite the baked label. No public
+product version routing or stable claim is enabled by this indicator.
+
 ## Native snapshot contract
 
 - `content/` is the unpublished Docusaurus **current** editorial tree.

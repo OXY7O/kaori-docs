@@ -50,6 +50,8 @@ function FooterNavLink({item}: {item: FooterLink}): React.JSX.Element | null {
 export default function Footer(): React.JSX.Element | null {
   const {siteConfig} = useDocusaurusContext();
   const footer = siteConfig.themeConfig.footer as FooterConfig | undefined;
+  const buildVersion = String(siteConfig.customFields?.docsBuildVersion ?? 'development');
+  const buildSha = String(siteConfig.customFields?.docsBuildSha ?? '');
   const logo = useBaseUrl(footer?.logo?.src ?? 'branding/kaori-logo.svg');
 
   if (!footer) return null;
@@ -135,6 +137,9 @@ export default function Footer(): React.JSX.Element | null {
       <div className="container kaori-docs-footer__bottom">
         <span>{footer.copyright}</span>
         <span>Documentation for connected operations.</span>
+        <span data-docs-build-version={buildVersion} data-docs-build-sha={buildSha}>
+          {'Docs build ' + buildVersion}
+        </span>
       </div>
     </footer>
   );

@@ -27,3 +27,20 @@ test('opt-in native version route preview remains clearly unreleased', async ({p
   await expect(page.getByText('unpublished review draft')).toBeVisible();
   await expect(page.getByText(/Unreleased/i).first()).toBeVisible();
 });
+
+test('footer identifies the immutable Docs build', async ({page}) => {
+  await page.goto('/');
+  const version = process.env.KAORI_DOCS_BUILD_VERSION;
+  const expected = version ? 'v' + version : 'development';
+  const build = page.locator('[data-docs-build-version]');
+  await expect(build).toBeVisible();
+  await expect(build).toHaveText('Docs build ' + expected);
+  await expect(build).toHaveAttribute('data-docs-build-version', expected);
+  const expectedSha = process.env.KAORI_DOCS_BUILD_SHA ?? '';
+  await expect(build).toHaveAttribute('data-docs-build-sha', expectedSha);
+  const fits = await build.evaluate((element) => {
+    const footer = element.closest('footer')!;
+    return footer.scrollWidth <= footer.clientWidth + 1;
+  });
+  expect(fits).toBe(true);
+});
