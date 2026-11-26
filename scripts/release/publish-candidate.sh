@@ -172,6 +172,14 @@ version="$(docker image inspect --format '{{index .Config.Labels "org.opencontai
 license="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.licenses"}}' "$ref")"
 source="$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.source"}}' "$ref")"
 [[ "$revision" == "$sha" && "$version" == "${tag#v}" && "$license" == "$APP_LICENSE" && "$source" == "https://github.com/OXY7O/kaori-docs" ]] || fail 'OCI identity mismatch'
+# The static footer must agree with the exact pulled OCI identity before signing.
+docker run --rm --network none --read-only --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  --env EXPECTED_TAG="$tag" --env EXPECTED_SHA="$sha" --entrypoint /bin/sh "$ref" -ec '
+    html=/usr/share/nginx/html/index.html
+    grep -Fq "Docs build $EXPECTED_TAG" "$html"
+    grep -Fq "data-docs-build-version=\"$EXPECTED_TAG\"" "$html"
+    grep -Fq "data-docs-build-sha=\"$EXPECTED_SHA\"" "$html"
+  ' || fail 'immutable Docs footer identity mismatch'
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
   -v kaori-docs-trivy-cache:/root/.cache/trivy aquasec/trivy:0.74.0 \
   image --cache-dir /root/.cache/trivy --exit-code 1 --ignore-unfixed --scanners vuln --severity HIGH,CRITICAL "$ref"

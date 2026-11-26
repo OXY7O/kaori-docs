@@ -41,7 +41,20 @@ const publishedDocsOptions: Preset.Options['docs'] =
         ),
       };
 
+const buildVersion = process.env.KAORI_DOCS_BUILD_VERSION ?? '';
+const buildSha = process.env.KAORI_DOCS_BUILD_SHA ?? '';
+if (
+  (buildVersion || buildSha) &&
+  (!/^\d+\.\d+\.\d+-rc\.[1-9]\d*$/.test(buildVersion) || !/^[a-f0-9]{40}$/.test(buildSha))
+) {
+  throw new Error('Invalid Docs build identity: exact RC version and source SHA required');
+}
+
 const config: Config = {
+  customFields: {
+    docsBuildVersion: buildVersion ? 'v' + buildVersion : 'development',
+    docsBuildSha: buildSha,
+  },
   title: 'KAORI Documentation',
   tagline: 'Knowledge, Automation, Operations, Resilience & Intelligence',
   url: 'https://docs.kaori.cloud',
