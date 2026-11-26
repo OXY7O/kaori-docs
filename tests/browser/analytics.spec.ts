@@ -96,11 +96,28 @@ test('consent and sanitized events', async ({page, request, baseURL}) => {
     const [allow, deny] = buttons.map((button) => button.getBoundingClientRect());
     const link = document.querySelector('.kaori-docs-footer__link')!;
     const copy = element.querySelector('p')!;
+    const linkStyle = getComputedStyle(link);
+    const ctaStyles = ['primary', 'secondary'].map((variant) =>
+      getComputedStyle(document.querySelector(`.kaori-docs-home__${variant}`)!),
+    );
     return {
       aligned: Math.abs(element.clientWidth - parent.clientWidth) <= 2,
       buttonsAligned: Math.abs(allow.top - deny.top) <= 1,
       sameHeight: Math.abs(allow.height - deny.height) <= 1,
-      sameType: getComputedStyle(copy).fontSize === getComputedStyle(link).fontSize,
+      sameType: getComputedStyle(copy).fontSize === linkStyle.fontSize,
+      buttonTypography: buttons.every((button) => {
+        const style = getComputedStyle(button);
+        const sameFamily = style.fontFamily === linkStyle.fontFamily;
+        return sameFamily && style.fontSize === linkStyle.fontSize;
+      }),
+      buttonPalette: buttons.every((button, index) => {
+        const style = getComputedStyle(button);
+        return (
+          style.color === ctaStyles[index].color &&
+          style.backgroundColor === ctaStyles[index].backgroundColor &&
+          style.borderTopColor === ctaStyles[index].borderTopColor
+        );
+      }),
     };
   });
   expect(geometry).toEqual({
@@ -108,6 +125,8 @@ test('consent and sanitized events', async ({page, request, baseURL}) => {
     buttonsAligned: true,
     sameHeight: true,
     sameType: true,
+    buttonTypography: true,
+    buttonPalette: true,
   });
   const fits = () =>
     panel.evaluate((element) => element.scrollWidth <= element.clientWidth);
